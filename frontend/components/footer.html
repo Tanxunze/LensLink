@@ -1,0 +1,35 @@
+<footer class="footer mt-auto py-3 bg-light">
+    <div class="container">
+        <div class="row">
+            <div class="col-md-4">
+                <h5>LensLink</h5>
+                <p class="text-muted">Connect with professional photographers for your special moments.</p>
+            </div>
+            <div class="col-md-4">
+                <h5>Quick Links</h5>
+                <ul class="list-unstyled">
+                    <li><a href="#" id="footerPhotographers">Find Photographers</a></li>
+                    <li><a href="#" id="footerServices">Browse Services</a></li>
+                    <li><a href="#" id="footerRegister">Become a Photographer</a></li>
+                </ul>
+            </div>
+            <div class="col-md-4">
+                <h5>Contact</h5>
+                <ul class="list-unstyled">
+                    <li>Email: info@lenslink.com</li>
+                    <li>Support: support@lenslink.com</li>
+                </ul>
+            </div>
+        </div>
+        <hr>
+        <div class="text-center">
+            <p class="mb-0">&copy; 2024 LensLink. All rights reserved.</p>
+        </div>
+    </div>
+</footer>
+
+<script>
+    document.getElementById('footerPhotographers').href = `${CONFIG.BASE_URL}pages/photographers.html`;
+    document.getElementById('footerServices').href = `${CONFIG.BASE_URL}pages/services.html`;
+    document.getElementById('footerRegister').href = `${CONFIG.BASE_URL}pages/auth/register.html`;
+</script>
