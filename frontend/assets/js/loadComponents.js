@@ -1,19 +1,7 @@
-document.addEventListener("DOMContentLoaded", async () => {
-    const baseUrl = CONFIG.BASE_URL;
-    const headerResponse = await fetch(`${baseUrl}components/header.html`);
-    const headerHtml = await headerResponse.text();
-    document.getElementById("header").innerHTML = headerHtml;
-
-    const footerResponse = await fetch(`${baseUrl}components/footer.html`);
-    const footerHtml = await footerResponse.text();
-    document.getElementById("footer").innerHTML = footerHtml;
-    updateAuthLinks();
-});
-
 function updateAuthLinks() {
     const authLinksElement = document.getElementById("authLinks");
     const isLoggedIn = false; 
-  const isPhotographer = false; //Todo
+    const isPhotographer = false; //Todo
 
     if (isLoggedIn) {
         const dashboardUrl = isPhotographer
@@ -39,3 +27,37 @@ function updateAuthLinks() {
             `;
     }
 }
+
+document.addEventListener("DOMContentLoaded", async () => {
+    const headerResponse = await fetch(
+        `${CONFIG.BASE_URL}components/header.html`
+    );
+    const headerHtml = await headerResponse.text();
+    document.getElementById("header").innerHTML = headerHtml;
+
+    document.getElementById("homeLink").href = `${CONFIG.BASE_URL}index.html`;
+    document.getElementById(
+        "photographersLink"
+    ).href = `${CONFIG.BASE_URL}pages/photographers.html`;
+    document.getElementById(
+        "servicesLink"
+    ).href = `${CONFIG.BASE_URL}pages/services.html`;
+
+    const footerResponse = await fetch(
+        `${CONFIG.BASE_URL}components/footer.html`
+    );
+    const footerHtml = await footerResponse.text();
+    document.getElementById("footer").innerHTML = footerHtml;
+
+    document.getElementById(
+        "footerPhotographersLink"
+    ).href = `${CONFIG.BASE_URL}pages/photographers.html`;
+    document.getElementById(
+        "footerServicesLink"
+    ).href = `${CONFIG.BASE_URL}pages/services.html`;
+    document.getElementById(
+        "footerRegisterLink"
+    ).href = `${CONFIG.BASE_URL}pages/auth/register.html`;
+
+    updateAuthLinks();
+});
