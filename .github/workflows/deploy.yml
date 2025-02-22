@@ -1,23 +1,24 @@
 name: Deploy Frontend
 
 on:
-  push:
-    branches:
-      - main
-    paths:
-      - 'frontend/**'  
+    push:
+        branches:
+        - main
+        paths:
+        - 'frontend/**'  
+    workflow_dispatch:
 
 jobs:
-  deploy-frontend:
+    deploy-frontend:
     runs-on: ubuntu-latest
 
     steps:
     - name: Checkout code
-      uses: actions/checkout@v4
+        uses: actions/checkout@v4
 
     - name: Deploy Frontend via Rsync
-      uses: easingthemes/ssh-deploy@main
-      env:
+        uses: easingthemes/ssh-deploy@main
+        env:
         SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
         ARGS: "-avz --delete --exclude='.git/'"
         REMOTE_HOST: ${{ secrets.REMOTE_HOST }}
