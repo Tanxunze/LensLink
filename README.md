@@ -77,4 +77,4 @@ LENSLINK/
 
 ## Resources
 - [Bootstrap Documentation](https://getbootstrap.com/docs/5.3/getting-started/introduction/)
-- [Project Requirements Document]([CS4116 Project 2025](https://learn.ul.ie/content/enforced/49257-CS4116_SEM2_2024_5/Module Material/CS4116 Project 2025.pdf?isCourseFile=true&ou=49257))
+- [Project Requirements Document](https://learn.ul.ie/content/enforced/49257-CS4116_SEM2_2024_5/Module Material/CS4116 Project 2025.pdf?isCourseFile=true&ou=49257)
