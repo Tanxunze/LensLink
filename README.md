@@ -16,6 +16,7 @@ A platform connecting photographers with clients, built for CS4116 project.
 
 ### Directory Structure
 
+```
 LENSLINK/
 ├── frontend/               
 │   ├── index.html         # Homepage
@@ -41,6 +42,7 @@ LENSLINK/
 │           ├── customer.html
 │           └── photographer.html
 └── backend/              # All backend codes（Laravel）
+```
 
 ## Development Guidelines
 
