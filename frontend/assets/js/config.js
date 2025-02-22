@@ -5,6 +5,10 @@ const CONFIG = {
     ? "../"
     : "./",
 
+    needsComponents: function() {
+        return !window.location.pathname.includes('/pages/dashboard/');
+    },
+
     API: {
         BASE_URL: "",
         VERSION: "v1",

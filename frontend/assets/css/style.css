@@ -60,3 +60,17 @@ main {
 .portfolio-item:hover img {
     transform: scale(1.05);
 }
+
+/* dashboard */
+.dashboard {
+    background-color: #f8f9fa;
+}
+
+.dashboard .navbar {
+    padding: 1rem;
+    margin-bottom: 2rem;
+}
+
+.dashboard .dropdown-toggle::after {
+    display: none;
+}
