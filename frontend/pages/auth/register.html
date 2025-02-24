@@ -66,7 +66,6 @@
 
     <div id="footer"></div>
 
-    <!-- Scripts -->
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="../../assets/js/config.js"></script>
@@ -74,16 +73,102 @@
     <script src="../../assets/js/loadComponents.js"></script>
     <script>
         $(document).ready(function () {
+            // Check if user is already logged in
+            if (localStorage.getItem("token")) {
+                const userRole = localStorage.getItem("userRole");
+                const redirectPath = userRole === "photographer"
+                    ? "../dashboard/photographer.html"
+                    : "../dashboard/customer.html";
+                window.location.href = redirectPath;
+                return;
+            }
+
             // Handle form submission
             $("#registerForm").submit(function (event) {
                 event.preventDefault();
                 handleRegister();
             });
+
+            // Password strength validation
+            $("#password").on('input', function () {
+                validatePasswordStrength();
+            });
+
+            // Password match validation
+            $("#confirmPassword").on('input', function () {
+                validatePasswordMatch();
+            });
         });
+
+        function validatePasswordStrength() {
+            const password = $("#password").val();
+            const strengthMeter = $("#passwordStrength");
+
+            if (!password) {
+                strengthMeter.addClass('d-none');
+                return;
+            }
+
+            // Show strength meter
+            strengthMeter.removeClass('d-none');
+
+            // Check password strength
+            let strength = 0;
+            const regexes = [
+                /[a-z]/, // lowercase
+                /[A-Z]/, // uppercase
+                /[0-9]/, // numbers
+                /[^a-zA-Z0-9]/ // special characters
+            ];
+
+            // Add points for each regex match
+            regexes.forEach(regex => {
+                if (regex.test(password)) strength++;
+            });
+
+            // Add points for length
+            if (password.length >= 8) strength++;
+            if (password.length >= 12) strength++;
+
+            // Update UI based on strength
+            const percentage = (strength / 6) * 100;
+            strengthMeter.css('width', percentage + '%');
+
+            if (percentage < 40) {
+                strengthMeter.removeClass('bg-warning bg-success').addClass('bg-danger');
+            } else if (percentage < 70) {
+                strengthMeter.removeClass('bg-danger bg-success').addClass('bg-warning');
+            } else {
+                strengthMeter.removeClass('bg-danger bg-warning').addClass('bg-success');
+            }
+        }
+
+        function validatePasswordMatch() {
+            const password = $("#password").val();
+            const confirmPassword = $("#confirmPassword").val();
+            const feedbackElement = $("#passwordMatchFeedback");
+
+            if (!confirmPassword) {
+                feedbackElement.addClass('d-none');
+                return;
+            }
+
+            if (password === confirmPassword) {
+                feedbackElement.text('Passwords match').removeClass('text-danger d-none').addClass('text-success');
+            } else {
+                feedbackElement.text('Passwords do not match').removeClass('text-success d-none').addClass('text-danger');
+            }
+        }
 
         function handleRegister() {
             // Hide any previous error messages
             $("#registerError").addClass("d-none");
+
+            // Show loading state
+            const submitButton = $("#registerForm button[type='submit']");
+            const originalText = submitButton.text();
+            submitButton.html('<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Registering...');
+            submitButton.prop('disabled', true);
 
             // Get password values and check if they match
             const password = $("#password").val();
@@ -93,6 +178,10 @@
                 $("#registerError")
                     .text("Passwords do not match.")
                     .removeClass("d-none");
+
+                // Reset button state
+                submitButton.html(originalText);
+                submitButton.prop('disabled', false);
                 return;
             }
 
@@ -106,40 +195,58 @@
 
             // Call register API
             API.register(userData)
-                .done(function (response) {
+                .then(function (response) {
                     if (response.success) {
+                        // Show success message briefly
+                        $("#registerSuccess")
+                            .text("Registration successful! Logging you in...")
+                            .removeClass("d-none");
+
                         // Auto-login after successful registration
-                        API.login({
+                        return API.login({
                             email: userData.email,
                             password: userData.password
-                        })
-                            .done(function (loginResponse) {
-                                if (loginResponse.token) {
-                                    // Store token and user role
-                                    localStorage.setItem("token", loginResponse.token);
-                                    localStorage.setItem("userRole", userData.role);
-
-                                    // Redirect based on user role
-                                    const redirectPath = userData.role === "photographer"
-                                        ? "../dashboard/photographer.html"
-                                        : "../dashboard/customer.html";
-                                    window.location.href = redirectPath;
-                                }
-                            })
-                            .fail(function (error) {
-                                // Registration succeeded but login failed
-                                $("#registerError")
-                                    .text("Registration successful, but login failed. Please try logging in manually.")
-                                    .removeClass("d-none");
-                            });
+                        });
                     }
                 })
-                .fail(function (error) {
-                    // Show error message
-                    $("#registerError")
-                        .text("Registration failed. Please try again.")
-                        .removeClass("d-none");
+                .then(function (loginResponse) {
+                    if (loginResponse && loginResponse.token) {
+                        // Store token and user role
+                        localStorage.setItem("token", loginResponse.token);
+                        localStorage.setItem("userRole", userData.role);
+
+                        // Redirect based on user role
+                        const redirectPath = userData.role === "photographer"
+                            ? "../dashboard/photographer.html"
+                            : "../dashboard/customer.html";
+                        window.location.href = redirectPath;
+                    }
+                })
+                .catch(function (error) {
+                    // Handle validation errors or other errors
+                    let errorMessage = 'Registration failed. Please try again.';
+
+                    if (error.errors) {
+                        // Format validation errors
+                        const errorMessages = [];
+                        for (const field in error.errors) {
+                            errorMessages.push(error.errors[field][0]);
+                        }
+                        errorMessage = errorMessages.join('<br>');
+                        $("#registerError").html(errorMessage);
+                    } else if (error.message) {
+                        $("#registerError").text(error.message);
+                    } else {
+                        $("#registerError").text(errorMessage);
+                    }
+
+                    $("#registerError").removeClass("d-none");
                     console.error("Registration error:", error);
+                })
+                .finally(function () {
+                    // Reset button state
+                    submitButton.html(originalText);
+                    submitButton.prop('disabled', false);
                 });
         }
     </script>

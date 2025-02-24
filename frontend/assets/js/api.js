@@ -7,15 +7,21 @@ class API {
           ? `Bearer ${localStorage.getItem("token")}`
           : "",
       },
+      credentials: "include",
     };
 
     try {
       return $.ajax({
         url: `${CONFIG.API.BASE_URL}${endpoint}`,
-        ...defaultOptions,
-        ...options,
-        data: options.body ? JSON.parse(options.body) : undefined,
+        type: options.method || "GET", 
+        contentType: "application/json",
+        headers: {
+          ...defaultOptions.headers,
+          ...(options.headers || {}),
+        },
+        data: options.body, 
         dataType: "json",
+        credentials: defaultOptions.credentials,
       });
     } catch (error) {
       console.error("API request failed:", error);
@@ -27,6 +33,10 @@ class API {
   static async login(credentials) {
     return this.request("/auth/login", {
       method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
       body: JSON.stringify(credentials),
     });
   }
@@ -34,6 +44,10 @@ class API {
   static async register(userData) {
     return this.request("/auth/register", {
       method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
       body: JSON.stringify(userData),
     });
   }

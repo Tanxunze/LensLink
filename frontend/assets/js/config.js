@@ -17,7 +17,7 @@ const CONFIG = {
 
   // API configuration
   API: {
-    BASE_URL: "", // Will be set to Laravel backend URL
+    BASE_URL: "http://localhost:8089/api", 
     VERSION: "v1",
   },
 
