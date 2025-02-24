@@ -1,0 +1,69 @@
+.photographer-banner {
+    height: 300px;
+    background-size: cover;
+    background-position: center;
+    position: relative;
+}
+
+.photographer-banner::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.4);
+}
+
+.photographer-profile-image {
+    width: 150px;
+    height: 150px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 4px solid white;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.photographer-info {
+    position: relative;
+    margin-top: -75px;
+}
+
+.portfolio-item {
+    position: relative;
+    overflow: hidden;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.portfolio-item img {
+    transition: transform 0.3s ease;
+    width: 100%;
+    height: 220px;
+    object-fit: cover;
+}
+
+.portfolio-item:hover img {
+    transform: scale(1.05);
+}
+
+.ribbon {
+    position: absolute;
+    top: 10px;
+    right: -5px;
+    padding: 5px 10px;
+    background: #007bff;
+    color: white;
+    font-size: 0.8em;
+    border-radius: 3px;
+}
+
+.rating-star {
+    color: #ccc;
+    cursor: pointer;
+    font-size: 24px;
+}
+
+.rating-star.active {
+    color: #ffc107;
+}

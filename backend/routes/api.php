@@ -6,6 +6,8 @@ use App\Http\Controllers\API\AuthController;
 //public routes
 Route::post('/auth/login', [AuthController::class, 'login']);
 Route::post('/auth/register', [AuthController::class, 'register']);
+Route::get('/photographers', [App\Http\Controllers\API\PhotographerController::class, 'index']);
+Route::get('/photographers/{id}', [App\Http\Controllers\API\PhotographerController::class, 'show']);
 
 //private routes
 Route::middleware('auth:sanctum')->group(function () {
