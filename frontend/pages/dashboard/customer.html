@@ -25,12 +25,12 @@
                         <i class="bi bi-person-circle"></i>
                     </button>
                     <ul class="dropdown-menu dropdown-menu-end">
-                        <li><a class="dropdown-item" href="#">Profile</a></li>
-                        <li><a class="dropdown-item" href="#">Settings</a></li>
+                        <li><a class="dropdown-item" href="#" id="profileLink">Profile</a></li>
+                        <li><a class="dropdown-item" href="#" id="settingsLink">Settings</a></li>
                         <li>
                             <hr class="dropdown-divider">
                         </li>
-                        <li><a class="dropdown-item" href="../../index.html">Logout</a></li>
+                        <li><a class="dropdown-item" href="#" id="logoutLink">Logout</a></li>
                     </ul>
                 </div>
             </div>
@@ -39,35 +39,36 @@
 
     <div class="container-fluid">
         <div class="row">
+            <!-- Sidebar navigation -->
             <div class="col-md-3 col-lg-2 px-0 bg-dark min-vh-100">
                 <div class="p-3">
                     <ul class="nav flex-column">
                         <li class="nav-item">
-                            <a class="nav-link active text-white" href="#">
+                            <a class="nav-link active text-white" href="#" data-section="dashboard">
                                 <i class="bi bi-house me-2"></i>
                                 Dashboard
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link text-white" href="#">
+                            <a class="nav-link text-white" href="#" data-section="bookings">
                                 <i class="bi bi-calendar me-2"></i>
                                 My Bookings
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link text-white" href="#">
+                            <a class="nav-link text-white" href="#" data-section="messages">
                                 <i class="bi bi-chat me-2"></i>
                                 Messages
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link text-white" href="#">
+                            <a class="nav-link text-white" href="#" data-section="savedPhotographers">
                                 <i class="bi bi-heart me-2"></i>
                                 Saved Photographers
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link text-white" href="#">
+                            <a class="nav-link text-white" href="#" data-section="settings">
                                 <i class="bi bi-gear me-2"></i>
                                 Settings
                             </a>
@@ -76,56 +77,357 @@
                 </div>
             </div>
 
+            <!-- Main content area -->
             <div class="col-md-9 col-lg-10 px-md-4">
-                <div
-                    class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-                    <h1 class="h2">Dashboard</h1>
+                <!-- Dashboard section -->
+                <div class="dashboard-section" id="dashboardSection">
+                    <div
+                        class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                        <h1 class="h2">Dashboard</h1>
+                    </div>
+
+                    <!-- Status cards -->
+                    <div class="row">
+                        <div class="col-md-4 mb-4">
+                            <div class="card">
+                                <div class="card-body">
+                                    <h5 class="card-title">Active Bookings</h5>
+                                    <h2 class="display-4" id="activeBookingsCount">0</h2>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4 mb-4">
+                            <div class="card">
+                                <div class="card-body">
+                                    <h5 class="card-title">Completed Sessions</h5>
+                                    <h2 class="display-4" id="completedSessionsCount">0</h2>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4 mb-4">
+                            <div class="card">
+                                <div class="card-body">
+                                    <h5 class="card-title">Messages</h5>
+                                    <h2 class="display-4" id="messagesCount">0</h2>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Recent bookings -->
+                    <div class="card mb-4">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <span>Recent Bookings</span>
+                            <a href="#" class="btn btn-sm btn-primary" id="viewAllBookingsBtn">View All</a>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-striped">
+                                    <thead>
+                                        <tr>
+                                            <th>Photographer</th>
+                                            <th>Service</th>
+                                            <th>Date</th>
+                                            <th>Status</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="recentBookingsTable">
+                                        <tr>
+                                            <td colspan="5" class="text-center">
+                                                <div class="spinner-border spinner-border-sm" role="status">
+                                                    <span class="visually-hidden">Loading...</span>
+                                                </div>
+                                                <span class="ms-2">Loading bookings...</span>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
-                <div class="row">
-                    <div class="col-md-4 mb-4">
-                        <div class="card">
-                            <div class="card-body">
-                                <h5 class="card-title">Active Bookings</h5>
-                                <h2 class="display-4">3</h2>
-                            </div>
-                        </div>
+                <!-- Bookings section (initially hidden) -->
+                <div class="dashboard-section d-none" id="bookingsSection">
+                    <div
+                        class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                        <h1 class="h2">My Bookings</h1>
                     </div>
-                    <div class="col-md-4 mb-4">
-                        <div class="card">
-                            <div class="card-body">
-                                <h5 class="card-title">Completed Sessions</h5>
-                                <h2 class="display-4">8</h2>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-4 mb-4">
-                        <div class="card">
-                            <div class="card-body">
-                                <h5 class="card-title">Messages</h5>
-                                <h2 class="display-4">5</h2>
-                            </div>
-                        </div>
-                    </div>
+                    <!-- This section will be populated with bookings data -->
                 </div>
 
-                <!-- rcent appointment -->
-                <div class="card mb-4">
-                    <div class="card-header">
-                        Recent Bookings
+                <!-- Messages section (initially hidden) -->
+                <div class="dashboard-section d-none" id="messagesSection">
+                    <div
+                        class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                        <h1 class="h2">Messages</h1>
                     </div>
-                    <div class="card-body">
-                        <!-- rcent appointment tables -->
-                    </div>
+                    <!-- This section will be populated with messages data -->
                 </div>
+
+                <!-- Other sections will be added similarly -->
             </div>
         </div>
     </div>
 
+    <!-- Scripts -->
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="../../assets/js/config.js"></script>
     <script src="../../assets/js/api.js"></script>
-    <script src="../../assets/js/loadComponents.js"></script>
+    <script>
+        $(document).ready(function () {
+            // Check authentication
+            checkAuth();
+
+            // Load user data
+            loadUserData();
+
+            // Load dashboard data
+            loadDashboardData();
+
+            // Handle navigation
+            $(".nav-link").click(function (e) {
+                e.preventDefault();
+                const section = $(this).data("section");
+
+                // Update active link
+                $(".nav-link").removeClass("active");
+                $(this).addClass("active");
+
+                // Show selected section, hide others
+                $(".dashboard-section").addClass("d-none");
+                $(`#${section}Section`).removeClass("d-none");
+
+                // Load section data if needed
+                if (section === "bookings") {
+                    loadBookings();
+                } else if (section === "messages") {
+                    loadMessages();
+                } else if (section === "savedPhotographers") {
+                    loadSavedPhotographers();
+                }
+            });
+
+            // Handle logout
+            $("#logoutLink").click(function (e) {
+                e.preventDefault();
+                logout();
+            });
+
+            // Handle view all bookings
+            $("#viewAllBookingsBtn").click(function (e) {
+                e.preventDefault();
+                $(".nav-link").removeClass("active");
+                $('[data-section="bookings"]').addClass("active");
+                $(".dashboard-section").addClass("d-none");
+                $("#bookingsSection").removeClass("d-none");
+                loadBookings();
+            });
+        });
+
+        function checkAuth() {
+            // Check if user is logged in
+            const token = localStorage.getItem("token");
+            const userRole = localStorage.getItem("userRole");
+
+            if (!token || userRole !== "customer") {
+                // Redirect to login if not authenticated or not a customer
+                window.location.href = "../../pages/auth/login.html";
+                return;
+            }
+
+            // Verify token with backend (optional)
+            API.verifyToken()
+                .fail(function (error) {
+                    console.error("Token verification failed:", error);
+                    localStorage.removeItem("token");
+                    localStorage.removeItem("userRole");
+                    window.location.href = "../../pages/auth/login.html";
+                });
+        }
+
+        function loadUserData() {
+            API.getUserProfile()
+                .done(function (user) {
+                    // Update user name
+                    $("#userName").text(user.name);
+
+                    // Here you can update other user profile elements
+                })
+                .fail(function (error) {
+                    console.error("Failed to load user data:", error);
+                });
+        }
+
+        function loadDashboardData() {
+            // Load counts for dashboard cards
+            Promise.all([
+                loadBookingCounts(),
+                loadMessagesCount()
+            ])
+                .then(function () {
+                    // Load recent bookings
+                    loadRecentBookings();
+                })
+                .catch(function (error) {
+                    console.error("Error loading dashboard data:", error);
+                });
+        }
+
+        function loadBookingCounts() {
+            // This would be replaced with an actual API call
+            // For now, using mock data
+            setTimeout(function () {
+                $("#activeBookingsCount").text("3");
+                $("#completedSessionsCount").text("8");
+            }, 500);
+
+            return Promise.resolve();
+        }
+
+        function loadMessagesCount() {
+            // This would be replaced with an actual API call
+            setTimeout(function () {
+                $("#messagesCount").text("5");
+            }, 500);
+
+            return Promise.resolve();
+        }
+
+        function loadRecentBookings() {
+            // Show loading state
+            $("#recentBookingsTable").html(`
+            <tr>
+                <td colspan="5" class="text-center">
+                    <div class="spinner-border spinner-border-sm" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <span class="ms-2">Loading bookings...</span>
+                </td>
+            </tr>
+        `);
+
+            // This would be replaced with an actual API call
+            // For now, using mock data
+            setTimeout(function () {
+                const bookings = [
+                    {
+                        id: 1,
+                        photographer: {
+                            id: 101,
+                            name: "John Doe"
+                        },
+                        service: "Wedding Photography",
+                        date: "2025-03-15",
+                        status: "confirmed"
+                    },
+                    {
+                        id: 2,
+                        photographer: {
+                            id: 102,
+                            name: "Jane Smith"
+                        },
+                        service: "Family Portrait",
+                        date: "2025-04-10",
+                        status: "pending"
+                    }
+                ];
+
+                // Generate table rows
+                if (bookings.length === 0) {
+                    $("#recentBookingsTable").html(`
+                    <tr>
+                        <td colspan="5" class="text-center">No bookings found</td>
+                    </tr>
+                `);
+                    return;
+                }
+
+                const rows = bookings.map(booking => `
+                <tr>
+                    <td>
+                        <a href="../../pages/photographer-detail.html?id=${booking.photographer.id}">
+                            ${booking.photographer.name}
+                        </a>
+                    </td>
+                    <td>${booking.service}</td>
+                    <td>${formatDate(booking.date)}</td>
+                    <td>
+                        <span class="badge ${getStatusBadgeClass(booking.status)}">
+                            ${capitalizeFirstLetter(booking.status)}
+                        </span>
+                    </td>
+                    <td>
+                        <button class="btn btn-sm btn-outline-primary viewBookingBtn" data-id="${booking.id}">
+                            View
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+
+                $("#recentBookingsTable").html(rows);
+
+                // Add event listeners to view buttons
+                $(".viewBookingBtn").click(function () {
+                    const bookingId = $(this).data("id");
+                    viewBookingDetails(bookingId);
+                });
+            }, 1000);
+        }
+
+        function loadBookings() {
+            // This would load all bookings for the bookings section
+            // Implementation would be similar to loadRecentBookings but with more filters/options
+        }
+
+        function loadMessages() {
+            // This would load messages for the messages section
+        }
+
+        function loadSavedPhotographers() {
+            // This would load saved photographers for that section
+        }
+
+        function viewBookingDetails(bookingId) {
+            // This would show a modal or navigate to booking details
+            alert(`View booking details for booking ID: ${bookingId}`);
+        }
+
+        function formatDate(dateString) {
+            const options = { year: 'numeric', month: 'long', day: 'numeric' };
+            return new Date(dateString).toLocaleDateString(undefined, options);
+        }
+
+        function getStatusBadgeClass(status) {
+            switch (status.toLowerCase()) {
+                case 'confirmed':
+                    return 'bg-success';
+                case 'pending':
+                    return 'bg-warning';
+                case 'cancelled':
+                    return 'bg-danger';
+                case 'completed':
+                    return 'bg-info';
+                default:
+                    return 'bg-secondary';
+            }
+        }
+
+        function capitalizeFirstLetter(string) {
+            return string.charAt(0).toUpperCase() + string.slice(1);
+        }
+
+        function logout() {
+            // Clear authentication data
+            localStorage.removeItem("token");
+            localStorage.removeItem("userRole");
+
+            // Redirect to home page
+            window.location.href = "../../index.html";
+        }
+    </script>
 </body>
 
 </html>

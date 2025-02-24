@@ -10,16 +10,13 @@ class API {
     };
 
     try {
-      const response = await fetch(`${CONFIG.API.BASE_URL}${endpoint}`, {
+      return $.ajax({
+        url: `${CONFIG.API.BASE_URL}${endpoint}`,
         ...defaultOptions,
         ...options,
+        data: options.body ? JSON.parse(options.body) : undefined,
+        dataType: "json",
       });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      return await response.json();
     } catch (error) {
       console.error("API request failed:", error);
       throw error;

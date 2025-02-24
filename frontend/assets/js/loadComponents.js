@@ -1,72 +1,81 @@
-document.addEventListener("DOMContentLoaded", async () => {
+$(document).ready(function () {
   if (window.location.pathname.includes("/pages/dashboard/")) {
-    // if dashboard pages, remove header and footer
-    const header = document.getElementById("header");
-    const footer = document.getElementById("footer");
-    if (header) header.remove();
-    if (footer) footer.remove();
+    // if dashboard page, remove header and footer
+    $("#header, #footer").remove();
     return;
   }
 
-  // not dashboard pages, load header and footer
-  const headerResponse = await fetch(
-    `${CONFIG.BASE_URL}components/header.html`
-  );
-  const headerHtml = await headerResponse.text();
-  document.getElementById("header").innerHTML = headerHtml;
+  // if not dashboard page, load header and footer
+  $.get(`${CONFIG.BASE_URL}components/header.html`, function (headerHtml) {
+    $("#header").html(headerHtml);
 
-  document.getElementById("homeLink").href = `${CONFIG.BASE_URL}index.html`;
-  document.getElementById(
-    "photographersLink"
-  ).href = `${CONFIG.BASE_URL}pages/photographers.html`;
-  document.getElementById(
-    "servicesLink"
-  ).href = `${CONFIG.BASE_URL}pages/services.html`;
+    $("#homeLink").attr("href", `${CONFIG.BASE_URL}index.html`);
+    $("#photographersLink").attr(
+      "href",
+      `${CONFIG.BASE_URL}pages/photographers.html`
+    );
+    $("#servicesLink").attr("href", `${CONFIG.BASE_URL}pages/services.html`);
 
-  const footerResponse = await fetch(
-    `${CONFIG.BASE_URL}components/footer.html`
-  );
-  const footerHtml = await footerResponse.text();
-  document.getElementById("footer").innerHTML = footerHtml;
+    updateAuthLinks();
+  });
 
-  document.getElementById(
-    "footerPhotographersLink"
-  ).href = `${CONFIG.BASE_URL}pages/photographers.html`;
-  document.getElementById(
-    "footerServicesLink"
-  ).href = `${CONFIG.BASE_URL}pages/services.html`;
-  document.getElementById(
-    "footerRegisterLink"
-  ).href = `${CONFIG.BASE_URL}pages/auth/register.html`;
-
-  updateAuthLinks();
+  $.get(`${CONFIG.BASE_URL}components/footer.html`, function (footerHtml) {
+      $("#footer").html(footerHtml);
+      
+    $("#footerPhotographersLink").attr(
+      "href",
+      `${CONFIG.BASE_URL}pages/photographers.html`
+    );
+    $("#footerServicesLink").attr(
+      "href",
+      `${CONFIG.BASE_URL}pages/services.html`
+    );
+    $("#footerRegisterLink").attr(
+      "href",
+      `${CONFIG.BASE_URL}pages/auth/register.html`
+    );
+  });
 });
 
 function updateAuthLinks() {
-  const authLinksElement = document.getElementById("authLinks");
-  const isLoggedIn = false;
-  const isPhotographer = false; //Todo
+  // check if user is logged in and get user role
+  const isLoggedIn = localStorage.getItem("token") !== null;
+  const userRole = localStorage.getItem("userRole");
+  const isPhotographer = userRole === "photographer";
 
   if (isLoggedIn) {
     const dashboardUrl = isPhotographer
       ? `${CONFIG.BASE_URL}pages/dashboard/photographer.html`
       : `${CONFIG.BASE_URL}pages/dashboard/customer.html`;
-    authLinksElement.innerHTML = `
-            <li class="nav-item">
-                <a class="nav-link" href="${dashboardUrl}">Dashboard</a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link" href="#" onclick="logout()">Logout</a>
-            </li>
-        `;
+
+    $("#authLinks").html(`
+      <li class="nav-item">
+        <a class="nav-link" href="${dashboardUrl}">Dashboard</a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" href="#" id="logoutBtn">Logout</a>
+      </li>
+    `);
+
+    // logout button click event
+    $("#logoutBtn").click(function (e) {
+      e.preventDefault();
+      logout();
+    });
   } else {
-    authLinksElement.innerHTML = `
-            <li class="nav-item">
-                <a class="btn btn-outline-success me-2" href="${CONFIG.BASE_URL}pages/auth/login.html">Login</a>
-            </li>
-            <li class="nav-item">
-                <a class="btn btn-primary" href="${CONFIG.BASE_URL}pages/auth/register.html">Register</a>
-            </li>
-        `;
+    $("#authLinks").html(`
+      <li class="nav-item">
+        <a class="btn btn-outline-success me-2" href="${CONFIG.BASE_URL}pages/auth/login.html">Login</a>
+      </li>
+      <li class="nav-item">
+        <a class="btn btn-primary" href="${CONFIG.BASE_URL}pages/auth/register.html">Register</a>
+      </li>
+    `);
   }
+}
+
+function logout() {
+  localStorage.removeItem("token");
+  localStorage.removeItem("userRole");
+  window.location.href = `${CONFIG.BASE_URL}index.html`;
 }

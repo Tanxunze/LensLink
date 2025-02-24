@@ -18,7 +18,7 @@
                 <div class="card shadow">
                     <div class="card-body p-5">
                         <h2 class="text-center mb-4">Login</h2>
-                        <form id="loginForm" onsubmit="handleLogin(event)">
+                        <form id="loginForm">
                             <div class="mb-3">
                                 <label for="email" class="form-label">Email address</label>
                                 <input type="email" class="form-control" id="email" required>
@@ -45,34 +45,53 @@
 
     <div id="footer"></div>
 
+    <!-- Scripts -->
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="../../assets/js/config.js"></script>
     <script src="../../assets/js/api.js"></script>
     <script src="../../assets/js/loadComponents.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        async function handleLogin(event) {
-            event.preventDefault();
-            const errorDiv = document.getElementById('loginError');
-            errorDiv.classList.add('d-none');
+        $(document).ready(function () {
+            // Handle form submission
+            $("#loginForm").submit(function (event) {
+                event.preventDefault();
+                handleLogin();
+            });
+        });
 
-            try {
-                const credentials = {
-                    email: document.getElementById('email').value,
-                    password: document.getElementById('password').value
-                };
+        function handleLogin() {
+            // Hide any previous error messages
+            $("#loginError").addClass("d-none");
 
-                const response = await API.login(credentials);
-                if (response.token) {
-                    localStorage.setItem('token', response.token);
-                    const redirectPath = response.user.role === 'photographer'
-                        ? '../dashboard/photographer.html'
-                        : '../dashboard/customer.html';
-                    window.location.href = redirectPath;
-                }
-            } catch (error) {
-                errorDiv.textContent = 'Login failed. Please check your credentials.';
-                errorDiv.classList.remove('d-none');
-            }
+            // Get form values
+            const credentials = {
+                email: $("#email").val(),
+                password: $("#password").val()
+            };
+
+            // Call login API
+            API.login(credentials)
+                .done(function (response) {
+                    if (response.token) {
+                        // Store token and user role
+                        localStorage.setItem("token", response.token);
+                        localStorage.setItem("userRole", response.user.role);
+
+                        // Redirect based on user role
+                        const redirectPath = response.user.role === "photographer"
+                            ? "../dashboard/photographer.html"
+                            : "../dashboard/customer.html";
+                        window.location.href = redirectPath;
+                    }
+                })
+                .fail(function (error) {
+                    // Show error message
+                    $("#loginError")
+                        .text("Login failed. Please check your credentials.")
+                        .removeClass("d-none");
+                    console.error("Login error:", error);
+                });
         }
     </script>
 </body>

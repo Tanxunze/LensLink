@@ -18,7 +18,7 @@
                 <div class="card shadow">
                     <div class="card-body p-5">
                         <h2 class="text-center mb-4">Create Account</h2>
-                        <form id="registerForm" onsubmit="handleRegister(event)">
+                        <form id="registerForm">
                             <div class="mb-3">
                                 <label for="name" class="form-label">Full Name</label>
                                 <input type="text" class="form-control" id="name" required>
@@ -66,52 +66,81 @@
 
     <div id="footer"></div>
 
+    <!-- Scripts -->
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="../../assets/js/config.js"></script>
     <script src="../../assets/js/api.js"></script>
     <script src="../../assets/js/loadComponents.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        async function handleRegister(event) {
-            event.preventDefault();
-            const errorDiv = document.getElementById('registerError');
-            errorDiv.classList.add('d-none');
+        $(document).ready(function () {
+            // Handle form submission
+            $("#registerForm").submit(function (event) {
+                event.preventDefault();
+                handleRegister();
+            });
+        });
 
-            const password = document.getElementById('password').value;
-            const confirmPassword = document.getElementById('confirmPassword').value;
+        function handleRegister() {
+            // Hide any previous error messages
+            $("#registerError").addClass("d-none");
+
+            // Get password values and check if they match
+            const password = $("#password").val();
+            const confirmPassword = $("#confirmPassword").val();
 
             if (password !== confirmPassword) {
-                errorDiv.textContent = 'Passwords do not match.';
-                errorDiv.classList.remove('d-none');
+                $("#registerError")
+                    .text("Passwords do not match.")
+                    .removeClass("d-none");
                 return;
             }
 
-            try {
-                const userData = {
-                    name: document.getElementById('name').value,
-                    email: document.getElementById('email').value,
-                    password: password,
-                    role: document.querySelector('input[name="role"]:checked').value
-                };
+            // Get form data
+            const userData = {
+                name: $("#name").val(),
+                email: $("#email").val(),
+                password: password,
+                role: $("input[name='role']:checked").val()
+            };
 
-                const response = await API.register(userData);
-                if (response.success) {
-                    const loginResponse = await API.login({
-                        email: userData.email,
-                        password: userData.password
-                    });
+            // Call register API
+            API.register(userData)
+                .done(function (response) {
+                    if (response.success) {
+                        // Auto-login after successful registration
+                        API.login({
+                            email: userData.email,
+                            password: userData.password
+                        })
+                            .done(function (loginResponse) {
+                                if (loginResponse.token) {
+                                    // Store token and user role
+                                    localStorage.setItem("token", loginResponse.token);
+                                    localStorage.setItem("userRole", userData.role);
 
-                    if (loginResponse.token) {
-                        localStorage.setItem('token', loginResponse.token);
-                        const redirectPath = userData.role === 'photographer'
-                            ? '../dashboard/photographer.html'
-                            : '../dashboard/customer.html';
-                        window.location.href = redirectPath;
+                                    // Redirect based on user role
+                                    const redirectPath = userData.role === "photographer"
+                                        ? "../dashboard/photographer.html"
+                                        : "../dashboard/customer.html";
+                                    window.location.href = redirectPath;
+                                }
+                            })
+                            .fail(function (error) {
+                                // Registration succeeded but login failed
+                                $("#registerError")
+                                    .text("Registration successful, but login failed. Please try logging in manually.")
+                                    .removeClass("d-none");
+                            });
                     }
-                }
-            } catch (error) {
-                errorDiv.textContent = 'Registration failed. Please try again.';
-                errorDiv.classList.remove('d-none');
-            }
+                })
+                .fail(function (error) {
+                    // Show error message
+                    $("#registerError")
+                        .text("Registration failed. Please try again.")
+                        .removeClass("d-none");
+                    console.error("Registration error:", error);
+                });
         }
     </script>
 </body>

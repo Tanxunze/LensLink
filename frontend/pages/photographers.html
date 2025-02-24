@@ -14,11 +14,12 @@
     <div id="header"></div>
 
     <main class="container py-4">
+        <!-- Search and filter section -->
         <div class="row mb-4">
             <div class="col-md-8">
                 <div class="input-group">
                     <input type="text" class="form-control" placeholder="Search photographers..." id="searchInput">
-                    <button class="btn btn-primary" type="button">
+                    <button class="btn btn-primary" type="button" id="searchBtn">
                         <i class="bi bi-search"></i> Search
                     </button>
                 </div>
@@ -34,43 +35,27 @@
             </div>
         </div>
 
-        <!-- photographersList -->
+        <!-- Photographers list container -->
         <div class="row" id="photographersList">
-            <!-- need backend data to generate, only example now-->
-            <div class="col-md-4 mb-4">
-                <div class="card h-100">
-                    <img src="../assets/images/photographer1.jpg" class="card-img-top" alt="Photographer">
-                    <div class="card-body">
-                        <h5 class="card-title">John Doe</h5>
-                        <p class="card-text text-muted mb-2">Portrait Specialist</p>
-                        <div class="mb-2">
-                            <i class="bi bi-star-fill text-warning"></i>
-                            <i class="bi bi-star-fill text-warning"></i>
-                            <i class="bi bi-star-fill text-warning"></i>
-                            <i class="bi bi-star-fill text-warning"></i>
-                            <i class="bi bi-star-half text-warning"></i>
-                            <span class="ms-1">(4.5)</span>
-                        </div>
-                        <p class="card-text">Specializing in portrait photography with 5 years of experience.</p>
-                        <div class="d-flex justify-content-between align-items-center">
-                            <span class="text-primary">From €100/hour</span>
-                            <a href="photographer-detail.html?id=1" class="btn btn-outline-primary">View Profile</a>
-                        </div>
-                    </div>
+            <!-- Content will be loaded dynamically -->
+            <div class="col-12 text-center">
+                <div class="spinner-border" role="status">
+                    <span class="visually-hidden">Loading...</span>
                 </div>
             </div>
         </div>
 
+        <!-- Pagination -->
         <nav aria-label="Page navigation" class="mt-4">
             <ul class="pagination justify-content-center">
                 <li class="page-item disabled">
-                    <a class="page-link" href="#" tabindex="-1">Previous</a>
+                    <a class="page-link" href="#" data-page="prev">Previous</a>
                 </li>
-                <li class="page-item active"><a class="page-link" href="#">1</a></li>
-                <li class="page-item"><a class="page-link" href="#">2</a></li>
-                <li class="page-item"><a class="page-link" href="#">3</a></li>
+                <li class="page-item active"><a class="page-link" href="#" data-page="1">1</a></li>
+                <li class="page-item"><a class="page-link" href="#" data-page="2">2</a></li>
+                <li class="page-item"><a class="page-link" href="#" data-page="3">3</a></li>
                 <li class="page-item">
-                    <a class="page-link" href="#">Next</a>
+                    <a class="page-link" href="#" data-page="next">Next</a>
                 </li>
             </ul>
         </nav>
@@ -78,67 +63,127 @@
 
     <div id="footer"></div>
 
+    <!-- Scripts -->
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="../assets/js/config.js"></script>
     <script src="../assets/js/api.js"></script>
     <script src="../assets/js/loadComponents.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        async function loadPhotographers() {
-            try {
-                const params = {
-                    search: document.getElementById('searchInput').value,
-                    category: document.getElementById('categoryFilter').value
-                };
+        $(document).ready(function () {
+            // Load photographers on page load
+            loadPhotographers();
 
-                const photographers = await API.getPhotographers(params);
-                displayPhotographers(photographers);
-            } catch (error) {
-                console.error('Failed to load photographers:', error);
-            }
+            // Add event listeners
+            $("#searchInput").on("input", loadPhotographers);
+            $("#searchBtn").on("click", loadPhotographers);
+            $("#categoryFilter").on("change", loadPhotographers);
+
+            // Pagination event handling
+            $(".pagination .page-link").on("click", function (e) {
+                e.preventDefault();
+
+                if ($(this).parent().hasClass("disabled")) {
+                    return;
+                }
+
+                const page = $(this).data("page");
+
+                // Handle previous and next navigation
+                if (page === "prev" || page === "next") {
+                    const currentPage = parseInt($(".pagination .active .page-link").data("page"));
+                    const newPage = page === "prev" ? currentPage - 1 : currentPage + 1;
+
+                    if (newPage < 1) return;
+
+                    $(".pagination .page-item").removeClass("active");
+                    $(`.pagination .page-link[data-page="${newPage}"]`).parent().addClass("active");
+                } else {
+                    $(".pagination .page-item").removeClass("active");
+                    $(this).parent().addClass("active");
+                }
+
+                // Update prev/next button states
+                const currentPage = parseInt($(".pagination .active .page-link").data("page"));
+                $(".pagination .page-link[data-page='prev']").parent().toggleClass("disabled", currentPage === 1);
+
+                loadPhotographers();
+            });
+        });
+
+        function loadPhotographers() {
+            // Show loading state
+            $("#photographersList").html('<div class="col-12 text-center"><div class="spinner-border" role="status"><span class="visually-hidden">Loading...</span></div></div>');
+
+            // Get search parameters
+            const params = {
+                search: $("#searchInput").val(),
+                category: $("#categoryFilter").val(),
+                page: $(".pagination .active .page-link").data("page") || 1
+            };
+
+            // Call API to get photographers list
+            API.getPhotographers(params)
+                .done(function (photographers) {
+                    displayPhotographers(photographers);
+                })
+                .fail(function (error) {
+                    $("#photographersList").html('<div class="col-12"><div class="alert alert-danger">Failed to load photographers. Please try again.</div></div>');
+                    console.error('Failed to load photographers:', error);
+                });
         }
 
         function displayPhotographers(photographers) {
-            const container = document.getElementById('photographersList');
-            container.innerHTML = photographers.map(photographer => `
-                <div class="col-md-4 mb-4">
-                    <div class="card h-100">
-                        <img src="${photographer.image}" class="card-img-top" alt="${photographer.name}">
-                        <div class="card-body">
-                            <h5 class="card-title">${photographer.name}</h5>
-                            <p class="card-text text-muted mb-2">${photographer.specialization}</p>
-                            <div class="mb-2">
-                                ${generateStarRating(photographer.rating)}
-                                <span class="ms-1">(${photographer.rating})</span>
-                            </div>
-                            <p class="card-text">${photographer.description}</p>
-                            <div class="d-flex justify-content-between align-items-center">
-                                <span class="text-primary">From €${photographer.startingPrice}/hour</span>
-                                <a href="photographer-detail.html?id=${photographer.id}" class="btn btn-outline-primary">View Profile</a>
-                            </div>
+            // Handle empty results
+            if (!photographers || photographers.length === 0) {
+                $("#photographersList").html('<div class="col-12"><div class="alert alert-info">No photographers found matching your criteria.</div></div>');
+                return;
+            }
+
+            // Generate HTML for photographers list
+            const photographersHtml = photographers.map(photographer => `
+            <div class="col-md-4 mb-4">
+                <div class="card h-100">
+                    <img src="${photographer.image}" class="card-img-top" alt="${photographer.name}">
+                    <div class="card-body">
+                        <h5 class="card-title">${photographer.name}</h5>
+                        <p class="card-text text-muted mb-2">${photographer.specialization}</p>
+                        <div class="mb-2">
+                            ${generateStarRating(photographer.rating)}
+                            <span class="ms-1">(${photographer.rating})</span>
+                        </div>
+                        <p class="card-text">${photographer.description}</p>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span class="text-primary">From €${photographer.startingPrice}/hour</span>
+                            <a href="photographer-detail.html?id=${photographer.id}" class="btn btn-outline-primary">View Profile</a>
                         </div>
                     </div>
                 </div>
-            `).join('');
+            </div>
+        `).join('');
+
+            // Update DOM
+            $("#photographersList").html(photographersHtml);
         }
 
         function generateStarRating(rating) {
             let stars = '';
+            const fullStars = Math.floor(rating);
+            const hasHalfStar = rating - fullStars >= 0.5;
+
+            // Generate star rating HTML
             for (let i = 1; i <= 5; i++) {
-                if (i <= Math.floor(rating)) {
+                if (i <= fullStars) {
                     stars += '<i class="bi bi-star-fill text-warning"></i>';
-                } else if (i - 0.5 <= rating) {
+                } else if (i === fullStars + 1 && hasHalfStar) {
                     stars += '<i class="bi bi-star-half text-warning"></i>';
                 } else {
                     stars += '<i class="bi bi-star text-warning"></i>';
                 }
             }
+
             return stars;
         }
-
-        document.getElementById('searchInput').addEventListener('input', loadPhotographers);
-        document.getElementById('categoryFilter').addEventListener('change', loadPhotographers);
-
-        loadPhotographers();
     </script>
 </body>
 

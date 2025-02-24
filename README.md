@@ -12,6 +12,7 @@ A platform connecting photographers with clients, built for CS4116 project.
 - Web server supporting PHP 8.0+
 - MySQL 8.0+
 - Bootstrap 5.3.3
+- jQuery 3.7.1 min
 - Live Server or similar development server
 
 ### Directory Structure

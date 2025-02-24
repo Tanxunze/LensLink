@@ -14,114 +14,50 @@
     <div id="header"></div>
 
     <main class="container py-4">
-        <!-- photographers info -->
-        <div class="row mb-5">
-            <div class="col-md-4">
-                <img src="../assets/images/photographer1.jpg" class="img-fluid rounded" alt="Photographer">
-            </div>
-            <div class="col-md-8">
-                <h2 class="mb-3">John Doe</h2>
-                <div class="mb-3">
-                    <i class="bi bi-star-fill text-warning"></i>
-                    <i class="bi bi-star-fill text-warning"></i>
-                    <i class="bi bi-star-fill text-warning"></i>
-                    <i class="bi bi-star-fill text-warning"></i>
-                    <i class="bi bi-star-half text-warning"></i>
-                    <span class="ms-2">4.5 (128 reviews)</span>
+        <!-- Photographer info section -->
+        <div class="row mb-5" id="photographerInfo">
+            <div class="col-12 text-center" id="infoLoading">
+                <div class="spinner-border" role="status">
+                    <span class="visually-hidden">Loading...</span>
                 </div>
-                <p class="lead mb-4">Professional photographer specializing in portrait and wedding photography</p>
-                <div class="d-flex gap-3 mb-4">
-                    <span><i class="bi bi-geo-alt"></i> London, UK</span>
-                    <span><i class="bi bi-camera"></i> 5 years experience</span>
-                    <span><i class="bi bi-image"></i> 500+ photoshoots</span>
-                </div>
-                <button class="btn btn-primary btn-lg me-3">Book Now</button>
-                <button class="btn btn-outline-primary btn-lg">Contact</button>
             </div>
         </div>
 
-        <!-- services type -->
-        <section class="mb-5">
+        <!-- Services section -->
+        <section class="mb-5" id="servicesSection">
             <h3 class="mb-4">Photography Services</h3>
-            <div class="row">
-                <div class="col-md-4 mb-4">
-                    <div class="card">
-                        <div class="card-body">
-                            <h5 class="card-title">Basic Package</h5>
-                            <h6 class="card-subtitle mb-3 text-primary">€100/hour</h6>
-                            <ul class="list-unstyled">
-                                <li><i class="bi bi-check2 text-success"></i> 2-hour photoshoot</li>
-                                <li><i class="bi bi-check2 text-success"></i> 20 edited photos</li>
-                                <li><i class="bi bi-check2 text-success"></i> Digital delivery</li>
-                            </ul>
-                            <button class="btn btn-primary w-100">Select Package</button>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-4 mb-4">
-                    <div class="card border-primary">
-                        <div class="card-body">
-                            <div class="ribbon">Most Popular</div>
-                            <h5 class="card-title">Standard Package</h5>
-                            <h6 class="card-subtitle mb-3 text-primary">€200/hour</h6>
-                            <ul class="list-unstyled">
-                                <li><i class="bi bi-check2 text-success"></i> 4-hour photoshoot</li>
-                                <li><i class="bi bi-check2 text-success"></i> 50 edited photos</li>
-                                <li><i class="bi bi-check2 text-success"></i> Digital delivery</li>
-                                <li><i class="bi bi-check2 text-success"></i> Photo album</li>
-                            </ul>
-                            <button class="btn btn-primary w-100">Select Package</button>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-4 mb-4">
-                    <div class="card">
-                        <div class="card-body">
-                            <h5 class="card-title">Premium Package</h5>
-                            <h6 class="card-subtitle mb-3 text-primary">€300/hour</h6>
-                            <ul class="list-unstyled">
-                                <li><i class="bi bi-check2 text-success"></i> Full day coverage</li>
-                                <li><i class="bi bi-check2 text-success"></i> 100 edited photos</li>
-                                <li><i class="bi bi-check2 text-success"></i> Digital delivery</li>
-                                <li><i class="bi bi-check2 text-success"></i> Premium photo album</li>
-                                <li><i class="bi bi-check2 text-success"></i> Video highlights</li>
-                            </ul>
-                            <button class="btn btn-primary w-100">Select Package</button>
-                        </div>
+            <div class="row" id="servicesList">
+                <!-- Services will be loaded dynamically -->
+                <div class="col-12 text-center">
+                    <div class="spinner-border" role="status">
+                        <span class="visually-hidden">Loading...</span>
                     </div>
                 </div>
             </div>
         </section>
 
+        <!-- Portfolio section -->
         <section class="mb-5">
             <h3 class="mb-4">Portfolio</h3>
             <div class="row g-3" id="portfolio">
-                <!-- by js generated -->
+                <!-- Portfolio will be loaded dynamically -->
+                <div class="col-12 text-center">
+                    <div class="spinner-border" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                </div>
             </div>
         </section>
 
-        <!-- commit, need backend data -->
+        <!-- Reviews section -->
         <section class="mb-5">
             <h3 class="mb-4">Reviews</h3>
-            <div class="card mb-4">
-                <div class="card-body">
-                    <div class="d-flex mb-3">
-                        <img src="../assets/images/avatar1.jpg" class="rounded-circle me-3" width="50" height="50"
-                            alt="User">
-                        <div>
-                            <h6 class="mb-1">Sarah Johnson</h6>
-                            <div class="mb-2">
-                                <i class="bi bi-star-fill text-warning"></i>
-                                <i class="bi bi-star-fill text-warning"></i>
-                                <i class="bi bi-star-fill text-warning"></i>
-                                <i class="bi bi-star-fill text-warning"></i>
-                                <i class="bi bi-star-fill text-warning"></i>
-                            </div>
-                            <small class="text-muted">Wedding Photography - March 15, 2024</small>
-                        </div>
+            <div id="reviewsList">
+                <!-- Reviews will be loaded dynamically -->
+                <div class="text-center">
+                    <div class="spinner-border" role="status">
+                        <span class="visually-hidden">Loading...</span>
                     </div>
-                    <p class="card-text">Amazing experience! John was professional, creative, and made everyone feel
-                        comfortable. The photos turned out beautifully.</p>
                 </div>
             </div>
         </section>
@@ -129,34 +65,347 @@
 
     <div id="footer"></div>
 
+    <!-- Scripts -->
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="../assets/js/config.js"></script>
     <script src="../assets/js/api.js"></script>
     <script src="../assets/js/loadComponents.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        let photographerId = null;
+        $(document).ready(function () {
+            // Initialize page
+            initializePage();
 
-        async function initializePage() {
-            // fetch id from URL
+            // Delegate event handler for service package selection buttons
+            $(document).on("click", ".btn-select-package", function () {
+                const packageId = $(this).data("id");
+                const packageName = $(this).data("name");
+
+                // Confirm booking
+                if (confirm(`Are you sure you want to book the "${packageName}" package?`)) {
+                    bookPackage(packageId);
+                }
+            });
+
+            // Delegate event handler for portfolio items
+            $(document).on("click", ".portfolio-item", function () {
+                const imageUrl = $(this).find("img").attr("src");
+                const title = $(this).data("title") || "Portfolio Item";
+                showLightbox(imageUrl, title);
+            });
+        });
+
+        function initializePage() {
+            // Get photographer ID from URL
             const urlParams = new URLSearchParams(window.location.search);
-            photographerId = urlParams.get('id');
+            const photographerId = urlParams.get('id');
 
+            // Redirect if no ID found
             if (!photographerId) {
                 window.location.href = 'photographers.html';
                 return;
             }
 
-            try {
-                await loadPhotographerDetails();
-                await loadPortfolio();
-                await loadReviews();
-            } catch (error) {
-                console.error('Failed to load photographer details:', error);
-            }
+            // Load photographer data in parallel
+            loadPhotographerDetails(photographerId);
+            loadPhotographerServices(photographerId);
+            loadPhotographerPortfolio(photographerId);
+            loadPhotographerReviews(photographerId);
         }
 
-        // init
-        document.addEventListener('DOMContentLoaded', initializePage);
+        function loadPhotographerDetails(photographerId) {
+            API.getPhotographerProfile(photographerId)
+                .done(function (photographer) {
+                    // Update page title
+                    document.title = `${photographer.name} - LensLink`;
+
+                    // Generate photographer info HTML
+                    const infoHtml = `
+                    <div class="col-md-4">
+                        <img src="${photographer.image || '../assets/images/photographer1.jpg'}" class="img-fluid rounded" alt="${photographer.name}">
+                    </div>
+                    <div class="col-md-8">
+                        <h2 class="mb-3">${photographer.name}</h2>
+                        <div class="mb-3">
+                            ${generateStarRating(photographer.rating)}
+                            <span class="ms-2">${photographer.rating} (${photographer.reviewCount} reviews)</span>
+                        </div>
+                        <p class="lead mb-4">${photographer.bio}</p>
+                        <div class="d-flex gap-3 mb-4">
+                            <span><i class="bi bi-geo-alt"></i> ${photographer.location}</span>
+                            <span><i class="bi bi-camera"></i> ${photographer.experience} experience</span>
+                            <span><i class="bi bi-image"></i> ${photographer.photoshootCount}+ photoshoots</span>
+                        </div>
+                        <button class="btn btn-primary btn-lg me-3" id="bookNowBtn">Book Now</button>
+                        <button class="btn btn-outline-primary btn-lg" id="contactBtn">Contact</button>
+                    </div>
+                `;
+
+                    // Update DOM
+                    $("#photographerInfo").html(infoHtml);
+
+                    // Add event handlers for buttons
+                    $("#bookNowBtn").on("click", function () {
+                        // Scroll to services section
+                        $("html, body").animate({
+                            scrollTop: $("#servicesSection").offset().top - 100
+                        }, 500);
+                    });
+
+                    $("#contactBtn").on("click", function () {
+                        // Show contact form or modal
+                        showContactForm(photographerId);
+                    });
+                })
+                .fail(function (error) {
+                    $("#photographerInfo").html('<div class="col-12"><div class="alert alert-danger">Failed to load photographer details. Please try again.</div></div>');
+                    console.error('Failed to load photographer details:', error);
+                });
+        }
+
+        function loadPhotographerServices(photographerId) {
+            API.getPhotographerServices(photographerId)
+                .done(function (services) {
+                    // Handle empty services
+                    if (!services || services.length === 0) {
+                        $("#servicesList").html('<div class="col-12"><div class="alert alert-info">This photographer has not added any services yet.</div></div>');
+                        return;
+                    }
+
+                    // Generate services HTML
+                    const servicesHtml = services.map((service, index) => `
+                    <div class="col-md-4 mb-4">
+                        <div class="card ${index === 1 ? 'border-primary' : ''}">
+                            <div class="card-body">
+                                ${index === 1 ? '<div class="ribbon">Most Popular</div>' : ''}
+                                <h5 class="card-title">${service.name}</h5>
+                                <h6 class="card-subtitle mb-3 text-primary">€${service.price}/${service.unit}</h6>
+                                <ul class="list-unstyled">
+                                    ${service.features.map(feature => `
+                                        <li><i class="bi bi-check2 text-success"></i> ${feature}</li>
+                                    `).join('')}
+                                </ul>
+                                <button class="btn btn-primary w-100 btn-select-package" 
+                                        data-id="${service.id}" 
+                                        data-name="${service.name}">Select Package</button>
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+
+                    // Update DOM
+                    $("#servicesList").html(servicesHtml);
+                })
+                .fail(function (error) {
+                    $("#servicesList").html('<div class="col-12"><div class="alert alert-danger">Failed to load services. Please try again.</div></div>');
+                    console.error('Failed to load photographer services:', error);
+                });
+        }
+
+        function loadPhotographerPortfolio(photographerId) {
+            // Call API to get portfolio
+            // Note: This is a placeholder, replace with actual API call
+            const portfolioItems = [
+                { id: 1, image: '../assets/images/portfolio1.jpg', title: 'Wedding Photography' },
+                { id: 2, image: '../assets/images/portfolio2.jpg', title: 'Portrait Session' },
+                { id: 3, image: '../assets/images/portfolio3.jpg', title: 'Family Photoshoot' },
+                // Add more items as needed
+            ];
+
+            // Generate portfolio HTML
+            const portfolioHtml = portfolioItems.map(item => `
+            <div class="col-md-4 col-sm-6">
+                <div class="portfolio-item" data-id="${item.id}" data-title="${item.title}">
+                    <img src="${item.image}" class="img-fluid rounded" alt="${item.title}">
+                </div>
+            </div>
+        `).join('');
+
+            // Update DOM
+            $("#portfolio").html(portfolioHtml);
+        }
+
+        function loadPhotographerReviews(photographerId) {
+            // Call API to get reviews
+            // Note: This is a placeholder, replace with actual API call
+            const reviews = [
+                {
+                    id: 1,
+                    user: { name: 'Sarah Johnson', avatar: '../assets/images/avatar1.jpg' },
+                    rating: 5,
+                    date: 'March 15, 2024',
+                    service: 'Wedding Photography',
+                    text: 'Amazing experience! John was professional, creative, and made everyone feel comfortable. The photos turned out beautifully.'
+                },
+                // Add more reviews as needed
+            ];
+
+            // Generate reviews HTML
+            const reviewsHtml = reviews.map(review => `
+            <div class="card mb-4">
+                <div class="card-body">
+                    <div class="d-flex mb-3">
+                        <img src="${review.user.avatar}" class="rounded-circle me-3" width="50" height="50" alt="${review.user.name}">
+                        <div>
+                            <h6 class="mb-1">${review.user.name}</h6>
+                            <div class="mb-2">
+                                ${generateStarRating(review.rating)}
+                            </div>
+                            <small class="text-muted">${review.service} - ${review.date}</small>
+                        </div>
+                    </div>
+                    <p class="card-text">${review.text}</p>
+                </div>
+            </div>
+        `).join('');
+
+            // Update DOM
+            $("#reviewsList").html(reviewsHtml);
+        }
+
+        function generateStarRating(rating) {
+            let stars = '';
+            const fullStars = Math.floor(rating);
+            const hasHalfStar = rating - fullStars >= 0.5;
+
+            // Generate star rating HTML
+            for (let i = 1; i <= 5; i++) {
+                if (i <= fullStars) {
+                    stars += '<i class="bi bi-star-fill text-warning"></i>';
+                } else if (i === fullStars + 1 && hasHalfStar) {
+                    stars += '<i class="bi bi-star-half text-warning"></i>';
+                } else {
+                    stars += '<i class="bi bi-star text-warning"></i>';
+                }
+            }
+
+            return stars;
+        }
+
+        function showLightbox(imageUrl, title) {
+            // Create lightbox HTML
+            const lightboxHtml = `
+            <div class="lightbox" id="lightbox" style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:9999; display:none;">
+                <div class="lightbox-content" style="position:absolute; top:50%; left:50%; transform:translate(-50%, -50%); max-width:90%; max-height:90%;">
+                    <span class="close" style="position:absolute; top:-30px; right:0; color:white; font-size:30px; cursor:pointer;">&times;</span>
+                    <h4 style="color:white; margin-bottom:15px;">${title}</h4>
+                    <img src="${imageUrl}" class="img-fluid" alt="${title}">
+                </div>
+            </div>
+        `;
+
+            // Add to body and show
+            $("body").append(lightboxHtml);
+            $("#lightbox").fadeIn();
+
+            // Add close event
+            $("#lightbox .close").on("click", function () {
+                $("#lightbox").fadeOut(function () {
+                    $(this).remove();
+                });
+            });
+
+            // Close on background click
+            $("#lightbox").on("click", function (e) {
+                if (e.target === this) {
+                    $(this).fadeOut(function () {
+                        $(this).remove();
+                    });
+                }
+            });
+        }
+
+        function showContactForm(photographerId) {
+            // Create contact form modal
+            const modalHtml = `
+            <div class="modal fade" id="contactModal" tabindex="-1" aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">Contact Photographer</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <form id="contactForm">
+                                <div class="mb-3">
+                                    <label for="contactSubject" class="form-label">Subject</label>
+                                    <input type="text" class="form-control" id="contactSubject" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="contactMessage" class="form-label">Message</label>
+                                    <textarea class="form-control" id="contactMessage" rows="5" required></textarea>
+                                </div>
+                            </form>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                            <button type="button" class="btn btn-primary" id="sendMessageBtn">Send Message</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+
+            // Add to body and show
+            $("body").append(modalHtml);
+            const modal = new bootstrap.Modal(document.getElementById('contactModal'));
+            modal.show();
+
+            // Handle send message
+            $("#sendMessageBtn").on("click", function () {
+                const subject = $("#contactSubject").val();
+                const message = $("#contactMessage").val();
+
+                if (!subject || !message) {
+                    alert("Please fill all fields");
+                    return;
+                }
+
+                // Check if user is logged in
+                if (!localStorage.getItem("token")) {
+                    alert("Please login to send a message");
+                    modal.hide();
+                    window.location.href = "../auth/login.html";
+                    return;
+                }
+
+                // Send message logic
+                // This would be an API call in production
+                alert("Message sent successfully!");
+                modal.hide();
+
+                // Remove modal from DOM after hiding
+                $("#contactModal").on("hidden.bs.modal", function () {
+                    $(this).remove();
+                });
+            });
+        }
+
+        function bookPackage(packageId) {
+            // Check if user is logged in
+            if (!localStorage.getItem("token")) {
+                alert("Please login to book a service");
+                window.location.href = "../auth/login.html";
+                return;
+            }
+
+            // Prepare booking data
+            const bookingData = {
+                packageId: packageId,
+                photographerId: new URLSearchParams(window.location.search).get('id')
+            };
+
+            // Call API to create booking
+            API.createBooking(bookingData)
+                .done(function (response) {
+                    alert("Booking successful!");
+                    window.location.href = "../dashboard/customer.html";
+                })
+                .fail(function (error) {
+                    alert("Booking failed. Please try again.");
+                    console.error('Booking failed:', error);
+                });
+        }
     </script>
 </body>
 
