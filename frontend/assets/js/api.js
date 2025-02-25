@@ -94,3 +94,4 @@ class API {
 //     return this.request("/bookings");
 //   }
 }
+//Due to the complexity and sheer volume of the dashboard's js, they have been moved to separate js files.
