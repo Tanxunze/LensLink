@@ -18,31 +18,72 @@ A platform connecting photographers with clients, built for CS4116 project.
 ### Directory Structure
 
 ```
-LENSLINK/
-├── frontend/               
-│   ├── index.html         # Homepage
-│   ├── assets/            # Static resources
-│   │   ├── css/          # Style Files
+LensLink/
+├── backend/                           # Laravel backend
+│   ├── app/
+│   │   ├── Http/
+│   │   │   ├── Controllers/
+│   │   │   │   ├── API/               # API controllers
+│   │   │   │   │   ├── AuthController.php
+│   │   │   │   │   ├── PhotographerController.php
+│   │   │   │   │   └── ...
+│   │   │   ├── Middleware/
+│   │   │   └── ...
+│   │   ├── Models/                    # Data models
+│   │   │   ├── User.php
+│   │   │   ├── PhotographerProfile.php
+│   │   │   ├── Category.php
+│   │   │   ├── PortfolioItem.php
+│   │   │   ├── Service.php
+│   │   │   ├── ServiceFeature.php
+│   │   │   └── ...
+│   │   └── ...
+│   ├── config/                        # Configuration files
+│   ├── database/
+│   │   ├── migrations/                # Database migrations
+│   │   └── ...
+│   ├── public/                        # Public assets
+│   │   └── storage/                   # Symlink to storage/app/public
+│   ├── resources/
+│   ├── routes/
+│   │   ├── api.php                    # API routes
+│   │   └── ...
+│   ├── storage/
+│   │   └── app/
+│   │       └── public/                # Storage for uploaded files
+│   └── ...
+│
+├── frontend/                          # Frontend
+│   ├── index.html                     # Home page
+│   ├── assets/                        # Static assets
+│   │   ├── css/                       # Stylesheets
 │   │   │   ├── style.css
-│   │   │   └── components/
-│   │   ├── js/           # JavaScript Files
-│   │   │   ├── api.js    # API calls
-│   │   │   ├── config.js # URL config
-│   │   │   └── loadComponents.js # Components Loading
-│   │   └── images/       
-│   ├── components/        # Reusable HTML components
+│   │   │   ├── dashboard-common.css
+│   │   │   ├── customer-dashboard.css
+│   │   │   └── photographer-dashboard.css
+│   │   ├── js/                        # JavaScript files
+│   │   │   ├── api.js                 # API calls wrapper
+│   │   │   ├── config.js              # Configuration
+│   │   │   ├── customer-dashboard.js
+│   │   │   ├── dashboard-common.js
+│   │   │   ├── photographer-dashboard.js
+│   │   │   └── loadComponents.js      # Component loader
+│   │   └── images/                    # Image resources
+│   │       ├── default-avatar.jpg
+│   │       ├── default-photographer.jpg
+│   │       └── placeholder.jpg
+│   ├── components/                    # Reusable HTML components
 │   │   ├── header.html
 │   │   └── footer.html
-│   └── pages/            
-│       ├── photographers.html
-│       ├── photographer-detail.html
-│       ├── auth/         # Authentication Pages
+│   └── pages/                         # HTML pages
+│       ├── photographers.html         # Photographers listing
+│       ├── photographer-detail.html   # Photographer details
+│       ├── auth/                      # Authentication pages
 │       │   ├── login.html
 │       │   └── register.html
-│       └── dashboard/    # Dashboard
-│           ├── customer.html
-│           └── photographer.html
-└── backend/              # All backend codes（Laravel）
+│       └── dashboard/                 # Dashboard pages
+│           ├── customer.html          # Customer dashboard
+│           └── photographer.html      # Photographer dashboard
 ```
 
 ## Development Guidelines
