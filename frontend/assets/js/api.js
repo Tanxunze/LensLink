@@ -82,15 +82,15 @@ class API {
     return this.request(`/photographers/${id}/services`);
   }
 
-  // booking
-  static async createBooking(bookingData) {
-    return this.request("/bookings", {
-      method: "POST",
-      body: JSON.stringify(bookingData),
-    });
-  }
+//   // booking
+//   static async createBooking(bookingData) {
+//     return this.request("/bookings", {
+//       method: "POST",
+//       body: JSON.stringify(bookingData),
+//     });
+//   }
 
-  static async getBookings() {
-    return this.request("/bookings");
-  }
+//   static async getBookings() {
+//     return this.request("/bookings");
+//   }
 }

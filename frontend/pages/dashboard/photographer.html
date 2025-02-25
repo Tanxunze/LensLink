@@ -8,16 +8,16 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
     <link href="../../assets/css/style.css" rel="stylesheet">
+    <link href="../../assets/css/dashboard-common.css" rel="stylesheet">
+    <link href="../../assets/css/photographer-dashboard.css" rel="stylesheet">
 </head>
 
 <body class="dashboard">
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
         <div class="container-fluid">
-            <a class="navbar-brand" href="../../index.html">
-                <img src="../../assets/images/logo.png" alt="LensLink" height="30">
-            </a>
+            <a class="navbar-brand" href="#" id="homeLink">LensLink</a>
             <div class="d-flex align-items-center">
-                <div class="me-3">
+                <div class="me-3 d-none d-md-block">
                     <span class="text-light">Welcome, <span id="photographerName">Photographer</span></span>
                 </div>
                 <div class="dropdown">
@@ -25,7 +25,8 @@
                         <i class="bi bi-person-circle"></i>
                     </button>
                     <ul class="dropdown-menu dropdown-menu-end">
-                        <li><a class="dropdown-item" href="#" id="profileLink">Profile</a></li>
+                        <li><a class="dropdown-item" href="#" id="viewProfileLink">View Profile</a></li>
+                        <li><a class="dropdown-item" href="#" id="editProfileLink">Edit Profile</a></li>
                         <li><a class="dropdown-item" href="#" id="settingsLink">Settings</a></li>
                         <li>
                             <hr class="dropdown-divider">
@@ -40,7 +41,7 @@
     <div class="container-fluid">
         <div class="row">
             <!-- Sidebar navigation -->
-            <div class="col-md-3 col-lg-2 px-0 bg-dark min-vh-100">
+            <div class="col-md-3 col-lg-2 px-0 bg-dark sidebar">
                 <div class="p-3">
                     <ul class="nav flex-column">
                         <li class="nav-item">
@@ -59,6 +60,7 @@
                             <a class="nav-link text-white" href="#" data-section="bookings">
                                 <i class="bi bi-calendar me-2"></i>
                                 Bookings
+                                <span class="badge bg-danger rounded-pill ms-2 booking-badge d-none">0</span>
                             </a>
                         </li>
                         <li class="nav-item">
@@ -71,12 +73,25 @@
                             <a class="nav-link text-white" href="#" data-section="messages">
                                 <i class="bi bi-chat me-2"></i>
                                 Messages
+                                <span class="badge bg-danger rounded-pill ms-2 message-badge d-none">0</span>
                             </a>
                         </li>
                         <li class="nav-item">
                             <a class="nav-link text-white" href="#" data-section="reviews">
                                 <i class="bi bi-star me-2"></i>
                                 Reviews
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link text-white" href="#" data-section="availability">
+                                <i class="bi bi-clock me-2"></i>
+                                Availability
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link text-white" href="#" data-section="profile">
+                                <i class="bi bi-person me-2"></i>
+                                Profile
                             </a>
                         </li>
                         <li class="nav-item">
@@ -90,45 +105,125 @@
             </div>
 
             <!-- Main content area -->
-            <div class="col-md-9 col-lg-10 px-md-4">
+            <div class="col-md-9 col-lg-10 px-md-4 main-content">
                 <!-- Dashboard section -->
                 <div class="dashboard-section" id="dashboardSection">
                     <div
                         class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
                         <h1 class="h2">Photographer Dashboard</h1>
+                        <div class="btn-toolbar">
+                            <div class="btn-group me-2">
+                                <button type="button" class="btn btn-sm btn-outline-primary" id="refreshDashboardBtn">
+                                    <i class="bi bi-arrow-clockwise"></i> Refresh
+                                </button>
+                            </div>
+                        </div>
                     </div>
 
                     <!-- Status cards -->
                     <div class="row">
                         <div class="col-md-3 mb-4">
-                            <div class="card">
+                            <div class="card dashboard-card">
                                 <div class="card-body">
-                                    <h5 class="card-title">Pending Orders</h5>
-                                    <h2 class="display-4" id="pendingOrdersCount">0</h2>
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <h5 class="card-title text-muted mb-0">Pending Orders</h5>
+                                            <h2 class="display-4 mt-2" id="pendingOrdersCount">0</h2>
+                                        </div>
+                                        <div class="card-icon bg-warning text-white">
+                                            <i class="bi bi-hourglass-split"></i>
+                                        </div>
+                                    </div>
+                                    <p class="card-text mt-3">
+                                        <a href="#" class="text-warning stretched-link" id="viewPendingOrdersLink">View
+                                            pending orders</a>
+                                    </p>
                                 </div>
                             </div>
                         </div>
                         <div class="col-md-3 mb-4">
-                            <div class="card">
+                            <div class="card dashboard-card">
                                 <div class="card-body">
-                                    <h5 class="card-title">Active Orders</h5>
-                                    <h2 class="display-4" id="activeOrdersCount">0</h2>
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <h5 class="card-title text-muted mb-0">Active Orders</h5>
+                                            <h2 class="display-4 mt-2" id="activeOrdersCount">0</h2>
+                                        </div>
+                                        <div class="card-icon bg-primary text-white">
+                                            <i class="bi bi-calendar-check"></i>
+                                        </div>
+                                    </div>
+                                    <p class="card-text mt-3">
+                                        <a href="#" class="text-primary stretched-link" id="viewActiveOrdersLink">View
+                                            active orders</a>
+                                    </p>
                                 </div>
                             </div>
                         </div>
                         <div class="col-md-3 mb-4">
-                            <div class="card">
+                            <div class="card dashboard-card">
                                 <div class="card-body">
-                                    <h5 class="card-title">Monthly Earnings</h5>
-                                    <h2 class="display-4" id="monthlyEarnings">€0</h2>
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <h5 class="card-title text-muted mb-0">Monthly Earnings</h5>
+                                            <h2 class="display-4 mt-2" id="monthlyEarnings">€0</h2>
+                                        </div>
+                                        <div class="card-icon bg-success text-white">
+                                            <i class="bi bi-currency-euro"></i>
+                                        </div>
+                                    </div>
+                                    <p class="card-text mt-3">
+                                        <a href="#" class="text-success stretched-link" id="viewEarningsLink">View
+                                            earnings</a>
+                                    </p>
                                 </div>
                             </div>
                         </div>
                         <div class="col-md-3 mb-4">
-                            <div class="card">
+                            <div class="card dashboard-card">
                                 <div class="card-body">
-                                    <h5 class="card-title">Rating</h5>
-                                    <h2 class="display-4" id="overallRating">0.0</h2>
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <h5 class="card-title text-muted mb-0">Rating</h5>
+                                            <h2 class="display-4 mt-2" id="overallRating">0.0</h2>
+                                        </div>
+                                        <div class="card-icon bg-info text-white">
+                                            <i class="bi bi-star"></i>
+                                        </div>
+                                    </div>
+                                    <p class="card-text mt-3">
+                                        <a href="#" class="text-info stretched-link" id="viewReviewsLink">View
+                                            reviews</a>
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Earnings Chart -->
+                    <div class="card mb-4">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0">Earnings Overview</h5>
+                            <div class="dropdown">
+                                <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button"
+                                    id="earningsTimeframeDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                                    Last 6 Months
+                                </button>
+                                <ul class="dropdown-menu" aria-labelledby="earningsTimeframeDropdown">
+                                    <li><a class="dropdown-item" href="#" data-timeframe="30">Last 30 Days</a></li>
+                                    <li><a class="dropdown-item" href="#" data-timeframe="90">Last 3 Months</a></li>
+                                    <li><a class="dropdown-item active" href="#" data-timeframe="180">Last 6 Months</a>
+                                    </li>
+                                    <li><a class="dropdown-item" href="#" data-timeframe="365">Last 12 Months</a></li>
+                                </ul>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div id="earningsChart" style="height: 300px;">
+                                <div class="d-flex justify-content-center align-items-center h-100">
+                                    <div class="spinner-border text-primary" role="status">
+                                        <span class="visually-hidden">Loading...</span>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -168,19 +263,19 @@
                         </div>
                     </div>
 
-                    <!-- Recent messages -->
+                    <!-- Recent reviews -->
                     <div class="card mb-4">
                         <div class="card-header d-flex justify-content-between align-items-center">
-                            <h5 class="mb-0">Recent Messages</h5>
-                            <a href="#" class="btn btn-sm btn-primary" id="viewAllMessagesBtn">View All</a>
+                            <h5 class="mb-0">Recent Reviews</h5>
+                            <a href="#" class="btn btn-sm btn-primary" id="viewAllReviewsBtn">View All</a>
                         </div>
                         <div class="card-body">
-                            <div id="recentMessagesContainer">
+                            <div id="recentReviewsContainer">
                                 <div class="text-center">
                                     <div class="spinner-border spinner-border-sm" role="status">
                                         <span class="visually-hidden">Loading...</span>
                                     </div>
-                                    <span class="ms-2">Loading messages...</span>
+                                    <span class="ms-2">Loading reviews...</span>
                                 </div>
                             </div>
                         </div>
@@ -197,8 +292,29 @@
                         </button>
                     </div>
 
-                    <div id="portfolioItems" class="row">
-                        <!-- Portfolio items will be loaded here -->
+                    <!-- Portfolio category filter -->
+                    <div class="mb-4">
+                        <div class="btn-group" role="group" aria-label="Portfolio categories">
+                            <button type="button" class="btn btn-outline-primary active"
+                                data-category="all">All</button>
+                            <button type="button" class="btn btn-outline-primary"
+                                data-category="wedding">Wedding</button>
+                            <button type="button" class="btn btn-outline-primary"
+                                data-category="portrait">Portrait</button>
+                            <button type="button" class="btn btn-outline-primary" data-category="event">Event</button>
+                            <button type="button" class="btn btn-outline-primary" data-category="family">Family</button>
+                            <button type="button" class="btn btn-outline-primary"
+                                data-category="commercial">Commercial</button>
+                        </div>
+                    </div>
+
+                    <div class="row" id="portfolioItems">
+                        <div class="col-12 text-center">
+                            <div class="spinner-border" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                            <p>Loading portfolio...</p>
+                        </div>
                     </div>
                 </div>
 
@@ -207,8 +323,80 @@
                     <div
                         class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
                         <h1 class="h2">Bookings</h1>
+                        <div class="btn-toolbar">
+                            <div class="btn-group me-2">
+                                <button type="button" class="btn btn-sm btn-outline-secondary dropdown-toggle"
+                                    data-bs-toggle="dropdown">
+                                    <i class="bi bi-filter"></i> Filter
+                                </button>
+                                <ul class="dropdown-menu">
+                                    <li><a class="dropdown-item" href="#" data-filter="all">All Bookings</a></li>
+                                    <li><a class="dropdown-item" href="#" data-filter="pending">Pending</a></li>
+                                    <li><a class="dropdown-item" href="#" data-filter="confirmed">Confirmed</a></li>
+                                    <li><a class="dropdown-item" href="#" data-filter="completed">Completed</a></li>
+                                    <li><a class="dropdown-item" href="#" data-filter="cancelled">Cancelled</a></li>
+                                </ul>
+                            </div>
+                            <div class="btn-group me-2">
+                                <button type="button" class="btn btn-sm btn-outline-secondary active" data-view="list">
+                                    <i class="bi bi-list"></i>
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline-secondary" data-view="calendar">
+                                    <i class="bi bi-calendar3"></i>
+                                </button>
+                            </div>
+                        </div>
                     </div>
-                    <!-- This section will be populated with bookings data -->
+
+                    <!-- List view (default) -->
+                    <div id="bookingsListView">
+                        <div class="table-responsive">
+                            <table class="table table-striped table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Client</th>
+                                        <th>Service</th>
+                                        <th>Date</th>
+                                        <th>Time</th>
+                                        <th>Location</th>
+                                        <th>Status</th>
+                                        <th>Price</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="bookingsTable">
+                                    <tr>
+                                        <td colspan="8" class="text-center">
+                                            <div class="spinner-border" role="status">
+                                                <span class="visually-hidden">Loading...</span>
+                                            </div>
+                                            <p>Loading bookings...</p>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Pagination -->
+                        <nav aria-label="Bookings pagination" class="mt-4">
+                            <ul class="pagination justify-content-center" id="bookingsPagination">
+                                <!-- Will be filled dynamically -->
+                            </ul>
+                        </nav>
+                    </div>
+
+                    <!-- Calendar view (initially hidden) -->
+                    <div id="bookingsCalendarView" class="d-none">
+                        <div id="bookingsCalendar" class="border rounded p-3">
+                            <!-- Will be filled with calendar component -->
+                            <div class="text-center p-5">
+                                <div class="spinner-border" role="status">
+                                    <span class="visually-hidden">Loading...</span>
+                                </div>
+                                <p>Loading calendar...</p>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Services section (initially hidden) -->
@@ -220,7 +408,15 @@
                             <i class="bi bi-plus"></i> Add Service
                         </button>
                     </div>
-                    <!-- This section will be populated with services data -->
+
+                    <div class="row" id="servicesList">
+                        <div class="col-12 text-center">
+                            <div class="spinner-border" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                            <p>Loading services...</p>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Messages section (initially hidden) -->
@@ -229,7 +425,57 @@
                         class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
                         <h1 class="h2">Messages</h1>
                     </div>
-                    <!-- This section will be populated with messages data -->
+
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="card mb-4">
+                                <div class="card-header">Conversations</div>
+                                <div class="list-group list-group-flush" id="conversationsList">
+                                    <!-- Will be filled dynamically -->
+                                    <div class="text-center p-3">
+                                        <div class="spinner-border spinner-border-sm" role="status">
+                                            <span class="visually-hidden">Loading...</span>
+                                        </div>
+                                        <span class="ms-2">Loading conversations...</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-8">
+                            <div class="card">
+                                <div class="card-header d-flex justify-content-between align-items-center">
+                                    <h5 class="mb-0" id="conversationTitle">Select a conversation</h5>
+                                    <div class="dropdown" id="conversationMenuContainer">
+                                        <button class="btn btn-sm btn-outline-secondary dropdown-toggle d-none"
+                                            type="button" id="conversationMenu" data-bs-toggle="dropdown">
+                                            <i class="bi bi-three-dots-vertical"></i>
+                                        </button>
+                                        <ul class="dropdown-menu dropdown-menu-end">
+                                            <li><a class="dropdown-item" href="#" id="markAsReadBtn">Mark as Read</a>
+                                            </li>
+                                            <li><a class="dropdown-item" href="#" id="viewClientProfileBtn">View Client
+                                                    Profile</a></li>
+                                        </ul>
+                                    </div>
+                                </div>
+                                <div class="card-body" id="messagesContainer">
+                                    <div class="text-center p-5">
+                                        <i class="bi bi-chat-dots display-4 text-muted"></i>
+                                        <p class="mt-3">Select a conversation to view messages</p>
+                                    </div>
+                                </div>
+                                <div class="card-footer d-none" id="messageInputContainer">
+                                    <form id="sendMessageForm" class="d-flex">
+                                        <input type="text" class="form-control me-2" placeholder="Type your message..."
+                                            id="messageInput">
+                                        <button type="submit" class="btn btn-primary">
+                                            <i class="bi bi-send"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Reviews section (initially hidden) -->
@@ -237,506 +483,591 @@
                     <div
                         class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
                         <h1 class="h2">Reviews</h1>
+                        <div class="btn-toolbar">
+                            <div class="btn-group me-2">
+                                <button type="button" class="btn btn-sm btn-outline-secondary dropdown-toggle"
+                                    data-bs-toggle="dropdown">
+                                    <i class="bi bi-filter"></i> Filter
+                                </button>
+                                <ul class="dropdown-menu">
+                                    <li><a class="dropdown-item active" href="#" data-filter="all">All Reviews</a></li>
+                                    <li><a class="dropdown-item" href="#" data-filter="replied">Replied</a></li>
+                                    <li><a class="dropdown-item" href="#" data-filter="notReplied">Not Replied</a></li>
+                                </ul>
+                            </div>
+                            <div class="btn-group">
+                                <button type="button" class="btn btn-sm btn-outline-secondary dropdown-toggle"
+                                    data-bs-toggle="dropdown">
+                                    <i class="bi bi-sort-down"></i> Sort
+                                </button>
+                                <ul class="dropdown-menu">
+                                    <li><a class="dropdown-item active" href="#" data-sort="date_desc">Newest First</a>
+                                    </li>
+                                    <li><a class="dropdown-item" href="#" data-sort="date_asc">Oldest First</a></li>
+                                    <li><a class="dropdown-item" href="#" data-sort="rating_desc">Highest Rating</a>
+                                    </li>
+                                    <li><a class="dropdown-item" href="#" data-sort="rating_asc">Lowest Rating</a></li>
+                                </ul>
+                            </div>
+                        </div>
                     </div>
-                    <!-- This section will be populated with reviews data -->
+
+                    <div id="reviewsContainer">
+                        <div class="text-center">
+                            <div class="spinner-border" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                            <p>Loading reviews...</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Availability section (initially hidden) -->
+                <div class="dashboard-section d-none" id="availabilitySection">
+                    <div
+                        class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                        <h1 class="h2">Availability</h1>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-8">
+                            <div class="card mb-4">
+                                <div class="card-header">
+                                    <h5 class="mb-0">Calendar</h5>
+                                </div>
+                                <div class="card-body"><div id="availabilityCalendar" class="border rounded p-3">
+                                    <!-- Will be filled with calendar component -->
+                                    <div class="text-center p-5">
+                                        <div class="spinner-border" role="status">
+                                            <span class="visually-hidden">Loading...</span>
+                                        </div>
+                                        <p>Loading calendar...</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card mb-4">
+                                <div class="card-header">
+                                    <h5 class="mb-0">Regular Working Hours</h5>
+                                </div>
+                                <div class="card-body">
+                                    <form id="workingHoursForm">
+                                        <div class="mb-3" id="weekdayHours">
+                                            <!-- Will be filled dynamically with weekday hours inputs -->
+                                            <div class="text-center">
+                                                <div class="spinner-border spinner-border-sm" role="status">
+                                                    <span class="visually-hidden">Loading...</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <button type="submit" class="btn btn-primary">Save Working Hours</button>
+                                    </form>
+                                </div>
+                            </div>
+
+                            <div class="card">
+                                <div class="card-header d-flex justify-content-between align-items-center">
+                                    <h5 class="mb-0">Special Dates</h5>
+                                    <button class="btn btn-sm btn-outline-primary" id="addSpecialDateBtn">
+                                        <i class="bi bi-plus"></i> Add
+                                    </button>
+                                </div>
+                                <div class="card-body">
+                                    <div id="specialDatesList">
+                                        <!-- Will be filled dynamically with special dates -->
+                                        <div class="text-center">
+                                            <div class="spinner-border spinner-border-sm" role="status">
+                                                <span class="visually-hidden">Loading...</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Profile section (initially hidden) -->
+                <div class="dashboard-section d-none" id="profileSection">
+                    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                        <h1 class="h2">My Profile</h1>
+                        <button class="btn btn-primary" id="editProfileBtn">
+                            <i class="bi bi-pencil"></i> Edit Profile
+                        </button>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-4 mb-4">
+                            <div class="card">
+                                <div class="card-body text-center">
+                                    <div class="profile-image-container mb-3">
+                                        <img src="../../assets/images/default-photographer.jpg" alt="Profile" class="rounded-circle profile-image" id="profileImage">
+                                        <div class="overlay">
+                                            <button class="btn btn-sm btn-outline-light" id="changeProfileImageBtn">
+                                                <i class="bi bi-camera"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <h4 id="profileName">Loading...</h4>
+                                    <p class="text-muted" id="profileEmail">loading@example.com</p>
+                                    <div class="mb-2" id="profileRating">
+                                        <!-- Rating stars will be placed here -->
+                                    </div>
+                                    <p class="mb-0" id="profileMember">Member since: Loading...</p>
+                                </div>
+                            </div>
+
+                            <div class="card mt-4">
+                                <div class="card-header">
+                                    <h5 class="mb-0">Categories</h5>
+                                </div>
+                                <div class="card-body">
+                                    <div id="photographerCategories">
+                                        <!-- Categories will be shown here -->
+                                        <div class="text-center">
+                                            <div class="spinner-border spinner-border-sm" role="status">
+                                                <span class="visually-hidden">Loading...</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-8">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5 class="mb-0">Professional Information</h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row mb-3">
+                                        <div class="col-md-4 fw-bold">Full Name:</div>
+                                        <div class="col-md-8" id="infoName">Loading...</div>
+                                    </div>
+                                    <div class="row mb-3">
+                                        <div class="col-md-4 fw-bold">Email:</div>
+                                        <div class="col-md-8" id="infoEmail">Loading...</div>
+                                    </div>
+                                    <div class="row mb-3">
+                                        <div class="col-md-4 fw-bold">Phone:</div>
+                                        <div class="col-md-8" id="infoPhone">Loading...</div>
+                                    </div>
+                                    <div class="row mb-3">
+                                        <div class="col-md-4 fw-bold">Location:</div>
+                                        <div class="col-md-8" id="infoLocation">Loading...</div>
+                                    </div>
+                                    <div class="row mb-3">
+                                        <div class="col-md-4 fw-bold">Specialization:</div>
+                                        <div class="col-md-8" id="infoSpecialization">Loading...</div>
+                                    </div>
+                                    <div class="row mb-3">
+                                        <div class="col-md-4 fw-bold">Experience:</div>
+                                        <div class="col-md-8" id="infoExperience">Loading...</div>
+                                    </div>
+                                    <div class="row mb-3">
+                                        <div class="col-md-4 fw-bold">Bio:</div>
+                                        <div class="col-md-8" id="infoBio">Loading...</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="card mt-4">
+                                <div class="card-header">
+                                    <h5 class="mb-0">Activity Summary</h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row mb-3">
+                                        <div class="col-md-6">
+                                            <div class="d-flex align-items-center">
+                                                <div class="icon-rounded bg-primary text-white me-3">
+                                                    <i class="bi bi-calendar-check"></i>
+                                                </div>
+                                                <div>
+                                                    <h6 class="mb-0" id="totalSessions">0</h6>
+                                                    <small class="text-muted">Total Sessions</small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="d-flex align-items-center">
+                                                <div class="icon-rounded bg-success text-white me-3">
+                                                    <i class="bi bi-currency-euro"></i>
+                                                </div>
+                                                <div>
+                                                    <h6 class="mb-0" id="totalEarnings">€0</h6>
+                                                    <small class="text-muted">Total Earnings</small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="d-flex align-items-center">
+                                                <div class="icon-rounded bg-info text-white me-3">
+                                                    <i class="bi bi-star"></i>
+                                                </div>
+                                                <div>
+                                                    <h6 class="mb-0" id="totalReviews">0</h6>
+                                                    <small class="text-muted">Total Reviews</small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="d-flex align-items-center">
+                                                <div class="icon-rounded bg-warning text-white me-3">
+                                                    <i class="bi bi-eye"></i>
+                                                </div>
+                                                <div>
+                                                    <h6 class="mb-0" id="profileViews">0</h6>
+                                                    <small class="text-muted">Profile Views</small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Settings section (initially hidden) -->
                 <div class="dashboard-section d-none" id="settingsSection">
-                    <div
-                        class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-                        <h1 class="h2">Account Settings</h1>
+                    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                        <h1 class="h2">Settings</h1>
                     </div>
-                    <!-- This section will be populated with settings forms -->
+                    <div class="row">
+                        <div class="col-md-4 mb-4">
+                            <div class="list-group settings-menu">
+                                <a href="#" class="list-group-item list-group-item-action active" data-settings="account">
+                                    <i class="bi bi-person me-2"></i> Account Settings
+                                </a>
+                                <a href="#" class="list-group-item list-group-item-action" data-settings="profile">
+                                    <i class="bi bi-camera me-2"></i> Professional Profile
+                                </a>
+                                <a href="#" class="list-group-item list-group-item-action" data-settings="notifications">
+                                    <i class="bi bi-bell me-2"></i> Notification Preferences
+                                </a>
+                                <a href="#" class="list-group-item list-group-item-action" data-settings="privacy">
+                                    <i class="bi bi-shield-lock me-2"></i> Privacy Settings
+                                </a>
+                                <a href="#" class="list-group-item list-group-item-action" data-settings="payment">
+                                    <i class="bi bi-credit-card me-2"></i> Payment Information
+                                </a>
+                                <a href="#" class="list-group-item list-group-item-action" data-settings="password">
+                                    <i class="bi bi-key me-2"></i> Change Password
+                                </a>
+                                <a href="#" class="list-group-item list-group-item-action text-danger" data-settings="delete">
+                                    <i class="bi bi-trash me-2"></i> Delete Account
+                                </a>
+                            </div>
+                        </div>
+                        <div class="col-md-8">
+                            <!-- Account Settings Panel -->
+                            <div class="card settings-panel" id="accountSettings">
+                                <div class="card-header">
+                                    <h5 class="mb-0">Account Settings</h5>
+                                </div>
+                                <div class="card-body">
+                                    <form id="accountSettingsForm">
+                                        <div class="mb-3">
+                                            <label for="settingsName" class="form-label">Full Name</label>
+                                            <input type="text" class="form-control" id="settingsName">
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="settingsEmail" class="form-label">Email</label>
+                                            <input type="email" class="form-control" id="settingsEmail">
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="settingsPhone" class="form-label">Phone</label>
+                                            <input type="tel" class="form-control" id="settingsPhone">
+                                        </div>
+                                        <div class="d-flex justify-content-end">
+                                            <button type="submit" class="btn btn-primary">Save Changes</button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+
+                            <!-- Professional Profile Panel (Initially Hidden) -->
+                            <div class="card settings-panel d-none" id="profileSettings">
+                                <div class="card-header">
+                                    <h5 class="mb-0">Professional Profile</h5>
+                                </div>
+                                <div class="card-body">
+                                    <form id="profileSettingsForm">
+                                        <div class="mb-3">
+                                            <label for="settingsSpecialization" class="form-label">Specialization</label>
+                                            <input type="text" class="form-control" id="settingsSpecialization">
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="settingsLocation" class="form-label">Location</label>
+                                            <input type="text" class="form-control" id="settingsLocation">
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="settingsExperience" class="form-label">Years of Experience</label>
+                                            <input type="number" class="form-control" id="settingsExperience" min="0">
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="settingsBio" class="form-label">Professional Bio</label>
+                                            <textarea class="form-control" id="settingsBio" rows="5"></textarea>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label class="form-label">Categories</label>
+                                            <div id="settingsCategories">
+                                                <!-- Will be filled dynamically -->
+                                            </div>
+                                        </div>
+                                        <div class="d-flex justify-content-end">
+                                            <button type="submit" class="btn btn-primary">Save Changes</button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+
+                            <!-- Other settings panels will be shown based on selection -->
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Scripts -->
-    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="../../assets/js/config.js"></script>
-    <script src="../../assets/js/api.js"></script>
-    <script>
-        $(document).ready(function () {
-            // Check authentication
-            checkAuth();
-
-            // Load user data
-            loadUserData();
-
-            // Load dashboard data
-            loadDashboardData();
-
-            // Handle navigation
-            $(".nav-link").click(function (e) {
-                e.preventDefault();
-                const section = $(this).data("section");
-
-                // Update active link
-                $(".nav-link").removeClass("active");
-                $(this).addClass("active");
-
-                // Show selected section, hide others
-                $(".dashboard-section").addClass("d-none");
-                $(`#${section}Section`).removeClass("d-none");
-
-                // Load section data if needed
-                if (section === "portfolio") {
-                    loadPortfolio();
-                } else if (section === "bookings") {
-                    loadBookings();
-                } else if (section === "services") {
-                    loadServices();
-                } else if (section === "messages") {
-                    loadMessages();
-                } else if (section === "reviews") {
-                    loadReviews();
-                } else if (section === "settings") {
-                    loadSettings();
-                }
-            });
-
-            // Handle logout
-            $("#logoutLink").click(function (e) {
-                e.preventDefault();
-                logout();
-            });
-
-            // Handle view all buttons
-            $("#viewAllBookingsBtn").click(function (e) {
-                e.preventDefault();
-                $(".nav-link").removeClass("active");
-                $('[data-section="bookings"]').addClass("active");
-                $(".dashboard-section").addClass("d-none");
-                $("#bookingsSection").removeClass("d-none");
-                loadBookings();
-            });
-
-            $("#viewAllMessagesBtn").click(function (e) {
-                e.preventDefault();
-                $(".nav-link").removeClass("active");
-                $('[data-section="messages"]').addClass("active");
-                $(".dashboard-section").addClass("d-none");
-                $("#messagesSection").removeClass("d-none");
-                loadMessages();
-            });
-
-            // Handle add portfolio item
-            $("#addPortfolioItemBtn").click(function (e) {
-                e.preventDefault();
-                showAddPortfolioModal();
-            });
-
-            // Handle add service
-            $("#addServiceBtn").click(function (e) {
-                e.preventDefault();
-                showAddServiceModal();
-            });
-        });
-
-        function checkAuth() {
-            // Check if user is logged in
-            const token = localStorage.getItem("token");
-            const userRole = localStorage.getItem("userRole");
-
-            if (!token || userRole !== "photographer") {
-                // Redirect to login if not authenticated or not a photographer
-                window.location.href = "../../pages/auth/login.html";
-                return;
-            }
-
-            // Verify token with backend (optional)
-            API.verifyToken()
-                .fail(function (error) {
-                    console.error("Token verification failed:", error);
-                    localStorage.removeItem("token");
-                    localStorage.removeItem("userRole");
-                    window.location.href = "../../pages/auth/login.html";
-                });
-        }
-
-        function loadUserData() {
-            API.getUserProfile()
-                .done(function (user) {
-                    // Update photographer name
-                    $("#photographerName").text(user.name);
-
-                    // Here you can update other user profile elements
-                })
-                .fail(function (error) {
-                    console.error("Failed to load user data:", error);
-                });
-        }
-
-        function loadDashboardData() {
-            // Load counts for dashboard cards
-            Promise.all([
-                loadBookingCounts(),
-                loadEarnings(),
-                loadRating()
-            ])
-                .then(function () {
-                    // Load recent bookings and messages
-                    loadRecentBookings();
-                    loadRecentMessages();
-                })
-                .catch(function (error) {
-                    console.error("Error loading dashboard data:", error);
-                });
-        }
-
-        function loadBookingCounts() {
-            // This would be replaced with an actual API call
-            // For now, using mock data
-            setTimeout(function () {
-                $("#pendingOrdersCount").text("5");
-                $("#activeOrdersCount").text("3");
-            }, 500);
-
-            return Promise.resolve();
-        }
-
-        function loadEarnings() {
-            // This would be replaced with an actual API call
-            setTimeout(function () {
-                $("#monthlyEarnings").text("€2.5k");
-            }, 500);
-
-            return Promise.resolve();
-        }
-
-        function loadRating() {
-            // This would be replaced with an actual API call
-            setTimeout(function () {
-                $("#overallRating").text("4.8");
-            }, 500);
-
-            return Promise.resolve();
-        }
-
-        function loadRecentBookings() {
-            // Show loading state
-            $("#recentBookingsTable").html(`
-            <tr>
-                <td colspan="6" class="text-center">
-                    <div class="spinner-border spinner-border-sm" role="status">
-                        <span class="visually-hidden">Loading...</span>
-                    </div>
-                    <span class="ms-2">Loading bookings...</span>
-                </td>
-            </tr>
-        `);
-
-            // This would be replaced with an actual API call
-            // For now, using mock data
-            setTimeout(function () {
-                const bookings = [
-                    {
-                        id: 1,
-                        client: {
-                            id: 101,
-                            name: "Sarah Johnson"
-                        },
-                        service: "Wedding Photography",
-                        date: "2025-03-15",
-                        status: "confirmed",
-                        price: "€1,200"
-                    },
-                    {
-                        id: 2,
-                        client: {
-                            id: 102,
-                            name: "Michael Brown"
-                        },
-                        service: "Family Portrait",
-                        date: "2025-04-10",
-                        status: "pending",
-                        price: "€350"
-                    }
-                ];
-
-                // Generate table rows
-                if (bookings.length === 0) {
-                    $("#recentBookingsTable").html(`
-                    <tr>
-                        <td colspan="6" class="text-center">No bookings found</td>
-                    </tr>
-                `);
-                    return;
-                }
-
-                const rows = bookings.map(booking => `
-                <tr>
-                    <td>${booking.client.name}</td>
-                    <td>${booking.service}</td>
-                    <td>${formatDate(booking.date)}</td>
-                    <td>
-                        <span class="badge ${getStatusBadgeClass(booking.status)}">
-                            ${capitalizeFirstLetter(booking.status)}
-                        </span>
-                    </td>
-                    <td>${booking.price}</td>
-                    <td>
-                        <button class="btn btn-sm btn-outline-primary viewBookingBtn" data-id="${booking.id}">
-                            View
-                        </button>
-                        <button class="btn btn-sm btn-outline-success messageClientBtn" data-id="${booking.client.id}">
-                            Message
-                        </button>
-                    </td>
-                </tr>
-            `).join('');
-
-                $("#recentBookingsTable").html(rows);
-
-                // Add event listeners to buttons
-                $(".viewBookingBtn").click(function () {
-                    const bookingId = $(this).data("id");
-                    viewBookingDetails(bookingId);
-                });
-
-                $(".messageClientBtn").click(function () {
-                    const clientId = $(this).data("id");
-                    messageClient(clientId);
-                });
-            }, 1000);
-        }
-
-        function loadRecentMessages() {
-            // Show loading state
-            $("#recentMessagesContainer").html(`
-            <div class="text-center">
-                <div class="spinner-border spinner-border-sm" role="status">
-                    <span class="visually-hidden">Loading...</span>
+    <!-- Modals -->
+    <!-- Add Portfolio Item Modal -->
+    <div class="modal fade" id="addPortfolioModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Add Portfolio Item</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
-                <span class="ms-2">Loading messages...</span>
+                <div class="modal-body">
+                    <form id="addPortfolioForm">
+                        <div class="mb-3 text-center">
+                            <div class="portfolio-preview-container">
+                                <img src="../../assets/images/placeholder.jpg" alt="Portfolio preview" id="portfolioPreview" class="img-fluid rounded mb-3">
+                                <div class="overlay">
+                                    <button type="button" class="btn btn-sm btn-light" id="portfolioImageBtn">
+                                        <i class="bi bi-upload"></i> Upload Image
+                                    </button>
+                                </div>
+                            </div>
+                            <input type="file" class="form-control" id="portfolioImageUpload" accept="image/*" style="display: none;">
+                        </div>
+                        <div class="mb-3">
+                            <label for="portfolioTitle" class="form-label">Title</label>
+                            <input type="text" class="form-control" id="portfolioTitle" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="portfolioCategory" class="form-label">Category</label>
+                            <select class="form-select" id="portfolioCategory" required>
+                                <option value="">Select category</option>
+                                <option value="wedding">Wedding</option>
+                                <option value="portrait">Portrait</option>
+                                <option value="event">Event</option>
+                                <option value="family">Family</option>
+                                <option value="commercial">Commercial</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="portfolioDescription" class="form-label">Description</label>
+                            <textarea class="form-control" id="portfolioDescription" rows="3"></textarea>
+                        </div>
+                        <div class="mb-3 form-check">
+                            <input type="checkbox" class="form-check-input" id="portfolioFeatured">
+                            <label class="form-check-label" for="portfolioFeatured">Feature this item</label>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="savePortfolioBtn">Save Item</button>
+                </div>
             </div>
-        `);
+        </div>
+    </div>
 
-            // This would be replaced with an actual API call
-            // For now, using mock data
-            setTimeout(function () {
-                const messages = [
-                    {
-                        id: 1,
-                        sender: {
-                            id: 101,
-                            name: "Sarah Johnson"
-                        },
-                        subject: "Wedding Photography Inquiry",
-                        preview: "Hi there, I'm interested in your wedding photography services...",
-                        date: "2025-02-22",
-                        isRead: false
-                    },
-                    {
-                        id: 2,
-                        sender: {
-                            id: 102,
-                            name: "Michael Brown"
-                        },
-                        subject: "Family Portrait Session",
-                        preview: "Hello, I'd like to book a family portrait session...",
-                        date: "2025-02-20",
-                        isRead: true
-                    }
-                ];
-
-                // Generate messages HTML
-                if (messages.length === 0) {
-                    $("#recentMessagesContainer").html(`
-                    <div class="text-center">No messages found</div>
-                `);
-                    return;
-                }
-
-                const messagesHtml = messages.map(message => `
-                <div class="card mb-2 ${message.isRead ? '' : 'border-primary'}">
-                    <div class="card-body p-3">
-                        <div class="d-flex justify-content-between align-items-center mb-2">
-                            <h6 class="mb-0 ${message.isRead ? '' : 'fw-bold'}">${message.subject}</h6>
-                            <small class="text-muted">${formatDate(message.date)}</small>
-                        </div>
-                        <p class="mb-1 text-truncate">${message.preview}</p>
-                        <div class="d-flex justify-content-between align-items-center">
-                            <small class="text-muted">From: ${message.sender.name}</small>
-                            <button class="btn btn-sm btn-outline-primary viewMessageBtn" data-id="${message.id}">
-                                Read
-                            </button>
-                        </div>
-                    </div>
+    <!-- Add Service Modal -->
+    <div class="modal fade" id="addServiceModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Add Service</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
-            `).join('');
-
-                $("#recentMessagesContainer").html(messagesHtml);
-
-                // Add event listeners to view buttons
-                $(".viewMessageBtn").click(function () {
-                    const messageId = $(this).data("id");
-                    viewMessageDetails(messageId);
-                });
-            }, 1000);
-        }
-
-        function loadPortfolio() {
-            // This would load portfolio for the portfolio section
-            $("#portfolioItems").html(`
-            <div class="col-12 text-center">
-                <div class="spinner-border" role="status">
-                    <span class="visually-hidden">Loading...</span>
-                </div>
-                <p>Loading portfolio...</p>
-            </div>
-        `);
-
-            // This would be replaced with an actual API call
-            setTimeout(function () {
-                const portfolioItems = [
-                    { id: 1, image: '../../assets/images/portfolio1.jpg', title: 'Wedding Photography', category: 'Wedding' },
-                    { id: 2, image: '../../assets/images/portfolio2.jpg', title: 'Portrait Session', category: 'Portrait' },
-                    { id: 3, image: '../../assets/images/portfolio3.jpg', title: 'Family Photoshoot', category: 'Family' }
-                ];
-
-                // Generate portfolio items HTML
-                if (portfolioItems.length === 0) {
-                    $("#portfolioItems").html(`
-                    <div class="col-12">
-                        <div class="alert alert-info">
-                            You haven't added any portfolio items yet. Click "Add Photo" to get started.
+                <div class="modal-body">
+                    <form id="addServiceForm">
+                        <div class="mb-3">
+                            <label for="serviceName" class="form-label">Service Name</label>
+                            <input type="text" class="form-control" id="serviceName" required>
                         </div>
-                    </div>
-                `);
-                    return;
-                }
-
-                const itemsHtml = portfolioItems.map(item => `
-                <div class="col-md-4 col-sm-6 mb-4">
-                    <div class="card">
-                        <img src="${item.image}" class="card-img-top" alt="${item.title}">
-                        <div class="card-body">
-                            <h5 class="card-title">${item.title}</h5>
-                            <p class="card-text text-muted">${item.category}</p>
-                            <div class="d-flex justify-content-between">
-                                <button class="btn btn-sm btn-outline-primary editPortfolioBtn" data-id="${item.id}">
-                                    Edit
-                                </button>
-                                <button class="btn btn-sm btn-outline-danger deletePortfolioBtn" data-id="${item.id}">
-                                    Delete
-                                </button>
+                        <div class="mb-3">
+                            <label for="serviceDescription" class="form-label">Description</label>
+                            <textarea class="form-control" id="serviceDescription" rows="3"></textarea>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col">
+                                <label for="servicePrice" class="form-label">Price</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">€</span>
+                                    <input type="number" class="form-control" id="servicePrice" min="0" step="0.01" required>
+                                </div>
+                            </div>
+                            <div class="col">
+                                <label for="serviceUnit" class="form-label">Unit</label>
+                                <select class="form-select" id="serviceUnit" required>
+                                    <option value="hour">Per Hour</option>
+                                    <option value="session">Per Session</option>
+                                    <option value="package">Package</option>
+                                    <option value="day">Per Day</option>
+                                </select>
                             </div>
                         </div>
-                    </div>
+                        <div class="mb-3">
+                            <label for="serviceDuration" class="form-label">Duration (minutes)</label>
+                            <input type="number" class="form-control" id="serviceDuration" min="30" step="30">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Features</label>
+                            <div id="serviceFeatures">
+                                <div class="input-group mb-2">
+                                    <input type="text" class="form-control" placeholder="e.g., 2-hour photoshoot" name="features[]">
+                                    <button class="btn btn-outline-secondary remove-feature" type="button">
+                                        <i class="bi bi-dash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <button type="button" class="btn btn-sm btn-outline-primary" id="addFeatureBtn">
+                                <i class="bi bi-plus"></i> Add Feature
+                            </button>
+                        </div>
+                        <div class="mb-3 form-check">
+                            <input type="checkbox" class="form-check-input" id="serviceFeatured">
+                            <label class="form-check-label" for="serviceFeatured">Feature this service</label>
+                        </div>
+                    </form>
                 </div>
-            `).join('');
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="saveServiceBtn">Save Service</button>
+                </div>
+            </div>
+        </div>
+    </div>
 
-                $("#portfolioItems").html(itemsHtml);
+    <!-- Add Special Date Modal -->
+    <div class="modal fade" id="specialDateModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Add Special Date</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="specialDateForm">
+                        <div class="mb-3">
+                            <label for="specialDate" class="form-label">Date</label>
+                            <input type="date" class="form-control" id="specialDate" required>
+                        </div>
+                        <div class="mb-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="availabilityType" id="availabilityUnavailable" value="unavailable" checked>
+                                <label class="form-check-label" for="availabilityUnavailable">
+                                    Unavailable (Not working this day)
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="availabilityType" id="availabilityCustom" value="custom">
+                                <label class="form-check-label" for="availabilityCustom">
+                                    Custom Hours
+                                </label>
+                            </div>
+                        </div>
+                        <div class="mb-3 d-none" id="customHoursContainer">
+                            <div class="row">
+                                <div class="col">
+                                    <label for="specialStartTime" class="form-label">Start Time</label>
+                                    <input type="time" class="form-control" id="specialStartTime">
+                                </div>
+                                <div class="col">
+                                    <label for="specialEndTime" class="form-label">End Time</label>
+                                    <input type="time" class="form-control" id="specialEndTime">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="specialDateNote" class="form-label">Note (Optional)</label>
+                            <input type="text" class="form-control" id="specialDateNote" placeholder="e.g., Holiday, Personal Day">
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="saveSpecialDateBtn">Save</button>
+                </div>
+            </div>
+        </div>
+    </div>
 
-                // Add event listeners
-                $(".editPortfolioBtn").click(function () {
-                    const itemId = $(this).data("id");
-                    editPortfolioItem(itemId);
-                });
+    <!-- View/Reply to Review Modal -->
+    <div class="modal fade" id="reviewReplyModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Reply to Review</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="review-container mb-3">
+                        <div class="d-flex align-items-start">
+                            <img src="" alt="Client" class="rounded-circle me-2" width="40" height="40" id="reviewClientImage">
+                            <div>
+                                <h6 id="reviewClientName"></h6>
+                                <div id="reviewRating" class="mb-1">
+                                    <!-- Rating stars will be placed here -->
+                                </div>
+                                <small class="text-muted" id="reviewDate"></small>
+                            </div>
+                        </div>
+                        <h6 class="mt-3" id="reviewTitle"></h6>
+                        <p id="reviewText"></p>
+                    </div>
+                    <hr>
+                    <form id="reviewReplyForm">
+                        <div class="mb-3">
+                            <label for="replyText" class="form-label">Your Reply</label>
+                            <textarea class="form-control" id="replyText" rows="4" required></textarea>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="submitReplyBtn">Submit Reply</button>
+                </div>
+            </div>
+        </div>
+    </div>
 
-                $(".deletePortfolioBtn").click(function () {
-                    const itemId = $(this).data("id");
-                    if (confirm("Are you sure you want to delete this portfolio item?")) {
-                        deletePortfolioItem(itemId);
-                    }
-                });
-            }, 1000);
-        }
+    <!-- Notification Toast -->
+    <div class="position-fixed bottom-0 end-0 p-3" style="z-index: 11">
+        <div id="notificationToast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="toast-header">
+                <strong class="me-auto" id="toastTitle">Notification</strong>
+                <small id="toastTime">Just now</small>
+                <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+            <div class="toast-body" id="toastMessage">
+                This is a notification message.
+            </div>
+        </div>
+    </div>
 
-        function loadBookings() {
-            // This would load all bookings for the bookings section
-        }
-
-        function loadServices() {
-            // This would load services for the services section
-        }
-
-        function loadMessages() {
-            // This would load messages for the messages section
-        }
-
-        function loadReviews() {
-            // This would load reviews for the reviews section
-        }
-
-        function loadSettings() {
-            // This would load settings for the settings section
-        }
-
-        function viewBookingDetails(bookingId) {
-            // This would show a modal or navigate to booking details
-            alert(`View booking details for booking ID: ${bookingId}`);
-        }
-
-        function messageClient(clientId) {
-            // This would open a message composer modal
-            alert(`Send message to client ID: ${clientId}`);
-        }
-
-        function viewMessageDetails(messageId) {
-            // This would show a message details modal
-            alert(`View message details for message ID: ${messageId}`);
-        }
-
-        function showAddPortfolioModal() {
-            // This would show a modal for adding a portfolio item
-            alert("Show add portfolio item modal");
-        }
-
-        function editPortfolioItem(itemId) {
-            // This would show a modal for editing a portfolio item
-            alert(`Edit portfolio item ID: ${itemId}`);
-        }
-
-        function deletePortfolioItem(itemId) {
-            // This would delete a portfolio item
-            alert(`Delete portfolio item ID: ${itemId}`);
-            // After successful deletion, reload portfolio
-            loadPortfolio();
-        }
-
-        function showAddServiceModal() {
-            // This would show a modal for adding a service
-            alert("Show add service modal");
-        }
-
-        function formatDate(dateString) {
-            const options = { year: 'numeric', month: 'long', day: 'numeric' };
-            return new Date(dateString).toLocaleDateString(undefined, options);
-        }
-
-        function getStatusBadgeClass(status) {
-            switch (status.toLowerCase()) {
-                case 'confirmed':
-                    return 'bg-success';
-                case 'pending':
-                    return 'bg-warning';
-                case 'cancelled':
-                    return 'bg-danger';
-                case 'completed':
-                    return 'bg-info';
-                default:
-                    return 'bg-secondary';
-            }
-        }
-
-        function capitalizeFirstLetter(string) {
-            return string.charAt(0).toUpperCase() + string.slice(1);
-        }
-
-        function logout() {
-            // Clear authentication data
-            localStorage.removeItem("token");
-            localStorage.removeItem("userRole");
-
-            // Redirect to home page
-            window.location.href = "../../index.html";
-        }
-    </script>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="../../assets/js/config.js"></script>
+    <script src="../../assets/js/api.js"></script>
+    <script src="../../assets/js/dashboard-common.js"></script>
+    <script src="../../assets/js/photographer-dashboard.js"></script>
 </body>
 
 </html>
