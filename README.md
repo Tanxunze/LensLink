@@ -114,8 +114,9 @@ LensLink/
 - Test across different browsers
 
 ### 5. API Integration
-- All API endpoints are documented in `/docs/interfaces.md`
-- Use the API class in `assets/js/api.js` for all backend communication
+- All API endpoints are documented in `/docs/api-documentation.md`
+- The api except dashboard is definied in `/assets/js/api.js`
+- The api of dashboard is defined in `/assets/js/xxxx-dashboard.js` & `dashboard-common.js`
 
 ## Resources
 - [Bootstrap Documentation](https://getbootstrap.com/docs/5.3/getting-started/introduction/)
