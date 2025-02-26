@@ -806,6 +806,165 @@ GET /categories
 }
 ```
 
+## Services
+
+### Get All Services (across all photographers)
+
+```
+GET /services
+```
+
+**Query Parameters:**
+
+- `category` (optional): Filter by category (wedding, portrait, event, family, commercial)
+- `limit` (optional): Items per page (default: 12)
+- `page` (optional): Page number (default: 1)
+- `sort` (optional): Sort order (price_asc, price_desc, newest, rating)
+- `featured` (optional): Filter by featured status (true/false)
+
+**Response:**
+
+```json
+{
+  "services": [
+    {
+      "id": 5,
+      "title": "Premium Wedding Coverage",
+      "description": "Complete wedding day photography from preparation to reception",
+      "short_description": "Full-day professional wedding photography",
+      "price_range": "€1,200-€1,800",
+      "duration": "8-10 hours",
+      "category": "wedding",
+      "image_url": "http://example.com/images/wedding-service.jpg",
+      "photographer": {
+        "id": 12,
+        "name": "Emma Johnson",
+        "profile_image": "http://example.com/photographers/emma.jpg",
+        "rating": 4.9
+      },
+      "features": [
+        "Second photographer included",
+        "300+ edited photos",
+        "Online gallery" 
+      ]
+    },
+    // More services...
+  ],
+  "pagination": {
+    "total": 85,
+    "per_page": 12,
+    "current_page": 1,
+    "total_pages": 8
+  }
+}
+```
+
+### Get Service Details
+
+```
+GET /services/{id}
+```
+
+**Response:**
+
+```json
+{
+  "service": {
+    "id": 5,
+    "title": "Premium Wedding Coverage",
+    "description": "Our comprehensive wedding photography service includes everything you need to document your special day beautifully. From morning preparation through the ceremony and reception, we'll be there to capture every important moment.",
+    "short_description": "Full-day professional wedding photography",
+    "price_range": "€1,200-€1,800",
+    "duration": "8-10 hours",
+    "category": "wedding",
+    "image_url": "http://example.com/images/wedding-service.jpg",
+    "photographer": {
+      "id": 12,
+      "name": "Emma Johnson",
+      "profile_image": "http://example.com/photographers/emma.jpg",
+      "rating": 4.9,
+      "specialization": "Wedding Photography",
+      "location": "Berlin, Germany",
+      "bio_excerpt": "Award-winning wedding photographer with 8+ years of experience"
+    },
+    "features": [
+      "8-10 hours of coverage",
+      "Second photographer",
+      "Engagement session option",
+      "300+ edited photos",
+      "Online gallery",
+      "Print release",
+      "Wedding album options"
+    ],
+    "packages": [
+      {
+        "title": "Standard Package",
+        "price": "€1,200",
+        "description": "Our most popular wedding package",
+        "features": [
+          "8 hours coverage",
+          "300 edited photos",
+          "Online gallery with download"
+        ]
+      },
+      {
+        "title": "Deluxe Package",
+        "price": "€1,800",
+        "description": "Complete premium wedding coverage",
+        "features": [
+          "10 hours coverage",
+          "Second photographer",
+          "Engagement session",
+          "500 edited photos",
+          "Premium wedding album"
+        ]
+      }
+    ]
+  }
+}
+```
+
+### Get Photographer's Services
+
+```
+GET /photographers/{id}/services
+```
+
+**Response:**
+
+```json
+{
+  "photographer": {
+    "id": 12,
+    "name": "Emma Johnson",
+    "profile_image": "http://example.com/photographers/emma.jpg"
+  },
+  "services": [
+    {
+      "id": 5,
+      "title": "Premium Wedding Coverage",
+      "short_description": "Full-day professional wedding photography",
+      "price_range": "€1,200-€1,800",
+      "duration": "8-10 hours",
+      "category": "wedding",
+      "image_url": "http://example.com/images/wedding-service.jpg"
+    },
+    {
+      "id": 8,
+      "title": "Engagement Session",
+      "short_description": "Pre-wedding couple photoshoot",
+      "price_range": "€350-€500",
+      "duration": "2 hours",
+      "category": "portrait",
+      "image_url": "http://example.com/images/engagement-service.jpg"
+    },
+    // More services from this photographer...
+  ]
+}
+```
+
+This structure supports your marketplace model where each service is associated with a specific photographer while still allowing users to browse all services across photographers.
+
 ## Conclusion
 
 This API documentation provides a comprehensive guide to implementing the LensLink platform's backend APIs, focusing on the customer and photographer dashboard functionality. The backend team should use this document as a reference for developing the required endpoints.
