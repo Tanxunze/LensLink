@@ -1,108 +1,511 @@
+/* Customer Dashboard Specific Styles */
+
+/* Saved photographer cards */
 .saved-photographer-card {
-    transition: transform 0.3s, box-shadow 0.3s;
+    border-radius: 12px;
+    overflow: hidden;
+    transition: all 0.3s ease;
+    border: none;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    height: 100%;
+    position: relative;
 }
 
 .saved-photographer-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+    transform: translateY(-8px);
+    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.12);
 }
 
 .saved-photographer-image {
-    height: 200px;
+    height: 220px;
     object-fit: cover;
+    transition: transform 0.5s ease;
+}
+
+.saved-photographer-card:hover .saved-photographer-image {
+    transform: scale(1.05);
 }
 
 .remove-saved {
     position: absolute;
-    top: 10px;
-    right: 10px;
-    background-color: rgba(255, 255, 255, 0.8);
+    top: 12px;
+    right: 12px;
+    background-color: rgba(255, 255, 255, 0.9);
     border-radius: 50%;
-    width: 30px;
-    height: 30px;
+    width: 36px;
+    height: 36px;
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    transition: background-color 0.2s;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    z-index: 1;
 }
 
 .remove-saved:hover {
     background-color: white;
     color: #dc3545;
+    transform: scale(1.1);
 }
 
+/* Booking timeline styling */
 .booking-timeline {
     position: relative;
-    padding-left: 30px;
+    padding-left: 40px;
 }
 
 .booking-timeline::before {
     content: '';
     position: absolute;
     top: 0;
-    left: 15px;
+    left: 19px;
     height: 100%;
     width: 2px;
-    background-color: #dee2e6;
+    background-color: #e9ecef;
 }
 
 .timeline-item {
     position: relative;
-    margin-bottom: 30px;
+    margin-bottom: 35px;
+    padding-bottom: 5px;
+}
+
+.timeline-item:last-child {
+    margin-bottom: 0;
 }
 
 .timeline-dot {
     position: absolute;
-    left: -30px;
+    left: -40px;
     top: 0;
-    width: 20px;
-    height: 20px;
+    width: 24px;
+    height: 24px;
     border-radius: 50%;
     background-color: white;
-    border: 2px solid #6c757d;
+    border: 2px solid #adb5bd;
     z-index: 1;
+    transition: all 0.3s ease;
 }
 
 .timeline-dot.active {
     background-color: #0d6efd;
     border-color: #0d6efd;
+    box-shadow: 0 0 0 4px rgba(13, 110, 253, 0.2);
 }
 
 .timeline-dot.completed {
     background-color: #198754;
     border-color: #198754;
+    box-shadow: 0 0 0 4px rgba(25, 135, 84, 0.2);
 }
 
 .timeline-dot.cancelled {
     background-color: #dc3545;
     border-color: #dc3545;
+    box-shadow: 0 0 0 4px rgba(220, 53, 69, 0.2);
 }
 
-.recommended-card {
-    border: none;
-    transition: transform 0.3s;
+.timeline-content {
+    padding: 1.2rem;
+    background-color: #f8f9fa;
+    border-radius: 12px;
+    transition: all 0.3s ease;
+}
+
+.timeline-item:hover .timeline-content {
+    background-color: #e9ecef;
+    transform: translateY(-3px);
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
 }
 
+.timeline-date {
+    font-size: 0.85rem;
+    color: #6c757d;
+    margin-bottom: 0.5rem;
+}
+
+.timeline-title {
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+/* Recommended photographer styling */
+.recommended-card {
+    border-radius: 12px;
+    overflow: hidden;
+    transition: all 0.3s ease;
+    border: none;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    height: 100%;
+    position: relative;
+}
+
 .recommended-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+    transform: translateY(-8px);
+    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.12);
 }
 
 .recommended-image {
-    height: 180px;
+    height: 200px;
     object-fit: cover;
+    transition: transform 0.5s ease;
+}
+
+.recommended-card:hover .recommended-image {
+    transform: scale(1.05);
 }
 
 .recommended-badge {
     position: absolute;
-    top: 10px;
-    left: 10px;
-    background-color: rgba(255, 255, 255, 0.8);
+    top: 12px;
+    left: 12px;
+    background-color: rgba(255, 255, 255, 0.9);
     color: #0d6efd;
     font-size: 0.8rem;
-    padding: 5px 10px;
-    border-radius: 50px;
-    font-weight: bold;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-weight: 600;
+    z-index: 1;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.photographer-category {
+    font-size: 0.8rem;
+    color: #6c757d;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 0.5rem;
+}
+
+.photographer-rating {
+    color: #ffc107;
+    margin-bottom: 0.5rem;
+}
+
+.photographer-location {
+    display: flex;
+    align-items: center;
+    color: #6c757d;
+    font-size: 0.9rem;
+    margin-bottom: 0.5rem;
+}
+
+.photographer-location i {
+    margin-right: 0.3rem;
+    font-size: 0.85rem;
+}
+
+.photographer-price {
+    font-weight: 600;
+    color: #0d6efd;
+}
+
+/* Status badges for booking status */
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.4rem 0.8rem;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 500;
+}
+
+.status-badge i {
+    margin-right: 0.4rem;
+}
+
+.status-badge.pending {
+    background-color: rgba(255, 193, 7, 0.15);
+    color: #ffc107;
+}
+
+.status-badge.confirmed {
+    background-color: rgba(13, 110, 253, 0.15);
+    color: #0d6efd;
+}
+
+.status-badge.completed {
+    background-color: rgba(25, 135, 84, 0.15);
+    color: #198754;
+}
+
+.status-badge.cancelled {
+    background-color: rgba(220, 53, 69, 0.15);
+    color: #dc3545;
+}
+
+/* Action buttons styling for tables */
+.action-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: #495057;
+    background-color: #f8f9fa;
+    border: none;
+    transition: all 0.2s ease;
+    margin: 0 0.2rem;
+}
+
+.action-btn:hover {
+    background-color: #e9ecef;
+}
+
+.action-btn.view:hover {
+    color: #0d6efd;
+}
+
+.action-btn.edit:hover {
+    color: #ffc107;
+}
+
+.action-btn.delete:hover {
+    color: #dc3545;
+}
+
+/* Message section styling */
+.conversation-item {
+    cursor: pointer;
+    transition: all 0.2s ease;
+    padding: 0.8rem;
+    border-radius: 8px;
+    margin-bottom: 0.5rem;
+}
+
+.conversation-item:hover {
+    background-color: rgba(13, 110, 253, 0.05);
+}
+
+.conversation-item.active {
+    background-color: rgba(13, 110, 253, 0.08);
+    border-left: 4px solid #0d6efd;
+}
+
+.conversation-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 0.5rem;
+}
+
+.conversation-image {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+    margin-right: 0.8rem;
+}
+
+.conversation-name {
+    font-weight: 600;
+    margin-bottom: 0.1rem;
+}
+
+.conversation-time {
+    font-size: 0.75rem;
+    color: #6c757d;
+}
+
+.conversation-preview {
+    font-size: 0.85rem;
+    color: #6c757d;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.conversation-badge {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background-color: #dc3545;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    margin-left: auto;
+}
+
+.message-bubble {
+    max-width: 80%;
+    padding: 12px 16px;
+    border-radius: 18px;
+    margin-bottom: 15px;
+    position: relative;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.sender-bubble {
+    background-color: #f0f2f5;
+    margin-right: auto;
+    border-top-left-radius: 4px;
+}
+
+.my-bubble {
+    background-color: #d9e8ff;
+    margin-left: auto;
+    border-top-right-radius: 4px;
+}
+
+.message-time {
+    font-size: 0.7rem;
+    color: #6c757d;
+    margin-top: 5px;
+    display: block;
+    text-align: right;
+}
+
+.message-input-container {
+    background-color: #f8f9fa;
+    border-top: 1px solid rgba(0, 0, 0, 0.05);
+    padding: 1rem;
+}
+
+.message-input {
+    border-radius: 20px;
+    padding-left: 1rem;
+    border: 1px solid #dee2e6;
+}
+
+.message-input:focus {
+    box-shadow: none;
+    border-color: #0d6efd;
+}
+
+.message-send-btn {
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Table styling enhancements */
+.table-container {
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.table thead th {
+    background-color: #f8f9fa;
+    border-bottom: none;
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.85rem;
+    letter-spacing: 0.5px;
+    padding: 1rem;
+}
+
+.table tbody td {
+    padding: 1rem;
+    vertical-align: middle;
+}
+
+.table-hover tbody tr {
+    transition: background-color 0.2s ease;
+}
+
+.table-hover tbody tr:hover {
+    background-color: rgba(13, 110, 253, 0.05);
+}
+
+/* Media query adjustments */
+@media (max-width: 767.98px) {
+
+    .saved-photographer-image,
+    .recommended-image {
+        height: 180px;
+    }
+
+    .timeline-dot {
+        width: 20px;
+        height: 20px;
+        left: -36px;
+    }
+
+    .booking-timeline::before {
+        left: 17px;
+    }
+
+    .status-badge {
+        padding: 0.3rem 0.6rem;
+        font-size: 0.75rem;
+    }
+
+    .action-btn {
+        width: 28px;
+        height: 28px;
+        margin: 0 0.1rem;
+    }
+
+    .table thead th,
+    .table tbody td {
+        padding: 0.75rem;
+    }
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+    .dashboard.dark-mode {
+        background-color: #121212;
+        color: #e0e0e0;
+    }
+
+    .dashboard.dark-mode .card {
+        background-color: #1e1e1e;
+        color: #e0e0e0;
+    }
+
+    .dashboard.dark-mode .bg-dark {
+        background-color: #0a0a0a !important;
+    }
+
+    .dashboard.dark-mode .text-muted {
+        color: #adb5bd !important;
+    }
+
+    .dashboard.dark-mode .table {
+        color: #e0e0e0;
+    }
+
+    .dashboard.dark-mode .table-striped>tbody>tr:nth-of-type(odd)>* {
+        background-color: rgba(255, 255, 255, 0.05);
+        color: #e0e0e0;
+    }
+
+    .dashboard.dark-mode .form-control,
+    .dashboard.dark-mode .form-select {
+        background-color: #2d2d2d;
+        border-color: #444;
+        color: #e0e0e0;
+    }
+
+    .dashboard.dark-mode .conversation-item:hover {
+        background-color: rgba(255, 255, 255, 0.05);
+    }
+
+    .dashboard.dark-mode .conversation-item.active {
+        background-color: rgba(13, 110, 253, 0.2);
+    }
+
+    .dashboard.dark-mode .sender-bubble {
+        background-color: #2d2d2d;
+    }
+
+    .dashboard.dark-mode .my-bubble {
+        background-color: rgba(13, 110, 253, 0.3);
+    }
+
+    .dashboard.dark-mode .timeline-content {
+        background-color: #1e1e1e;
+    }
+
+    .dashboard.dark-mode .timeline-item:hover .timeline-content {
+        background-color: #2d2d2d;
+    }
 }
