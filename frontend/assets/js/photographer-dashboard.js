@@ -8,79 +8,79 @@ $(document).ready(function () {
 });
 
 function setupEventHandlers() {
-    $("#refreshDashboardBtn").click(function() {
+    $("#refreshDashboardBtn").click(function () {
         loadDashboardData();
         showNotification("Dashboard data refreshed", "info");
     });
-    
-    $("#viewProfileLink, #editProfileLink").click(function(e) {
+
+    $("#viewProfileLink, #editProfileLink").click(function (e) {
         e.preventDefault();
         $(".nav-link").removeClass("active");
         $('[data-section="profile"]').addClass("active");
         $(".dashboard-section").addClass("d-none");
         $("#profileSection").removeClass("d-none");
-        
+
         if (this.id === "editProfileLink") {
             openEditProfileModal();
         }
     });
-    
-    $("#viewPendingOrdersLink").click(function(e) {
+
+    $("#viewPendingOrdersLink").click(function (e) {
         e.preventDefault();
         showBookingsSection("pending");
     });
-    
-    $("#viewActiveOrdersLink").click(function(e) {
+
+    $("#viewActiveOrdersLink").click(function (e) {
         e.preventDefault();
         showBookingsSection("active");
     });
-    
-    $("#viewEarningsLink").click(function(e) {
+
+    $("#viewEarningsLink").click(function (e) {
         e.preventDefault();
         // Todo: jump to income statistics?
         alert("Earnings statistics coming soon!");
     });
-    
-    $("#viewReviewsLink").click(function(e) {
+
+    $("#viewReviewsLink").click(function (e) {
         e.preventDefault();
         showReviewsSection();
     });
-    
-    $("#viewAllBookingsBtn").click(function(e) {
+
+    $("#viewAllBookingsBtn").click(function (e) {
         e.preventDefault();
         showBookingsSection("all");
     });
-    
-    $("#viewAllReviewsBtn").click(function(e) {
+
+    $("#viewAllReviewsBtn").click(function (e) {
         e.preventDefault();
         showReviewsSection();
     });
-    
-    $("#addPortfolioItemBtn").click(function(e) {
+
+    $("#addPortfolioItemBtn").click(function (e) {
         e.preventDefault();
         openAddPortfolioModal();
     });
-    
-    $("#addServiceBtn").click(function(e) {
+
+    $("#addServiceBtn").click(function (e) {
         e.preventDefault();
         openAddServiceModal();
     });
 
-    $("#addSpecialDateBtn").click(function(e) {
+    $("#addSpecialDateBtn").click(function (e) {
         e.preventDefault();
         openSpecialDateModal();
     });
 
-    $("button[data-category]").click(function() {
+    $("button[data-category]").click(function () {
         const category = $(this).data("category");
         $("button[data-category]").removeClass("active");
         $(this).addClass("active");
         filterPortfolioItems(category);
     });
-    
-    $("button[data-view]").click(function() {
+
+    $("button[data-view]").click(function () {
         const view = $(this).data("view");
-        
+
         $("button[data-view]").removeClass("active");
         $(this).addClass("active");
 
@@ -95,97 +95,97 @@ function setupEventHandlers() {
             }
         }
     });
-    
+
     // loading event listeners
-    $(document).on("section:portfolio", function() {
+    $(document).on("section:portfolio", function () {
         loadPortfolio();
     });
-    
-    $(document).on("section:bookings", function() {
+
+    $(document).on("section:bookings", function () {
         loadBookings();
     });
-    
-    $(document).on("section:services", function() {
+
+    $(document).on("section:services", function () {
         loadServices();
     });
-    
-    $(document).on("section:messages", function() {
+
+    $(document).on("section:messages", function () {
         loadMessages();
     });
-    
-    $(document).on("section:reviews", function() {
+
+    $(document).on("section:reviews", function () {
         loadReviews();
     });
-    
-    $(document).on("section:availability", function() {
+
+    $(document).on("section:availability", function () {
         loadAvailability();
     });
-    
-    $(document).on("section:profile", function() {
+
+    $(document).on("section:profile", function () {
         loadDetailedPhotographerData();
     });
-    
-    $(document).on("section:settings", function() {
+
+    $(document).on("section:settings", function () {
         loadSettings();
     });
-    
+
     // income Time Range drop-down menu
-    $(".dropdown-item[data-timeframe]").click(function(e) {
+    $(".dropdown-item[data-timeframe]").click(function (e) {
         e.preventDefault();
         const timeframe = $(this).data("timeframe");
-        
+
         // update text
         let timeframeText = "Last 6 Months";
-        switch(timeframe) {
+        switch (timeframe) {
             case 30: timeframeText = "Last 30 Days"; break;
             case 90: timeframeText = "Last 3 Months"; break;
             case 365: timeframeText = "Last 12 Months"; break;
         }
         $("#earningsTimeframeDropdown").text(timeframeText);
-        
+
         // update active item
         $(".dropdown-item[data-timeframe]").removeClass("active");
         $(this).addClass("active");
-        
+
         // reload chart
         loadEarningsChart(timeframe);
     });
-    
-    $("#portfolioImageBtn").click(function() {
+
+    $("#portfolioImageBtn").click(function () {
         $("#portfolioImageUpload").click();
     });
-    
-    $("#portfolioImageUpload").change(function() {
+
+    $("#portfolioImageUpload").change(function () {
         if (this.files && this.files[0]) {
             previewImage(this.files[0], "portfolioPreview");
         }
     });
-    
-    $("#addFeatureBtn").click(function() {
+
+    $("#addFeatureBtn").click(function () {
         addServiceFeatureInput();
     });
-    
-    $("#savePortfolioBtn").click(function() {
+
+    $("#savePortfolioBtn").click(function () {
         savePortfolioItem();
     });
-    
-    $("#saveServiceBtn").click(function() {
+
+    $("#saveServiceBtn").click(function () {
         saveService();
     });
-    
-    $("input[name='availabilityType']").change(function() {
+
+    $("input[name='availabilityType']").change(function () {
         if ($(this).val() === "custom") {
             $("#customHoursContainer").removeClass("d-none");
         } else {
             $("#customHoursContainer").addClass("d-none");
         }
     });
-    
-    $("#saveSpecialDateBtn").click(function() {
+
+    $("#saveSpecialDateBtn").click(function () {
         saveSpecialDate();
     });
-    
-    $("#submitReplyBtn").click(function() {
+
+    $("#submitReplyBtn").click(function () {
         submitReviewReply();
     });
 }
@@ -195,7 +195,7 @@ function setupEventHandlers() {
  */
 function loadPhotographerData() {
     $("#photographerName").text("Loading...");
-    
+
     fetch(`${CONFIG.API.BASE_URL}/photographer/profile`, {
         method: 'GET',
         headers: {
@@ -203,30 +203,30 @@ function loadPhotographerData() {
             'Content-Type': 'application/json'
         }
     })
-    .then(response => {
-        if (!response.ok) {
-            throw new Error('Failed to load photographer data');
-        }
-        return response.json();
-    })
-    .then(data => {
-        $("#photographerName").text(data.user.name);
-        window.photographerData = data;
-    })
-    .catch(error => {
-        console.error("Failed to load photographer data:", error);
-        $("#photographerName").text("Photographer");
-    });
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Failed to load photographer data');
+            }
+            return response.json();
+        })
+        .then(data => {
+            $("#photographerName").text(data.user.name);
+            window.photographerData = data;
+        })
+        .catch(error => {
+            console.error("Failed to load photographer data:", error);
+            $("#photographerName").text("Photographer");
+        });
 }
 
 /**
  * Loading Dashboard Data
  */
 function loadDashboardData() {
-  loadDashboardCounts();
-  loadEarningsChart(180); // Default display 6 months(180 days)
-  loadRecentBookings();
-  loadRecentReviews();
+    loadDashboardCounts();
+    loadEarningsChart(180); // Default display 6 months(180 days)
+    loadRecentBookings();
+    loadRecentReviews();
 }
 
 /**
@@ -239,67 +239,67 @@ function loadDashboardCounts() {
             'Content-Type': 'application/json'
         }
     })
-    .then(response => response.json())
-    .then(data => {
-        $("#pendingOrdersCount").text(data.count);
-        
-        // Show notification badge if order is pending
-        if (data.count > 0) {
-            $(".booking-badge").removeClass("d-none").text(data.count);
-        } else {
+        .then(response => response.json())
+        .then(data => {
+            $("#pendingOrdersCount").text(data.count);
+
+            // Show notification badge if order is pending
+            if (data.count > 0) {
+                $(".booking-badge").removeClass("d-none").text(data.count);
+            } else {
+                $(".booking-badge").addClass("d-none");
+            }
+        })
+        .catch(error => {
+            console.error("Failed to load pending orders count:", error);
+            $("#pendingOrdersCount").text("0");
             $(".booking-badge").addClass("d-none");
-        }
-    })
-    .catch(error => {
-        console.error("Failed to load pending orders count:", error);
-        $("#pendingOrdersCount").text("0");
-        $(".booking-badge").addClass("d-none");
-    });
-    
+        });
+
     fetch(`${CONFIG.API.BASE_URL}/bookings/count?status=confirmed`, {
         headers: {
             'Authorization': `Bearer ${localStorage.getItem("token")}`,
             'Content-Type': 'application/json'
         }
     })
-    .then(response => response.json())
-    .then(data => {
-        $("#activeOrdersCount").text(data.count);
-    })
-    .catch(error => {
-        console.error("Failed to load active orders count:", error);
-        $("#activeOrdersCount").text("0");
-    });
-    
+        .then(response => response.json())
+        .then(data => {
+            $("#activeOrdersCount").text(data.count);
+        })
+        .catch(error => {
+            console.error("Failed to load active orders count:", error);
+            $("#activeOrdersCount").text("0");
+        });
+
     fetch(`${CONFIG.API.BASE_URL}/earnings/monthly`, {
         headers: {
             'Authorization': `Bearer ${localStorage.getItem("token")}`,
             'Content-Type': 'application/json'
         }
     })
-    .then(response => response.json())
-    .then(data => {
-        $("#monthlyEarnings").text(`€${data.amount}`);
-    })
-    .catch(error => {
-        console.error("Failed to load monthly earnings:", error);
-        $("#monthlyEarnings").text("€0");
-    });
-    
+        .then(response => response.json())
+        .then(data => {
+            $("#monthlyEarnings").text(`€${data.amount}`);
+        })
+        .catch(error => {
+            console.error("Failed to load monthly earnings:", error);
+            $("#monthlyEarnings").text("€0");
+        });
+
     fetch(`${CONFIG.API.BASE_URL}/reviews/rating`, {
         headers: {
             'Authorization': `Bearer ${localStorage.getItem("token")}`,
             'Content-Type': 'application/json'
         }
     })
-    .then(response => response.json())
-    .then(data => {
-        $("#overallRating").text(data.rating.toFixed(1));
-    })
-    .catch(error => {
-        console.error("Failed to load overall rating:", error);
-        $("#overallRating").text("0.0");
-    });
+        .then(response => response.json())
+        .then(data => {
+            $("#overallRating").text(data.rating.toFixed(1));
+        })
+        .catch(error => {
+            console.error("Failed to load overall rating:", error);
+            $("#overallRating").text("0.0");
+        });
 }
 
 /**
@@ -315,73 +315,73 @@ function loadEarningsChart(days) {
             </div>
         </div>
     `);
-    
+
     fetch(`${CONFIG.API.BASE_URL}/earnings/chart?days=${days}`, {
         headers: {
             'Authorization': `Bearer ${localStorage.getItem("token")}`,
             'Content-Type': 'application/json'
         }
     })
-    .then(response => {
-        if (!response.ok) {
-            throw new Error('Failed to load earnings data');
-        }
-        return response.json();
-    })
-    .then(data => {
-        // prepare chart canvas
-        $("#earningsChart").html('<canvas id="earningsChartCanvas"></canvas>');
-        
-        const chartData = {
-            labels: data.labels,
-            datasets: [{
-                label: 'Earnings (€)',
-                data: data.values,
-                backgroundColor: 'rgba(54, 162, 235, 0.2)',
-                borderColor: 'rgba(54, 162, 235, 1)',
-                borderWidth: 1,
-                tension: 0.4
-            }]
-        };
-        
-        // create chart
-        const ctx = document.getElementById('earningsChartCanvas').getContext('2d');
-        new Chart(ctx, {
-            type: 'line',
-            data: chartData,
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        ticks: {
-                            callback: function(value) {
-                                return '€' + value;
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Failed to load earnings data');
+            }
+            return response.json();
+        })
+        .then(data => {
+            // prepare chart canvas
+            $("#earningsChart").html('<canvas id="earningsChartCanvas"></canvas>');
+
+            const chartData = {
+                labels: data.labels,
+                datasets: [{
+                    label: 'Earnings (€)',
+                    data: data.values,
+                    backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                    borderColor: 'rgba(54, 162, 235, 1)',
+                    borderWidth: 1,
+                    tension: 0.4
+                }]
+            };
+
+            // create chart
+            const ctx = document.getElementById('earningsChartCanvas').getContext('2d');
+            new Chart(ctx, {
+                type: 'line',
+                data: chartData,
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function (value) {
+                                    return '€' + value;
+                                }
                             }
                         }
-                    }
-                },
-                plugins: {
-                    tooltip: {
-                        callbacks: {
-                            label: function(context) {
-                                return '€' + context.raw;
+                    },
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                label: function (context) {
+                                    return '€' + context.raw;
+                                }
                             }
                         }
                     }
                 }
-            }
-        });
-    })
-    .catch(error => {
-        console.error("Failed to load earnings chart:", error);
-        $("#earningsChart").html(`
+            });
+        })
+        .catch(error => {
+            console.error("Failed to load earnings chart:", error);
+            $("#earningsChart").html(`
             <div class="alert alert-danger m-3">
                 Failed to load earnings data. Please try again.
             </div>
         `);
-    });
+        });
 }
 
 /**
@@ -398,30 +398,30 @@ function loadRecentBookings() {
             </td>
         </tr>
     `);
-    
+
     fetch(`${CONFIG.API.BASE_URL}/bookings?limit=5&sort=date_desc`, {
         headers: {
             'Authorization': `Bearer ${localStorage.getItem("token")}`,
             'Content-Type': 'application/json'
         }
     })
-    .then(response => {
-        if (!response.ok) {
-            throw new Error('Failed to load recent bookings');
-        }
-        return response.json();
-    })
-    .then(data => {
-        if (!data.bookings || data.bookings.length === 0) {
-            $("#recentBookingsTable").html(`
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Failed to load recent bookings');
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (!data.bookings || data.bookings.length === 0) {
+                $("#recentBookingsTable").html(`
                 <tr>
                     <td colspan="6" class="text-center">No bookings found</td>
                 </tr>
             `);
-            return;
-        }
-        
-        const rows = data.bookings.map(booking => `
+                return;
+            }
+
+            const rows = data.bookings.map(booking => `
             <tr>
                 <td>${booking.client.name}</td>
                 <td>${booking.service.name}</td>
@@ -442,29 +442,29 @@ function loadRecentBookings() {
                 </td>
             </tr>
         `).join('');
-        
-        $("#recentBookingsTable").html(rows);
-        
-        $(".viewBookingBtn").click(function() {
-            const bookingId = $(this).data("id");
-            openBookingDetailsModal(bookingId);
-        });
-        
-        $(".messageClientBtn").click(function() {
-            const clientId = $(this).data("id");
-            messageClient(clientId);
-        });
-    })
-    .catch(error => {
-        console.error("Failed to load recent bookings:", error);
-        $("#recentBookingsTable").html(`
+
+            $("#recentBookingsTable").html(rows);
+
+            $(".viewBookingBtn").click(function () {
+                const bookingId = $(this).data("id");
+                openBookingDetailsModal(bookingId);
+            });
+
+            $(".messageClientBtn").click(function () {
+                const clientId = $(this).data("id");
+                messageClient(clientId);
+            });
+        })
+        .catch(error => {
+            console.error("Failed to load recent bookings:", error);
+            $("#recentBookingsTable").html(`
             <tr>
                 <td colspan="6" class="text-center text-danger">
                     Failed to load bookings. Please try again.
                 </td>
             </tr>
         `);
-    });
+        });
 }
 
 /**
@@ -479,34 +479,34 @@ function loadRecentReviews() {
             <span class="ms-2">Loading reviews...</span>
         </div>
     `);
-    
+
     fetch(`${CONFIG.API.BASE_URL}/reviews?limit=3&sort=date_desc`, {
         headers: {
             'Authorization': `Bearer ${localStorage.getItem("token")}`,
             'Content-Type': 'application/json'
         }
     })
-    .then(response => {
-        if (!response.ok) {
-            throw new Error('Failed to load recent reviews');
-        }
-        return response.json();
-    })
-    .then(data => {
-        if (!data.reviews || data.reviews.length === 0) {
-            $("#recentReviewsContainer").html(`
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Failed to load recent reviews');
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (!data.reviews || data.reviews.length === 0) {
+                $("#recentReviewsContainer").html(`
                 <div class="alert alert-info">
                     You haven't received any reviews yet.
                 </div>
             `);
-            return;
-        }
-        
-        const reviewsHtml = data.reviews.map(review => {
-            const hasReply = review.reply !== null && review.reply !== '';
-            const reviewClass = hasReply ? '' : 'new';
-            
-            return `
+                return;
+            }
+
+            const reviewsHtml = data.reviews.map(review => {
+                const hasReply = review.reply !== null && review.reply !== '';
+                const reviewClass = hasReply ? '' : 'new';
+
+                return `
                 <div class="card review-card ${reviewClass} mb-3">
                     <div class="card-body">
                         <div class="d-flex justify-content-between align-items-start mb-3">
@@ -537,23 +537,23 @@ function loadRecentReviews() {
                     </div>
                 </div>
             `;
-        }).join('');
-        
-        $("#recentReviewsContainer").html(reviewsHtml);
-        
-        $(".replyBtn").click(function() {
-            const reviewId = $(this).data("id");
-            openReviewReplyModal(reviewId);
-        });
-    })
-    .catch(error => {
-        console.error("Failed to load recent reviews:", error);
-        $("#recentReviewsContainer").html(`
+            }).join('');
+
+            $("#recentReviewsContainer").html(reviewsHtml);
+
+            $(".replyBtn").click(function () {
+                const reviewId = $(this).data("id");
+                openReviewReplyModal(reviewId);
+            });
+        })
+        .catch(error => {
+            console.error("Failed to load recent reviews:", error);
+            $("#recentReviewsContainer").html(`
             <div class="alert alert-danger">
                 Failed to load reviews. Please try again.
             </div>
         `);
-    });
+        });
 }
 
 /**
@@ -562,7 +562,7 @@ function loadRecentReviews() {
 function openAddPortfolioModal() {
     $("#addPortfolioForm")[0].reset();
     $("#portfolioPreview").attr("src", "../../assets/images/placeholder.jpg");
-    
+
     const portfolioModal = new bootstrap.Modal(document.getElementById('addPortfolioModal'));
     portfolioModal.show();
 }
@@ -581,9 +581,9 @@ function openAddServiceModal() {
             </button>
         </div>
     `);
-    
+
     setupRemoveFeatureButtons();
-    
+
     const serviceModal = new bootstrap.Modal(document.getElementById('addServiceModal'));
     serviceModal.show();
 }
@@ -594,11 +594,11 @@ function openAddServiceModal() {
 function openSpecialDateModal() {
     $("#specialDateForm")[0].reset();
     $("#customHoursContainer").addClass("d-none");
-    
+
     // Set the minimum date to today
     const today = new Date().toISOString().split('T')[0];
     $("#specialDate").attr("min", today);
-    
+
     const specialDateModal = new bootstrap.Modal(document.getElementById('specialDateModal'));
     specialDateModal.show();
 }
@@ -617,39 +617,39 @@ function openReviewReplyModal(reviewId) {
             <p class="mt-2">Loading review...</p>
         </div>
     `);
-    
+
     $("#reviewReplyModal .modal-footer").hide();
-    
+
     const replyModal = new bootstrap.Modal(document.getElementById('reviewReplyModal'));
     replyModal.show();
-    
+
     fetch(`${CONFIG.API.BASE_URL}/reviews/${reviewId}`, {
         headers: {
             'Authorization': `Bearer ${localStorage.getItem("token")}`,
             'Content-Type': 'application/json'
         }
     })
-    .then(response => {
-        if (!response.ok) {
-            throw new Error('Failed to load review details');
-        }
-        return response.json();
-    })
-    .then(review => {
-        updateReviewReplyModal(review);
-        
-        $("#reviewReplyModal .modal-footer").show();
-        
-        $("#submitReplyBtn").data("reviewId", review.id);
-    })
-    .catch(error => {
-        console.error("Failed to load review details:", error);
-        $("#reviewReplyModal .modal-body").html(`
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Failed to load review details');
+            }
+            return response.json();
+        })
+        .then(review => {
+            updateReviewReplyModal(review);
+
+            $("#reviewReplyModal .modal-footer").show();
+
+            $("#submitReplyBtn").data("reviewId", review.id);
+        })
+        .catch(error => {
+            console.error("Failed to load review details:", error);
+            $("#reviewReplyModal .modal-body").html(`
             <div class="alert alert-danger">
                 Failed to load review details. Please try again.
             </div>
         `);
-    });
+        });
 }
 
 /**
@@ -689,16 +689,16 @@ function submitReviewReply() {
     // fetch id & reply content
     const reviewId = $("#submitReplyBtn").data("reviewId");
     const replyText = $("#replyText").val();
-    
+
     if (!replyText.trim()) {
         alert("Please enter a reply");
         return;
     }
-    
+
     const submitBtn = $("#submitReplyBtn");
     const originalText = submitBtn.text();
     submitBtn.prop("disabled", true).html('<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Submitting...');
-    
+
     fetch(`${CONFIG.API.BASE_URL}/reviews/${reviewId}/reply`, {
         method: 'POST',
         headers: {
@@ -707,44 +707,44 @@ function submitReviewReply() {
         },
         body: JSON.stringify({ reply: replyText })
     })
-    .then(response => {
-        if (!response.ok) {
-            throw new Error('Failed to submit reply');
-        }
-        return response.json();
-    })
-    .then(data => {
-        bootstrap.Modal.getInstance(document.getElementById('reviewReplyModal')).hide();
-        
-        showNotification("Reply submitted successfully", "success");
-        
-        if ($("#reviewsSection").is(":visible")) {
-            loadReviews();
-        } else {
-            loadRecentReviews();
-        }
-    })
-    .catch(error => {
-        console.error("Failed to submit reply:", error);
-        showNotification("Failed to submit reply. Please try again.", "error");
-    })
-    .finally(() => {
-        submitBtn.prop("disabled", false).text(originalText);
-    });
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Failed to submit reply');
+            }
+            return response.json();
+        })
+        .then(data => {
+            bootstrap.Modal.getInstance(document.getElementById('reviewReplyModal')).hide();
+
+            showNotification("Reply submitted successfully", "success");
+
+            if ($("#reviewsSection").is(":visible")) {
+                loadReviews();
+            } else {
+                loadRecentReviews();
+            }
+        })
+        .catch(error => {
+            console.error("Failed to submit reply:", error);
+            showNotification("Failed to submit reply. Please try again.", "error");
+        })
+        .finally(() => {
+            submitBtn.prop("disabled", false).text(originalText);
+        });
 }
 
 /**
  * Setting the Service Feature Removal Button Event
  */
 function setupRemoveFeatureButtons() {
-    $(".remove-feature").off('click').on('click', function() {
-      // If there is only one feature, clear the input instead of deleting the line
-      if ($("#serviceFeatures .input-group").length === 1) {
-        $(this).closest(".input-group").find("input").val("");
-        return;
-      }
-      // del the line
-      $(this).closest(".input-group").remove();
+    $(".remove-feature").off('click').on('click', function () {
+        // If there is only one feature, clear the input instead of deleting the line
+        if ($("#serviceFeatures .input-group").length === 1) {
+            $(this).closest(".input-group").find("input").val("");
+            return;
+        }
+        // del the line
+        $(this).closest(".input-group").remove();
     });
 }
 
@@ -760,7 +760,7 @@ function addServiceFeatureInput() {
             </button>
         </div>
     `;
-    
+
     $("#serviceFeatures").append(newFeatureInput);
     setupRemoveFeatureButtons();
 }
@@ -775,7 +775,7 @@ function savePortfolioItem() {
     const description = $("#portfolioDescription").val();
     const featured = $("#portfolioFeatured").is(":checked");
     const imageFile = $("#portfolioImageUpload")[0].files[0];
-    
+
     if (!title || !category || !imageFile) {
         alert("Please fill in all required fields");
         return;
@@ -784,7 +784,7 @@ function savePortfolioItem() {
     const saveBtn = $("#savePortfolioBtn");
     const originalText = saveBtn.text();
     saveBtn.prop("disabled", true).html('<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Saving...');
-    
+
     // upload image
     uploadImage(imageFile)
         .then(imageData => {
@@ -812,9 +812,9 @@ function savePortfolioItem() {
         })
         .then(data => {
             bootstrap.Modal.getInstance(document.getElementById('addPortfolioModal')).hide();
-            
+
             showNotification("Portfolio item added successfully", "success");
-            
+
             loadPortfolio();
         })
         .catch(error => {
@@ -836,9 +836,9 @@ function saveService() {
     const unit = $("#serviceUnit").val();
     const duration = $("#serviceDuration").val();
     const featured = $("#serviceFeatured").is(":checked");
-    
+
     const features = [];
-    $("#serviceFeatures input").each(function() {
+    $("#serviceFeatures input").each(function () {
         const feature = $(this).val().trim();
         if (feature) {
             features.push(feature);
@@ -849,7 +849,7 @@ function saveService() {
         alert("Please fill in all required fields");
         return;
     }
-    
+
     const saveBtn = $("#saveServiceBtn");
     const originalText = saveBtn.text();
     saveBtn.prop("disabled", true).html('<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Saving...');
@@ -870,26 +870,26 @@ function saveService() {
             features: features
         })
     })
-    .then(response => {
-        if (!response.ok) {
-            throw new Error('Failed to save service');
-        }
-        return response.json();
-    })
-    .then(data => {
-        bootstrap.Modal.getInstance(document.getElementById('addServiceModal')).hide();
-        
-        showNotification("Service added successfully", "success");
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Failed to save service');
+            }
+            return response.json();
+        })
+        .then(data => {
+            bootstrap.Modal.getInstance(document.getElementById('addServiceModal')).hide();
 
-        loadServices();
-    })
-    .catch(error => {
-        console.error("Failed to save service:", error);
-        showNotification("Failed to save service. Please try again.", "error");
-    })
-    .finally(() => {
-        saveBtn.prop("disabled", false).text(originalText);
-    });
+            showNotification("Service added successfully", "success");
+
+            loadServices();
+        })
+        .catch(error => {
+            console.error("Failed to save service:", error);
+            showNotification("Failed to save service. Please try again.", "error");
+        })
+        .finally(() => {
+            saveBtn.prop("disabled", false).text(originalText);
+        });
 }
 
 /**
@@ -901,12 +901,12 @@ function saveSpecialDate() {
     const startTime = $("#specialStartTime").val();
     const endTime = $("#specialEndTime").val();
     const note = $("#specialDateNote").val();
-    
+
     if (!date) {
         alert("Please select a date");
         return;
     }
-    
+
     if (availabilityType === "custom" && (!startTime || !endTime)) {
         alert("Please specify both start and end times");
         return;
@@ -915,19 +915,19 @@ function saveSpecialDate() {
     const saveBtn = $("#saveSpecialDateBtn");
     const originalText = saveBtn.text();
     saveBtn.prop("disabled", true).html('<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Saving...');
-    
+
     const requestData = {
         date: date,
         is_available: availabilityType === "custom",
         note: note
     };
-    
+
     // If it's a custom time, add a start and end time
     if (availabilityType === "custom") {
         requestData.start_time = startTime;
         requestData.end_time = endTime;
     }
-    
+
     fetch(`${CONFIG.API.BASE_URL}/availability/special-dates`, {
         method: 'POST',
         headers: {
@@ -936,26 +936,26 @@ function saveSpecialDate() {
         },
         body: JSON.stringify(requestData)
     })
-    .then(response => {
-        if (!response.ok) {
-            throw new Error('Failed to save special date');
-        }
-        return response.json();
-    })
-    .then(data => {
-        bootstrap.Modal.getInstance(document.getElementById('specialDateModal')).hide();
-        
-        showNotification("Special date added successfully", "success");
-        
-        loadAvailability();
-    })
-    .catch(error => {
-        console.error("Failed to save special date:", error);
-        showNotification("Failed to save special date. Please try again.", "error");
-    })
-    .finally(() => {
-        saveBtn.prop("disabled", false).text(originalText);
-    });
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Failed to save special date');
+            }
+            return response.json();
+        })
+        .then(data => {
+            bootstrap.Modal.getInstance(document.getElementById('specialDateModal')).hide();
+
+            showNotification("Special date added successfully", "success");
+
+            loadAvailability();
+        })
+        .catch(error => {
+            console.error("Failed to save special date:", error);
+            showNotification("Failed to save special date. Please try again.", "error");
+        })
+        .finally(() => {
+            saveBtn.prop("disabled", false).text(originalText);
+        });
 }
 
 // Todo

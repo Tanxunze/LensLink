@@ -1,4 +1,4 @@
-$(document).ready(function() {
+$(document).ready(function () {
     loadUserData();
     loadDashboardData();
     setupEventHandlers();
@@ -10,13 +10,13 @@ $(document).ready(function() {
  */
 function setupEventHandlers() {
     // Dashboard Refresh Button
-    $("#refreshDashboardBtn").click(function() {
+    $("#refreshDashboardBtn").click(function () {
         loadDashboardData();
         showNotification("Dashboard data refreshed", "info");
     });
-    
+
     // Profile Button
-    $("#viewProfileLink, #editProfileLink").click(function(e) {
+    $("#viewProfileLink, #editProfileLink").click(function (e) {
         e.preventDefault();
         $(".nav-link").removeClass("active");
         $('[data-section="profile"]').addClass("active");
@@ -27,100 +27,100 @@ function setupEventHandlers() {
             openEditProfileModal();
         }
     });
-    
+
     // Quick Links
-    $("#viewActiveBookingsLink").click(function(e) {
+    $("#viewActiveBookingsLink").click(function (e) {
         e.preventDefault();
         showBookingsSection("active");
     });
-    
-    $("#viewCompletedSessionsLink").click(function(e) {
+
+    $("#viewCompletedSessionsLink").click(function (e) {
         e.preventDefault();
         showBookingsSection("completed");
     });
-    
-    $("#viewMessagesLink").click(function(e) {
+
+    $("#viewMessagesLink").click(function (e) {
         e.preventDefault();
         showMessagesSection();
     });
-    
-    $("#viewAllBookingsBtn").click(function(e) {
+
+    $("#viewAllBookingsBtn").click(function (e) {
         e.preventDefault();
         showBookingsSection("all");
     });
-    
-    $("#newMessageBtn").click(function(e) {
+
+    $("#newMessageBtn").click(function (e) {
         e.preventDefault();
         openNewMessageModal();
     });
-    
-    $("#editProfileBtn").click(function(e) {
+
+    $("#editProfileBtn").click(function (e) {
         e.preventDefault();
         openEditProfileModal();
     });
-    
-    $("#uploadProfileImageBtn").click(function() {
+
+    $("#uploadProfileImageBtn").click(function () {
         $("#profileImageUpload").click();
     });
-    
-    $("#profileImageUpload").change(function() {
+
+    $("#profileImageUpload").change(function () {
         if (this.files && this.files[0]) {
             previewImage(this.files[0], "previewProfileImage");
         }
     });
-    
-    $("#saveProfileBtn").click(function() {
+
+    $("#saveProfileBtn").click(function () {
         saveProfileChanges();
     });
-    
-    $("#sendNewMessageBtn").click(function() {
+
+    $("#sendNewMessageBtn").click(function () {
         sendNewMessage();
     });
-    
-    $("#sendMessageForm").submit(function(e) {
+
+    $("#sendMessageForm").submit(function (e) {
         e.preventDefault();
         sendMessage();
     });
-    
+
     // booking filter
-    $(".dropdown-item[data-filter]").click(function(e) {
+    $(".dropdown-item[data-filter]").click(function (e) {
         e.preventDefault();
         const filter = $(this).data("filter");
         filterBookings(filter);
-        
+
         $(".dropdown-item[data-filter]").removeClass("active");
         $(this).addClass("active");
     });
-    
+
     // Booking Search
-    $("#bookingSearchBtn").click(function() {
+    $("#bookingSearchBtn").click(function () {
         searchBookings($("#bookingSearchInput").val());
     });
-    
-    $("#bookingSearchInput").on("keyup", function(e) {
+
+    $("#bookingSearchInput").on("keyup", function (e) {
         if (e.key === "Enter") {
             searchBookings($(this).val());
         }
     });
-    
+
     // Partial Load Event Listening
-    $(document).on("section:bookings", function() {
+    $(document).on("section:bookings", function () {
         loadBookings();
     });
-    
-    $(document).on("section:messages", function() {
+
+    $(document).on("section:messages", function () {
         loadMessages();
     });
-    
-    $(document).on("section:savedPhotographers", function() {
+
+    $(document).on("section:savedPhotographers", function () {
         loadSavedPhotographers();
     });
-    
-    $(document).on("section:profile", function() {
+
+    $(document).on("section:profile", function () {
         loadDetailedUserData();
     });
-    
-    $(document).on("section:settings", function() {
+
+    $(document).on("section:settings", function () {
         loadSettings();
     });
 }
@@ -138,21 +138,21 @@ function loadUserData() {
             'Content-Type': 'application/json'
         }
     })
-    .then(response => {
-        if (!response.ok) {
-            throw new Error('Failed to load user data');
-        }
-        return response.json();
-    })
-    .then(data => {
-        $("#userName").text(data.name);
-        //cache
-        window.userData = data;
-    })
-    .catch(error => {
-        console.error("Failed to load user data:", error);
-        $("#userName").text("Customer");
-    });
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Failed to load user data');
+            }
+            return response.json();
+        })
+        .then(data => {
+            $("#userName").text(data.name);
+            //cache
+            window.userData = data;
+        })
+        .catch(error => {
+            console.error("Failed to load user data:", error);
+            $("#userName").text("Customer");
+        });
 }
 
 /**
@@ -174,50 +174,50 @@ function loadDashboardCounts() {
             'Content-Type': 'application/json'
         }
     })
-    .then(response => response.json())
-    .then(data => {
-        $("#activeBookingsCount").text(data.count);
-    })
-    .catch(error => {
-        console.error("Failed to load active bookings count:", error);
-        $("#activeBookingsCount").text("0");
-    });
-    
+        .then(response => response.json())
+        .then(data => {
+            $("#activeBookingsCount").text(data.count);
+        })
+        .catch(error => {
+            console.error("Failed to load active bookings count:", error);
+            $("#activeBookingsCount").text("0");
+        });
+
     fetch(`${CONFIG.API.BASE_URL}/bookings/count?status=completed`, {
         headers: {
             'Authorization': `Bearer ${localStorage.getItem("token")}`,
             'Content-Type': 'application/json'
         }
     })
-    .then(response => response.json())
-    .then(data => {
-        $("#completedSessionsCount").text(data.count);
-    })
-    .catch(error => {
-        console.error("Failed to load completed sessions count:", error);
-        $("#completedSessionsCount").text("0");
-    });
-    
+        .then(response => response.json())
+        .then(data => {
+            $("#completedSessionsCount").text(data.count);
+        })
+        .catch(error => {
+            console.error("Failed to load completed sessions count:", error);
+            $("#completedSessionsCount").text("0");
+        });
+
     fetch(`${CONFIG.API.BASE_URL}/messages/count?unread=true`, {
         headers: {
             'Authorization': `Bearer ${localStorage.getItem("token")}`,
             'Content-Type': 'application/json'
         }
     })
-    .then(response => response.json())
-    .then(data => {
-        $("#messagesCount").text(data.count);
-        if (data.count > 0) {
-            $(".message-badge").removeClass("d-none").text(data.count);
-        } else {
+        .then(response => response.json())
+        .then(data => {
+            $("#messagesCount").text(data.count);
+            if (data.count > 0) {
+                $(".message-badge").removeClass("d-none").text(data.count);
+            } else {
+                $(".message-badge").addClass("d-none");
+            }
+        })
+        .catch(error => {
+            console.error("Failed to load messages count:", error);
+            $("#messagesCount").text("0");
             $(".message-badge").addClass("d-none");
-        }
-    })
-    .catch(error => {
-        console.error("Failed to load messages count:", error);
-        $("#messagesCount").text("0");
-        $(".message-badge").addClass("d-none");
-    });
+        });
 }
 
 /**
@@ -234,32 +234,32 @@ function loadRecentBookings() {
             </td>
         </tr>
     `);
-    
+
     fetch(`${CONFIG.API.BASE_URL}/bookings?limit=5&sort=date_desc`, {
         headers: {
             'Authorization': `Bearer ${localStorage.getItem("token")}`,
             'Content-Type': 'application/json'
         }
     })
-    .then(response => {
-        if (!response.ok) {
-            throw new Error('Failed to load recent bookings');
-        }
-        return response.json();
-    })
-    .then(data => {
-        // check if there are bookings
-        if (!data.bookings || data.bookings.length === 0) {
-            $("#recentBookingsTable").html(`
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Failed to load recent bookings');
+            }
+            return response.json();
+        })
+        .then(data => {
+            // check if there are bookings
+            if (!data.bookings || data.bookings.length === 0) {
+                $("#recentBookingsTable").html(`
                 <tr>
                     <td colspan="5" class="text-center">No bookings found</td>
                 </tr>
             `);
-            return;
-        }
-        
-        // generate booking table rows
-        const rows = data.bookings.map(booking => `
+                return;
+            }
+
+            // generate booking table rows
+            const rows = data.bookings.map(booking => `
             <tr>
                 <td>
                     <a href="../../pages/photographer-detail.html?id=${booking.photographer.id}">
@@ -280,24 +280,24 @@ function loadRecentBookings() {
                 </td>
             </tr>
         `).join('');
-        
-        $("#recentBookingsTable").html(rows);
-        
-        $(".viewBookingBtn").click(function() {
-            const bookingId = $(this).data("id");
-            openBookingDetailsModal(bookingId);
-        });
-    })
-    .catch(error => {
-        console.error("Failed to load recent bookings:", error);
-        $("#recentBookingsTable").html(`
+
+            $("#recentBookingsTable").html(rows);
+
+            $(".viewBookingBtn").click(function () {
+                const bookingId = $(this).data("id");
+                openBookingDetailsModal(bookingId);
+            });
+        })
+        .catch(error => {
+            console.error("Failed to load recent bookings:", error);
+            $("#recentBookingsTable").html(`
             <tr>
                 <td colspan="5" class="text-center text-danger">
                     Failed to load bookings. Please try again.
                 </td>
             </tr>
         `);
-    });
+        });
 }
 
 /**
@@ -313,33 +313,33 @@ function loadRecommendedPhotographers() {
             <p>Loading recommendations...</p>
         </div>
     `);
-    
+
     fetch(`${CONFIG.API.BASE_URL}/photographers/recommended?limit=3`, {
         headers: {
             'Authorization': `Bearer ${localStorage.getItem("token")}`,
             'Content-Type': 'application/json'
         }
     })
-    .then(response => {
-        if (!response.ok) {
-            throw new Error('Failed to load recommended photographers');
-        }
-        return response.json();
-    })
-    .then(data => {
-        if (!data.photographers || data.photographers.length === 0) {
-            $("#recommendedPhotographers").html(`
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Failed to load recommended photographers');
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (!data.photographers || data.photographers.length === 0) {
+                $("#recommendedPhotographers").html(`
                 <div class="col-12">
                     <div class="alert alert-info">
                         No recommendations available at this time. Try browsing our photographers!
                     </div>
                 </div>
             `);
-            return;
-        }
-        
-        // generate recommend cards
-        const cards = data.photographers.map(photographer => `
+                return;
+            }
+
+            // generate recommend cards
+            const cards = data.photographers.map(photographer => `
             <div class="col-md-4 mb-4">
                 <div class="card recommended-card">
                     <div class="recommended-badge">${photographer.specialization}</div>
@@ -359,20 +359,20 @@ function loadRecommendedPhotographers() {
                 </div>
             </div>
         `).join('');
-        
-        //update cards
-        $("#recommendedPhotographers").html(cards);
-    })
-    .catch(error => {
-        console.error("Failed to load recommended photographers:", error);
-        $("#recommendedPhotographers").html(`
+
+            //update cards
+            $("#recommendedPhotographers").html(cards);
+        })
+        .catch(error => {
+            console.error("Failed to load recommended photographers:", error);
+            $("#recommendedPhotographers").html(`
             <div class="col-12">
                 <div class="alert alert-danger">
                     Failed to load recommendations. Please try again later.
                 </div>
             </div>
         `);
-    });
+        });
 }
 
 /**
@@ -389,38 +389,38 @@ function openBookingDetailsModal(bookingId) {
             <p class="mt-2">Loading booking details...</p>
         </div>
     `);
-    
+
     $("#bookingDetailsModal .modal-footer").hide();
-    
+
     // display the modal
     const bookingModal = new bootstrap.Modal(document.getElementById('bookingDetailsModal'));
     bookingModal.show();
-    
+
     fetch(`${CONFIG.API.BASE_URL}/bookings/${bookingId}`, {
         headers: {
             'Authorization': `Bearer ${localStorage.getItem("token")}`,
             'Content-Type': 'application/json'
         }
     })
-    .then(response => {
-        if (!response.ok) {
-            throw new Error('Failed to load booking details');
-        }
-        return response.json();
-    })
-    .then(booking => {
-        updateBookingDetailsModal(booking);
-        $("#bookingDetailsModal .modal-footer").show();
-        setupBookingModalButtons(booking);
-    })
-    .catch(error => {
-        console.error("Failed to load booking details:", error);
-        $("#bookingDetailsModal .modal-body").html(`
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Failed to load booking details');
+            }
+            return response.json();
+        })
+        .then(booking => {
+            updateBookingDetailsModal(booking);
+            $("#bookingDetailsModal .modal-footer").show();
+            setupBookingModalButtons(booking);
+        })
+        .catch(error => {
+            console.error("Failed to load booking details:", error);
+            $("#bookingDetailsModal .modal-body").html(`
             <div class="alert alert-danger">
                 Failed to load booking details. Please try again.
             </div>
         `);
-    });
+        });
 }
 
 /**
@@ -441,9 +441,9 @@ function updateBookingDetailsModal(booking) {
     $("#bookingTime").text(booking.start_time + (booking.end_time ? ` - ${booking.end_time}` : ''));
     $("#bookingLocation").text(booking.location || 'Not specified');
     $("#bookingPrice").text(`€${booking.total_amount}`);
-    
+
     $("#bookingServiceDescription").text(booking.service.description || 'No description available');
-    
+
     // service features
     if (booking.service.features && booking.service.features.length > 0) {
         const featuresList = booking.service.features
@@ -453,10 +453,10 @@ function updateBookingDetailsModal(booking) {
     } else {
         $("#bookingServiceFeatures").html('<p class="text-muted">No features listed</p>');
     }
-    
+
     // notes
     $("#bookingNotes").text(booking.notes || 'No additional notes');
-    
+
     // Enable/disable buttons according to booking status
     if (booking.status === 'completed' || booking.status === 'cancelled') {
         $("#bookingRescheduleBtn, #bookingCancelBtn").prop('disabled', true);
@@ -470,22 +470,22 @@ function updateBookingDetailsModal(booking) {
  * @param {Object} booking - booking data
  */
 function setupBookingModalButtons(booking) {
-    $("#messagePhotographerBtn").off('click').on('click', function() {
+    $("#messagePhotographerBtn").off('click').on('click', function () {
         bootstrap.Modal.getInstance(document.getElementById('bookingDetailsModal')).hide();
-        
+
         $(".nav-link").removeClass("active");
         $('[data-section="messages"]').addClass("active");
         $(".dashboard-section").addClass("d-none");
         $("#messagesSection").removeClass("d-none");
-        
+
         createOrOpenConversation(booking.photographer.id);
     });
-    
-    $("#bookingRescheduleBtn").off('click').on('click', function() {
+
+    $("#bookingRescheduleBtn").off('click').on('click', function () {
         alert(`Reschedule functionality for booking ID ${booking.id} will be implemented soon.`);
     });
-    
-    $("#bookingCancelBtn").off('click').on('click', function() {
+
+    $("#bookingCancelBtn").off('click').on('click', function () {
         if (confirm("Are you sure you want to cancel this booking?")) {
             cancelBooking(booking.id);
         }
@@ -504,24 +504,24 @@ function cancelBooking(bookingId) {
             'Content-Type': 'application/json'
         }
     })
-    .then(response => {
-        if (!response.ok) {
-            throw new Error('Failed to cancel booking');
-        }
-        return response.json();
-    })
-    .then(data => {
-        bootstrap.Modal.getInstance(document.getElementById('bookingDetailsModal')).hide();
-        showNotification("Booking cancelled successfully", "success");
-        loadDashboardData();
-        if ($("#bookingsSection").is(":visible")) {
-            loadBookings();
-        }
-    })
-    .catch(error => {
-        console.error("Failed to cancel booking:", error);
-        showNotification("Failed to cancel booking. Please try again.", "error");
-    });
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Failed to cancel booking');
+            }
+            return response.json();
+        })
+        .then(data => {
+            bootstrap.Modal.getInstance(document.getElementById('bookingDetailsModal')).hide();
+            showNotification("Booking cancelled successfully", "success");
+            loadDashboardData();
+            if ($("#bookingsSection").is(":visible")) {
+                loadBookings();
+            }
+        })
+        .catch(error => {
+            console.error("Failed to cancel booking:", error);
+            showNotification("Failed to cancel booking. Please try again.", "error");
+        });
 }
 
 /**
@@ -539,34 +539,34 @@ function loadBookings() {
             </td>
         </tr>
     `);
-    
+
     // Clear Pagination
     $("#bookingsPagination").empty();
-    
+
     fetch(`${CONFIG.API.BASE_URL}/bookings?page=1&limit=10`, {
         headers: {
             'Authorization': `Bearer ${localStorage.getItem("token")}`,
             'Content-Type': 'application/json'
         }
     })
-    .then(response => {
-        if (!response.ok) {
-            throw new Error('Failed to load bookings');
-        }
-        return response.json();
-    })
-    .then(data => {
-        if (!data.bookings || data.bookings.length === 0) {
-            $("#bookingsTable").html(`
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Failed to load bookings');
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (!data.bookings || data.bookings.length === 0) {
+                $("#bookingsTable").html(`
                 <tr>
                     <td colspan="8" class="text-center">No bookings found</td>
                 </tr>
             `);
-            return;
-        }
-        
-        // generate booking table rows
-        const rows = data.bookings.map(booking => `
+                return;
+            }
+
+            // generate booking table rows
+            const rows = data.bookings.map(booking => `
             <tr>
                 <td>
                     <a href="../../pages/photographer-detail.html?id=${booking.photographer.id}">
@@ -590,26 +590,26 @@ function loadBookings() {
                 </td>
             </tr>
         `).join('');
-        
-        $("#bookingsTable").html(rows);
-        
-        $(".viewBookingBtn").click(function() {
-            const bookingId = $(this).data("id");
-            openBookingDetailsModal(bookingId);
-        });
 
-        updatePagination(data.pagination);
-    })
-    .catch(error => {
-        console.error("Failed to load bookings:", error);
-        $("#bookingsTable").html(`
+            $("#bookingsTable").html(rows);
+
+            $(".viewBookingBtn").click(function () {
+                const bookingId = $(this).data("id");
+                openBookingDetailsModal(bookingId);
+            });
+
+            updatePagination(data.pagination);
+        })
+        .catch(error => {
+            console.error("Failed to load bookings:", error);
+            $("#bookingsTable").html(`
             <tr>
                 <td colspan="8" class="text-center text-danger">
                     Failed to load bookings. Please try again.
                 </td>
             </tr>
         `);
-    });
+        });
 }
 
 /**
@@ -621,17 +621,17 @@ function updatePagination(pagination) {
         $("#bookingsPagination").empty();
         return;
     }
-    
+
     let paginationHtml = `
         <li class="page-item ${pagination.current_page === 1 ? 'disabled' : ''}">
             <a class="page-link" href="#" data-page="${pagination.current_page - 1}">Previous</a>
         </li>
     `;
-    
+
     // calc page range
     const startPage = Math.max(1, pagination.current_page - 2);
     const endPage = Math.min(pagination.total_pages, startPage + 4);
-    
+
     // add page numbers
     for (let i = startPage; i <= endPage; i++) {
         paginationHtml += `
@@ -640,20 +640,20 @@ function updatePagination(pagination) {
             </li>
         `;
     }
-    
+
     paginationHtml += `
         <li class="page-item ${pagination.current_page === pagination.total_pages ? 'disabled' : ''}">
             <a class="page-link" href="#" data-page="${pagination.current_page + 1}">Next</a>
         </li>
     `;
-    
+
     $("#bookingsPagination").html(paginationHtml);
-    $("#bookingsPagination .page-link").click(function(e) {
+    $("#bookingsPagination .page-link").click(function (e) {
         e.preventDefault();
         if ($(this).parent().hasClass('disabled')) {
             return;
         }
-        
+
         const page = $(this).data('page');
         loadBookingsPage(page);
     });
@@ -674,30 +674,30 @@ function loadBookingsPage(page) {
             </td>
         </tr>
     `);
-    
+
     fetch(`${CONFIG.API.BASE_URL}/bookings?page=${page}&limit=10`, {
         headers: {
             'Authorization': `Bearer ${localStorage.getItem("token")}`,
             'Content-Type': 'application/json'
         }
     })
-    .then(response => {
-        if (!response.ok) {
-            throw new Error(`Failed to load page ${page}`);
-        }
-        return response.json();
-    })
-    .then(data => {
-        if (!data.bookings || data.bookings.length === 0) {
-            $("#bookingsTable").html(`
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`Failed to load page ${page}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (!data.bookings || data.bookings.length === 0) {
+                $("#bookingsTable").html(`
                 <tr>
                     <td colspan="8" class="text-center">No bookings found</td>
                 </tr>
             `);
-            return;
-        }
-        
-        const rows = data.bookings.map(booking => `
+                return;
+            }
+
+            const rows = data.bookings.map(booking => `
             <tr>
                 <td>
                     <a href="../../pages/photographer-detail.html?id=${booking.photographer.id}">
@@ -721,25 +721,25 @@ function loadBookingsPage(page) {
                 </td>
             </tr>
         `).join('');
-        
-        $("#bookingsTable").html(rows);
-        $(".viewBookingBtn").click(function() {
-            const bookingId = $(this).data("id");
-            openBookingDetailsModal(bookingId);
-        });
-        
-        updatePagination(data.pagination);
-    })
-    .catch(error => {
-        console.error(`Failed to load page ${page}:`, error);
-        $("#bookingsTable").html(`
+
+            $("#bookingsTable").html(rows);
+            $(".viewBookingBtn").click(function () {
+                const bookingId = $(this).data("id");
+                openBookingDetailsModal(bookingId);
+            });
+
+            updatePagination(data.pagination);
+        })
+        .catch(error => {
+            console.error(`Failed to load page ${page}:`, error);
+            $("#bookingsTable").html(`
             <tr>
                 <td colspan="8" class="text-center text-danger">
                     Failed to load page ${page}. Please try again.
                 </td>
             </tr>
         `);
-    });
+        });
 }
 
 // Todo: other loading functions
