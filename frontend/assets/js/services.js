@@ -26,34 +26,88 @@ function loadServices() {
     $("#servicesLoadingIndicator").removeClass("d-none");
     $("#servicesErrorMessage").addClass("d-none");
     $(".service-item").remove();
+    $(".empty-state").remove();
 
-    // Fetch services from API
-    $.ajax({
-        url: `${CONFIG.API_BASE_URL}/services`,
-        method: "GET",
-        success: function (data) {
-            // Store services data
+    // Use API class method
+    API.getServices()
+        .then(function (data) {
             allServices = data.services || [];
-
-            // Extract and render categories
             extractCategories();
             renderCategoryFilters();
-
-            // Render services
             renderServices(allServices);
-
-            // Hide loading indicator
             $("#servicesLoadingIndicator").addClass("d-none");
-        },
-        error: function (xhr, status, error) {
+        })
+        .catch(function (error) {
             console.error("Error fetching services:", error);
+
+            // Provide more detailed error messages
+            let errorMessage = "Failed to load services. Please try again later.";
+            if (error.status === 404) {
+                errorMessage = "No services found. Please check back later.";
+            } else if (error.status === 500) {
+                errorMessage = "Server error occurred. Our team has been notified.";
+            } else if (error.status === 0) {
+                errorMessage = "Network error. Please check your connection.";
+            }
 
             // Hide loading, show error
             $("#servicesLoadingIndicator").addClass("d-none");
             $("#servicesErrorMessage").removeClass("d-none");
-            $("#errorText").text("Failed to load services. Please try again later.");
-        },
-    });
+            $("#errorText").text(errorMessage);
+        });
+}
+
+/**
+ * Load service details from API
+ */
+function loadServiceDetails(serviceId) {
+    // Show loading, hide error
+    $("#modalLoadingIndicator").removeClass("d-none");
+    $("#modalErrorMessage").addClass("d-none");
+    $(".service-detail-content").remove();
+    $("#serviceModalLabel").text("Loading Service Details...");
+
+    API.getServiceDetails(serviceId)
+        .then(function (data) {
+            $("#modalLoadingIndicator").addClass("d-none");
+            renderServiceDetails(data.service);
+
+            // Update modal title with service name
+            $("#serviceModalLabel").text(data.service.title);
+
+            // Update view photographer button link
+            $("#viewPhotographersBtn").attr(
+                "href",
+                `./photographer-detail.html?id=${data.service.photographer.id}`
+            );
+            $("#viewPhotographersBtn").text(
+                `View ${data.service.photographer.name}'s Profile`
+            );
+        })
+        .catch(function (error) {
+            console.error("Error fetching service details:", error);
+
+            // Provide more detailed error messages
+            let errorMessage = "Failed to load service details. Please try again later.";
+            if (error.status === 404) {
+                errorMessage = "Service not found.";
+            } else if (error.status === 500) {
+                errorMessage = "Server error occurred. Our team has been notified.";
+            } else if (error.status === 0) {
+                errorMessage = "Network error. Please check your connection.";
+            }
+
+            $("#modalLoadingIndicator").addClass("d-none");
+            $("#modalErrorMessage").removeClass("d-none");
+            $("#modalErrorText").text(errorMessage);
+
+            // Reset modal title
+            $("#serviceModalLabel").text("Service Details");
+
+            // Reset view photographer button
+            $("#viewPhotographersBtn").attr("href", "./photographers.html");
+            $("#viewPhotographersBtn").text("Browse Photographers");
+        });
 }
 
 /**
@@ -126,23 +180,36 @@ function renderCategoryFilters() {
 function renderServices(services) {
     const $container = $("#servicesContainer");
 
-    // Remove existing services
+    // Remove existing services and empty states
     $(".service-item").remove();
+    $(".empty-state").remove();
 
     // Show empty state if no services
     if (services.length === 0) {
         const $emptyState = $("<div>", {
-            class: "col-12 text-center empty-state",
+            class: "col-12 text-center empty-state py-5",
         }).html(`
-            <div class="empty-state-icon">
-                <i class="bi bi-camera"></i>
+            <div class="empty-state-icon mb-3">
+                <i class="bi bi-camera fs-1 text-muted"></i>
             </div>
             <h3>No Services Found</h3>
-            <p class="empty-state-text">We couldn't find any services matching your criteria.</p>
+            <p class="empty-state-text text-muted mb-4">We couldn't find any services matching your criteria.</p>
+            <button class="btn btn-outline-primary reset-filters-btn">
+                <i class="bi bi-arrow-counterclockwise me-2"></i>Reset Filters
+            </button>
         `);
+
+        // Add click handler to reset filters button
+        $emptyState.find('.reset-filters-btn').on('click', function () {
+            $("#categoryFilters").find('[data-filter="all"]').click();
+        });
+
         $container.append($emptyState);
         return;
     }
+
+    // Use document fragment to reduce DOM operations
+    const fragment = document.createDocumentFragment();
 
     // Render each service
     $.each(services, function (i, service) {
@@ -156,7 +223,7 @@ function renderServices(services) {
         }
 
         const $serviceItem = $("<div>", {
-            class: "col-md-6 col-lg-4 service-item",
+            class: "col-md-6 col-lg-4 service-item visible",
             "data-category": categoryAttribute,
         }).html(`
             <div class="service-card">
@@ -164,7 +231,7 @@ function renderServices(services) {
                     <img src="${service.image_url ||
             "../assets/images/services/placeholder.jpg"
             }" 
-                         alt="${service.title}" class="img-fluid">
+                            alt="${service.title}" class="img-fluid">
                     <div class="service-badge">${capitalizeFirstLetter(
                 Array.isArray(service.category)
                     ? service.category[0]
@@ -201,14 +268,16 @@ function renderServices(services) {
                         </div>
                     </div>
                     <a href="#" class="btn btn-outline-primary w-100 mt-3 view-service-btn" 
-                       data-bs-toggle="modal" data-bs-target="#serviceModal" 
-                       data-service-id="${service.id}">View Details</a>
+                        data-bs-toggle="modal" data-bs-target="#serviceModal" 
+                        data-service-id="${service.id}">View Details</a>
                 </div>
             </div>
         `);
 
-        $container.append($serviceItem);
+        fragment.appendChild($serviceItem[0]);
     });
+
+    $container.append(fragment);
 }
 
 /**
@@ -216,69 +285,15 @@ function renderServices(services) {
  */
 function filterServices(filter) {
     $(".service-item").each(function () {
-        const categories = $(this).data("category").split(" ");
+        const serviceElement = $(this);
+        const categories = serviceElement.data("category").split(" ");
 
         if (filter === "all" || categories.includes(filter)) {
-            $(this).removeClass("hidden");
-            setTimeout(() => {
-                $(this).show();
-            }, 300);
+            // Use CSS classes for animation
+            serviceElement.removeClass("hidden").addClass("visible");
         } else {
-            $(this).addClass("hidden");
-            setTimeout(() => {
-                $(this).hide();
-            }, 300);
+            serviceElement.removeClass("visible").addClass("hidden");
         }
-    });
-}
-
-/**
- * Load service details from API
- */
-function loadServiceDetails(serviceId) {
-    // Show loading, hide error
-    $("#modalLoadingIndicator").removeClass("d-none");
-    $("#modalErrorMessage").addClass("d-none");
-    $(".service-detail-content").remove();
-
-    // Update modal title to indicate loading
-    $("#serviceModalLabel").text("Loading Service Details...");
-
-    // Fetch service details
-    $.ajax({
-        url: `${CONFIG.API_BASE_URL}/services/${serviceId}`,
-        method: "GET",
-        success: function (data) {
-            $("#modalLoadingIndicator").addClass("d-none");
-            renderServiceDetails(data.service);
-
-            // Update modal title with service name
-            $("#serviceModalLabel").text(data.service.title);
-
-            // Update view photographer button link
-            $("#viewPhotographersBtn").attr(
-                "href",
-                `./photographer-detail.html?id=${data.service.photographer.id}`
-            );
-            $("#viewPhotographersBtn").text(
-                `View ${data.service.photographer.name}'s Profile`
-            );
-        },
-        error: function (xhr, status, error) {
-            console.error("Error fetching service details:", error);
-            $("#modalLoadingIndicator").addClass("d-none");
-            $("#modalErrorMessage").removeClass("d-none");
-            $("#modalErrorText").text(
-                "Failed to load service details. Please try again later."
-            );
-
-            // Reset modal title
-            $("#serviceModalLabel").text("Service Details");
-
-            // Reset view photographer button
-            $("#viewPhotographersBtn").attr("href", "./photographers.html");
-            $("#viewPhotographersBtn").text("Browse Photographers");
-        },
     });
 }
 
@@ -431,3 +446,4 @@ function truncateText(text, maxLength) {
     if (text.length <= maxLength) return text;
     return text.slice(0, maxLength) + "...";
 }
+

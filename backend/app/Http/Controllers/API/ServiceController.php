@@ -89,9 +89,7 @@ class ServiceController extends Controller
         ]);
     }
 
-    /**
-     * Get service details by ID
-     */
+    //Get service details by ID
     public function show($id)
     {
         $service = Service::with(['photographer.user', 'photographer.categories', 'features'])
@@ -130,9 +128,7 @@ class ServiceController extends Controller
         return response()->json(['service' => $formattedService]);
     }
 
-    /**
-     * Get services for a specific photographer
-     */
+   //Get services for a specific photographer
     public function photographerServices($id)
     {
         $photographer = PhotographerProfile::with('user')->findOrFail($id);
@@ -163,9 +159,7 @@ class ServiceController extends Controller
         ]);
     }
 
-    /**
-     * Create a new service (for photographer only)
-     */
+   //Create a new service (for photographer only)
     public function store(Request $request)
     {
         // Check if authenticated user is a photographer
@@ -250,9 +244,7 @@ class ServiceController extends Controller
         ], 201);
     }
 
-    /**
-     * Update an existing service (for photographer only)
-     */
+//Update an existing service (for photographer only)
     public function update(Request $request, $id)
     {
         // Check if authenticated user is a photographer
@@ -341,9 +333,7 @@ class ServiceController extends Controller
         ]);
     }
 
-    /**
-     * Delete a service (for photographer only)
-     */
+//Delete a service (for photographer only)
     public function destroy($id)
     {
         // Check if authenticated user is a photographer
@@ -378,9 +368,7 @@ class ServiceController extends Controller
         ]);
     }
 
-    /**
-     * Helper method to format duration
-     */
+//Helper func
     private function formatDuration($minutes)
     {
         if ($minutes < 60) {

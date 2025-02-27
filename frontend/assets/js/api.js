@@ -1,9 +1,16 @@
 class API {
+    /**
+     * Send a general API request
+     * @param {string} endpoint - API endpoint
+     * @param {Object} options - Request options
+     * @returns {Promise} - Request response Promise
+     */
     static async request(endpoint, options = {}) {
         const defaultOptions = {
             headers: {
                 "Content-Type": "application/json",
-                Authorization: localStorage.getItem("token")
+                "Accept": "application/json", 
+                "Authorization": localStorage.getItem("token")
                     ? `Bearer ${localStorage.getItem("token")}`
                     : "",
             },
@@ -24,43 +31,79 @@ class API {
                 credentials: defaultOptions.credentials,
             });
         } catch (error) {
-            console.error("API request failed:", error);
+            console.error(`API request failed (${endpoint}):`, error);
+            // Enhance error object
+            error.endpoint = endpoint;
+            error.requestOptions = options;
             throw error;
         }
     }
 
-    // auth
+    // Authentication APIs
+    /**
+     * User login
+     * @param {Object} credentials - Login credentials
+     * @returns {Promise} - Login response
+     */
     static async login(credentials) {
         return this.request("/auth/login", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
-                Accept: "application/json",
+                "Accept": "application/json",
             },
             body: JSON.stringify(credentials),
         });
     }
 
+    /**
+     * User registration
+     * @param {Object} userData - User data
+     * @returns {Promise} - Registration response
+     */
     static async register(userData) {
         return this.request("/auth/register", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
-                Accept: "application/json",
+                "Accept": "application/json",
             },
             body: JSON.stringify(userData),
         });
     }
 
+    /**
+     * Verify authentication token
+     * @returns {Promise} - Verification response
+     */
     static async verifyToken() {
         return this.request("/auth/verify");
     }
 
-    // userinfo
+    /**
+     * User logout
+     * @returns {Promise} - Logout response
+     */
+    static async logout() {
+        return this.request("/auth/logout", {
+            method: "POST"
+        });
+    }
+
+    // User Profile APIs
+    /**
+     * Get user profile
+     * @returns {Promise} - User profile
+     */
     static async getUserProfile() {
         return this.request("/user/profile");
     }
 
+    /**
+     * Update user profile
+     * @param {Object} profileData - Profile data
+     * @returns {Promise} - Update response
+     */
     static async updateUserProfile(profileData) {
         return this.request("/user/profile", {
             method: "PUT",
@@ -68,30 +111,230 @@ class API {
         });
     }
 
-    // photographer
-    static async getPhotographers(params = {}) {
-        const queryString = new URLSearchParams(params).toString();
-        return this.request(`/photographers?${queryString}`);
+    /**
+     * Update profile image
+     * @param {FormData} formData - Form data containing the image
+     * @returns {Promise} - Update response
+     */
+    static async updateProfileImage(formData) {
+        return $.ajax({
+            url: `${CONFIG.API.BASE_URL}/user/profile/image`,
+            type: "POST",
+            data: formData,
+            processData: false,
+            contentType: false,
+            headers: {
+                "Authorization": localStorage.getItem("token")
+                    ? `Bearer ${localStorage.getItem("token")}`
+                    : "",
+            }
+        });
     }
 
+    // Photographer APIs
+    /**
+     * Get photographers list
+     * @param {Object} params - Query parameters
+     * @returns {Promise} - Photographers list
+     */
+    static async getPhotographers(params = {}) {
+        const queryString = new URLSearchParams(params).toString();
+        return this.request(`/photographers${queryString ? `?${queryString}` : ''}`);
+    }
+
+    /**
+     * Get photographer profile
+     * @param {number} id - Photographer ID
+     * @returns {Promise} - Photographer profile
+     */
     static async getPhotographerProfile(id) {
         return this.request(`/photographers/${id}`);
     }
 
+    /**
+     * Get photographer services
+     * @param {number} id - Photographer ID
+     * @returns {Promise} - Photographer services
+     */
     static async getPhotographerServices(id) {
         return this.request(`/photographers/${id}/services`);
     }
 
-    //   // booking
-    //   static async createBooking(bookingData) {
-    //     return this.request("/bookings", {
-    //       method: "POST",
-    //       body: JSON.stringify(bookingData),
-    //     });
-    //   }
+    // Services
+    /**
+     * Get all services
+     * @param {Object} params - Filter parameters (category, featured, sort, page, limit, etc.)
+     * @returns {Promise} - Services list
+     */
+    static async getServices(params = {}) {
+        const queryString = new URLSearchParams(params).toString();
+        return this.request(`/services${queryString ? `?${queryString}` : ''}`);
+    }
 
-    //   static async getBookings() {
-    //     return this.request("/bookings");
-    //   }
+    /**
+     * Get service details
+     * @param {number} id - Service ID
+     * @returns {Promise} - Service details
+     */
+    static async getServiceDetails(id) {
+        return this.request(`/services/${id}`);
+    }
+
+    /**
+     * Create new service (Photographer)
+     * @param {Object} serviceData - Service data
+     * @returns {Promise} - Creation response
+     */
+    static async createService(serviceData) {
+        return this.request("/services", {
+            method: "POST",
+            body: JSON.stringify(serviceData),
+        });
+    }
+
+    /**
+     * Update service (Photographer)
+     * @param {number} id - Service ID
+     * @param {Object} serviceData - Update data
+     * @returns {Promise} - Update response
+     */
+    static async updateService(id, serviceData) {
+        return this.request(`/services/${id}`, {
+            method: "PUT",
+            body: JSON.stringify(serviceData),
+        });
+    }
+
+    /**
+     * Delete service (Photographer)
+     * @param {number} id - Service ID
+     * @returns {Promise} - Delete response
+     */
+    static async deleteService(id) {
+        return this.request(`/services/${id}`, {
+            method: "DELETE",
+        });
+    }
+
+    // Booking
+    /**
+     * Create booking
+     * @param {Object} bookingData - Booking data
+     * @returns {Promise} - Creation response
+     */
+    static async createBooking(bookingData) {
+        return this.request("/bookings", {
+            method: "POST",
+            body: JSON.stringify(bookingData),
+        });
+    }
+
+    /**
+     * Get bookings list
+     * @param {Object} params - Query parameters
+     * @returns {Promise} - Bookings list
+     */
+    static async getBookings(params = {}) {
+        const queryString = new URLSearchParams(params).toString();
+        return this.request(`/bookings${queryString ? `?${queryString}` : ''}`);
+    }
+
+    /**
+     * Get booking details
+     * @param {number} id - Booking ID
+     * @returns {Promise} - Booking details
+     */
+    static async getBookingDetails(id) {
+        return this.request(`/bookings/${id}`);
+    }
+
+    /**
+     * Cancel booking
+     * @param {number} id - Booking ID
+     * @returns {Promise} - Cancel response
+     */
+    static async cancelBooking(id) {
+        return this.request(`/bookings/${id}/cancel`, {
+            method: "PUT"
+        });
+    }
+
+    // Review APIs
+    /**
+     * Get reviews list
+     * @param {Object} params - Query parameters
+     * @returns {Promise} - Reviews list
+     */
+    static async getReviews(params = {}) {
+        const queryString = new URLSearchParams(params).toString();
+        return this.request(`/reviews${queryString ? `?${queryString}` : ''}`);
+    }
+
+    /**
+     * Get review details
+     * @param {number} id - Review ID
+     * @returns {Promise} - Review details
+     */
+    static async getReviewDetails(id) {
+        return this.request(`/reviews/${id}`);
+    }
+
+    /**
+     * Reply to review (Photographer)
+     * @param {number} id - Review ID
+     * @param {string} reply - Reply content
+     * @returns {Promise} - Reply response
+     */
+    static async replyToReview(id, reply) {
+        return this.request(`/reviews/${id}/reply`, {
+            method: "POST",
+            body: JSON.stringify({ reply }),
+        });
+    }
+
+    // Message APIs
+    /**
+     * Get conversations list
+     * @returns {Promise} - Conversations list
+     */
+    static async getConversations() {
+        return this.request("/messages/conversations");
+    }
+
+    /**
+     * Get conversation messages
+     * @param {number} id - Conversation ID
+     * @param {Object} params - Query parameters
+     * @returns {Promise} - Conversation messages
+     */
+    static async getConversationMessages(id, params = {}) {
+        const queryString = new URLSearchParams(params).toString();
+        return this.request(`/messages/conversation/${id}${queryString ? `?${queryString}` : ''}`);
+    }
+
+    /**
+     * Send message
+     * @param {Object} messageData - Message data
+     * @returns {Promise} - Send response
+     */
+    static async sendMessage(messageData) {
+        return this.request("/messages/send", {
+            method: "POST",
+            body: JSON.stringify(messageData),
+        });
+    }
+
+    /**
+     * Mark messages as read
+     * @param {number} conversationId - Conversation ID
+     * @returns {Promise} - Mark read response
+     */
+    static async markMessagesAsRead(conversationId) {
+        return this.request("/messages/mark-as-read", {
+            method: "POST",
+            body: JSON.stringify({ conversation_id: conversationId }),
+        });
+    }
 }
-//Due to the complexity and sheer volume of the dashboard's js, they have been moved to separate js files.
+
+// Due to the complexity and size of dashboard JS, they have been moved to separate files.

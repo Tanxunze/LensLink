@@ -17,7 +17,6 @@ const CONFIG = {
     // API configuration
     API: {
         BASE_URL: "http://localhost:8089/api",
-        VERSION: "v1",
     },
 
     // Get current user info from localStorage
