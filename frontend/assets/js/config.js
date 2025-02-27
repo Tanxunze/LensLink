@@ -1,5 +1,4 @@
 const CONFIG = {
-    // Base URL for relative paths based on current location
     BASE_URL: (function () {
         if (window.location.pathname.includes("/pages/auth/")) {
             return "../../";
@@ -38,7 +37,7 @@ const CONFIG = {
     },
 };
 
-// Add jQuery extension for common LensLink functions
+// Add jQuery extension
 (function ($) {
     $.lenslink = {
         // Format currency values
