@@ -1,3 +1,8 @@
+/* Note: Please use the following standard comment style for each js function so that it can be read and modified by other contributors. -Xunze
+* Description: A brief description of the function.
+* Input parameter: @param {type} name - description
+* Output parameter: @returns {type} - description
+*/ 
 $(document).ready(function () {
     loadUserData();
     loadDashboardData();

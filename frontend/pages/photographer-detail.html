@@ -284,7 +284,6 @@
     <script src="../assets/js/api.js"></script>
     <script src="../assets/js/loadComponents.js"></script>
     <script>
-        // Global variables
         let photographerId = null;
         let photographerData = null;
         let selectedRating = 0;
@@ -301,7 +300,6 @@
                 return;
             }
 
-            // Load photographer details
             loadPhotographerDetails();
 
             // Event handlers
@@ -358,16 +356,12 @@
         }
 
         function displayPhotographerInfo(photographer) {
-                // Set page title
                 document.title = `${photographer.name} - LensLink`;
 
-                // 设置banner背景 - 直接使用完整URL
                 $("#photographerBanner").css('background-image', `url('${photographer.banner_image || "../assets/images/default-banner.jpg"}')`);
 
-                // Set name and basic info
                 $("#photographerName").text(photographer.name);
 
-                // 设置个人头像 - 直接使用完整URL
                 $("#photographerImage").attr('src', photographer.profile_image || '../assets/images/default-photographer.jpg');
 
                 $("#photographerSpecialization").text(photographer.specialization);
@@ -389,8 +383,6 @@
                     $("#portfolio").html('<div class="col-12"><div class="alert alert-info">This photographer has not added any portfolio items yet.</div></div>');
                     return;
                 }
-
-                // Generate HTML for each portfolio item - 直接使用完整URL
                 const portfolioHtml = portfolio.map(item => `
         <div class="col-md-4 col-sm-6">
             <div class="portfolio-item" data-id="${item.id}">
@@ -414,7 +406,6 @@
                     const item = portfolio.find(p => p.id === itemId);
 
                     if (item) {
-                        // Populate and show modal - 直接使用完整URL
                         $("#portfolioModalTitle").text(item.title);
                         $("#portfolioModalImage").attr('src', item.image || '../assets/images/default-portfolio.jpg');
                         $("#portfolioModalDescription").text(item.description || '');
@@ -431,7 +422,6 @@
                     return;
                 }
 
-                // Generate HTML for each review - 直接使用完整URL
                 const reviewsHtml = reviews.map(review => `
         <div class="card mb-4">
             <div class="card-body">

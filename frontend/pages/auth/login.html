@@ -101,7 +101,6 @@
                     }
                 })
                 .catch(function (error) {
-                    // Show error message
                     let errorMessage = 'Login failed. Please check your credentials.';
 
                     if (error.errors && error.errors.email) {
@@ -114,7 +113,7 @@
                         .text(errorMessage)
                         .removeClass("d-none");
 
-                    // Log error for debugging
+                    // debug
                     console.error("Login error:", error);
                 })
                 .finally(function () {

@@ -1,5 +1,10 @@
 // Most of the code can be reused, but I haven't figured out how to decouple it. - Xunze
 // All media upload functionality will need to be rewritten at a later date and now only exists locally. - Xunze
+/* Note: Please use the following standard comment style for each js function so that it can be read and modified by other contributors. -Xunze
+* Description: A brief description of the function.
+* Input parameter: @param {type} name - description
+* Output parameter: @returns {type} - description
+*/ 
 $(document).ready(function () {
     loadPhotographerData();
     loadDashboardData();
