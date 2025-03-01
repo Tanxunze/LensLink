@@ -49,11 +49,22 @@ $(document).ready(function () {
 });
 
 function loadPhotographerDetails() {
-    API.getPhotographerProfile(photographerId)
+    return API.getPhotographerProfile(photographerId)
         .then(data => {
             photographerData = data;
+            console.log("API response:", data);//debug
+
             displayPhotographerInfo(data);
-            displayServices(data.services);
+
+            if (data.services && Array.isArray(data.services)) {
+                displayServices(data.services);
+                services = data.services;
+            } else {
+                console.warn("No valid services array in API response");
+                services = []; 
+                $("#servicesList").html('<div class="col-12"><div class="alert alert-warning">Could not load services.</div></div>');
+            }
+
             displayPortfolio(data.portfolio);
             displayReviews(data.reviews);
         })
@@ -86,19 +97,23 @@ function displayPhotographerInfo(photographer) {
     `);
 }
 
-function displayServices(services) {
-    if (!services || services.length === 0) {
+function displayServices(servicesData) {
+    if (!Array.isArray(servicesData)) {
+        console.error("服务数据不是数组:", servicesData);
+        $("#servicesList").html('<div class="col-12"><div class="alert alert-danger">Invalid services data format.</div></div>');
+        return;
+    }
+
+    if (servicesData.length === 0) {
         $("#servicesList").html('<div class="col-12"><div class="alert alert-info">This photographer has not added any services yet.</div></div>');
         return;
     }
 
-    // Store services in global variable for later use
-    this.services = services;
+    services = servicesData; 
+    console.log("Services saved to global variable:", services);
 
-    // Generate HTML for each service
-    const servicesHtml = services.map((service, index) => {
+    const servicesHtml = servicesData.map((service, index) => {
         const isFeatured = service.is_featured;
-
         return `
             <div class="col-md-4 mb-4">
                 <div class="card h-100 ${isFeatured ? 'border-primary' : ''}">
@@ -121,12 +136,12 @@ function displayServices(services) {
         `;
     }).join('');
 
-    // Update the DOM
     $("#servicesList").html(servicesHtml);
 
-    // Add event listeners to the select buttons
     $(".select-service-btn").on("click", function () {
-        const serviceId = $(this).data('id');
+        const serviceId = parseInt($(this).data('id'));
+        console.log("Service button clicked, id:", serviceId);
+        console.log("Current services array:", services);
         openBookingModal(serviceId);
     });
 }
