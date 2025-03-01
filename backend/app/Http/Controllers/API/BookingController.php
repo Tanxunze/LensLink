@@ -52,10 +52,10 @@ class BookingController extends Controller
             'booking_date' => 'required|date|after_or_equal:today',
             'start_time' => 'required',
             'location' => 'required|string|max:255',
-            'notes' => 'nullable|string'
+            'notes' => 'nullable|string',
+            'total_amount' => 'required|numeric'
         ]);
 
-        // Verify service belongs to the photographer
         $service = Service::findOrFail($request->service_id);
         if ($service->photographer_id != $request->photographer_id) {
             return response()->json(['message' => 'Service does not belong to this photographer'], 400);
@@ -69,6 +69,7 @@ class BookingController extends Controller
             'start_time' => $request->start_time,
             'location' => $request->location,
             'notes' => $request->notes,
+            'total_amount' => $request->total_amount,
             'status' => 'pending'
         ]);
 

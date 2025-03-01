@@ -15,13 +15,15 @@ class Booking extends Model
         'location',
         'notes',
         'status',
+        'total_amount',
         'cancelled_by',
         'cancelled_at'
     ];
 
     protected $casts = [
         'booking_date' => 'date',
-        'cancelled_at' => 'datetime'
+        'cancelled_at' => 'datetime',
+        'total_amount' => 'float'
     ];
 
     public function photographer()

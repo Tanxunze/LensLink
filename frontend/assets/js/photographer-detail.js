@@ -424,7 +424,6 @@ function sendMessage() {
 }
 
 function confirmBooking() {
-    // Validate form
     if (!$("#bookingForm")[0].checkValidity()) {
         alert("Please fill all required fields");
         return;
@@ -435,25 +434,31 @@ function confirmBooking() {
         return;
     }
 
-    // Prepare booking data
+    const selectedService = services.find(s => s.id.toString() === selectedServiceId.toString());
+    if (!selectedService) {
+        console.error("Could not find selected service:", selectedServiceId, services);
+        alert("Invalid service selected");
+        return;
+    }
+
     const bookingData = {
         photographer_id: photographerId,
         service_id: selectedServiceId,
         booking_date: $("#bookingDate").val(),
         start_time: $("#bookingTime").val(),
         location: $("#bookingLocation").val(),
-        notes: $("#bookingNotes").val()
+        notes: $("#bookingNotes").val(),
+        total_amount: selectedService.price 
     };
 
-    // Send booking to API
+    console.log("Sending booking data:", bookingData);
+
     API.createBooking(bookingData)
         .then(data => {
-            // Close modal and show success message
             bootstrap.Modal.getInstance(document.getElementById('bookingModal')).hide();
             $.lenslink.showNotification("Booking created successfully!", "success");
 
-            // Redirect to dashboard
-            setTimeout(() => {
+            setTimeout(() => {//redirect to dashboard
                 window.location.href = "../pages/dashboard/customer.html";
             }, 2000);
         })

@@ -5,8 +5,10 @@ namespace App\Http\Controllers\API;
 use App\Http\Controllers\Controller;
 use App\Models\Conversation;
 use App\Models\Message;
+use App\Models\PhotographerProfile;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class MessageController extends Controller
 {
@@ -59,36 +61,83 @@ class MessageController extends Controller
     {
         $request->validate([
             'photographer_id' => 'required|exists:photographer_profiles,id',
-            'subject' => 'required|string|max:255',
+            'subject' => 'nullable|string|max:255',
             'message' => 'required|string'
         ]);
 
         $user = Auth::user();
 
-        // Find or create conversation
-        $conversation = Conversation::firstOrCreate(
-            [
-                'photographer_id' => $request->photographer_id,
-                'customer_id' => $user->id
-            ],
-            ['subject' => $request->subject]
-        );
+        $photographer = PhotographerProfile::findOrFail($request->photographer_id);
+        $photographerUserId = $photographer->user_id;
 
-        // Create message
-        $message = Message::create([
-            'conversation_id' => $conversation->id,
-            'sender_id' => $user->id,
-            'content' => $request->message,
-            'is_read' => false
-        ]);
+        DB::beginTransaction();
 
-        // Update conversation last updated timestamp
-        $conversation->touch();
+        try {
+            $existingConversation = DB::table('conversations')
+                ->join('conversation_participants as p1', 'p1.conversation_id', '=', 'conversations.id')
+                ->join('conversation_participants as p2', 'p2.conversation_id', '=', 'conversations.id')
+                ->where('p1.user_id', $user->id)
+                ->where('p2.user_id', $photographerUserId)
+                ->select('conversations.id')
+                ->first();
 
-        return response()->json([
-            'conversation' => $conversation,
-            'message' => $message
-        ], 201);
+            if ($existingConversation) {
+                $conversationId = $existingConversation->id;
+            } else {
+                $conversationId = DB::table('conversations')->insertGetId([
+                    'subject' => $request->subject ?? 'Conversation with photographer',
+                    'booking_id' => null, // 如果需要关联预订
+                    'created_at' => now(),
+                    'updated_at' => now()
+                ]);
+
+                DB::table('conversation_participants')->insert([
+                    [
+                        'conversation_id' => $conversationId,
+                        'user_id' => $user->id,
+                        'last_read_at' => now(),
+                        'created_at' => now()
+                    ],
+                    [
+                        'conversation_id' => $conversationId,
+                        'user_id' => $photographerUserId,
+                        'last_read_at' => null, // 摄影师尚未阅读
+                        'created_at' => now()
+                    ]
+                ]);
+            }
+
+            $messageData = [
+                'conversation_id' => $conversationId, // 注意：根据实际列名修改这里
+                'sender_id' => $user->id,
+                'message' => $request->message, // 注意：根据实际列名修改这里
+                'is_read' => false,
+                'created_at' => now(),
+                'updated_at' => now()
+            ];
+
+            $messageId = DB::table('messages')->insertGetId($messageData);
+
+            DB::table('conversations')
+                ->where('id', $conversationId)
+                ->update(['updated_at' => now()]);
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'conversation_id' => $conversationId,
+                'message_id' => $messageId
+            ], 201);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to send message: ' . $e->getMessage()
+            ], 500);
+        }
     }
 
     public function markAsRead(Request $request)

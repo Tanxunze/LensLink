@@ -7,19 +7,13 @@ use Illuminate\Database\Eloquent\Model;
 class Conversation extends Model
 {
     protected $fillable = [
-        'photographer_id',
-        'customer_id',
-        'subject'
+        'subject',
+        'booking_id'
     ];
 
-    public function photographer()
+    public function participants()
     {
-        return $this->belongsTo(PhotographerProfile::class, 'photographer_id');
-    }
-
-    public function customer()
-    {
-        return $this->belongsTo(User::class, 'customer_id');
+        return $this->hasMany(ConversationParticipant::class);
     }
 
     public function messages()
@@ -27,8 +21,15 @@ class Conversation extends Model
         return $this->hasMany(Message::class);
     }
 
-    public function latestMessage()
+    public function booking()
     {
-        return $this->hasOne(Message::class)->latest();
+        return $this->belongsTo(Booking::class, 'booking_id');
+    }
+
+    public function users()
+    {
+        return $this->belongsToMany(User::class, 'conversation_participants')
+            ->withPivot('last_read_at')
+            ->withTimestamps();
     }
 }
