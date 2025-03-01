@@ -1,6 +1,9 @@
 <?php
 
 use App\Http\Controllers\API\ServiceController;
+use App\Http\Controllers\API\ReviewController;
+use App\Http\Controllers\API\MessageController;
+use App\Http\Controllers\API\BookingController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\API\AuthController;
 
@@ -21,11 +24,25 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/user/profile', function () {
         return auth()->user();
     });
-});
 
-Route::middleware('auth:sanctum')->group(function () {
     // Service management (for photographers)
     Route::post('/services', [ServiceController::class, 'store']);
     Route::put('/services/{id}', [ServiceController::class, 'update']);
     Route::delete('/services/{id}', [ServiceController::class, 'destroy']);
+
+    // Reviews
+    Route::post('/reviews', [ReviewController::class, 'store']);
+    Route::post('/reviews/{id}/reply', [ReviewController::class, 'reply']);
+
+    // Messages
+    Route::post('/messages', [MessageController::class, 'store']);
+    Route::get('/messages/conversations', [MessageController::class, 'getConversations']);
+    Route::get('/messages/conversation/{id}', [MessageController::class, 'getConversationMessages']);
+    Route::post('/messages/mark-as-read', [MessageController::class, 'markAsRead']);
+
+    // Bookings
+    Route::post('/bookings', [BookingController::class, 'store']);
+    Route::get('/bookings', [BookingController::class, 'index']);
+    Route::get('/bookings/{id}', [BookingController::class, 'show']);
+    Route::put('/bookings/{id}/cancel', [BookingController::class, 'cancel']);
 });

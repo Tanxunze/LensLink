@@ -265,6 +265,19 @@ class API {
     }
 
     // Review APIs
+
+    /**
+     * Create a review
+     * @param {Object} reviewData - Review data
+     * @returns {Promise} - Creation response
+     */
+    static async createReview(reviewData) {
+        return this.request("/reviews", {
+            method: "POST",
+            body: JSON.stringify(reviewData),
+        });
+    }
+
     /**
      * Get reviews list
      * @param {Object} params - Query parameters
@@ -323,7 +336,7 @@ class API {
      * @returns {Promise} - Send response
      */
     static async sendMessage(messageData) {
-        return this.request("/messages/send", {
+        return this.request("/messages", {
             method: "POST",
             body: JSON.stringify(messageData),
         });

@@ -37,6 +37,8 @@ $(document).ready(function () {
     });
 });
 
+// $.lenslink = $.lenslink || {};
+
 function updateAuthLinks() {
     // check if user is logged in and get user role
     const isLoggedIn = localStorage.getItem("token") !== null;
