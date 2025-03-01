@@ -25,7 +25,6 @@ class MessageController extends Controller
 
         $conversations = $query->orderBy('updated_at', 'desc')->get();
 
-        // Add unread count for each conversation
         foreach ($conversations as $conversation) {
             $unreadCount = Message::where('conversation_id', $conversation->id)
                 ->where('sender_id', '!=', $user->id)
@@ -43,7 +42,6 @@ class MessageController extends Controller
         $conversation = Conversation::findOrFail($id);
         $user = Auth::user();
 
-        // Check if user has access to this conversation
         if (($user->role === 'photographer' && $user->photographerProfile->id != $conversation->photographer_id) ||
             ($user->role === 'customer' && $user->id != $conversation->customer_id)) {
             return response()->json(['message' => 'Unauthorized'], 403);
@@ -86,7 +84,7 @@ class MessageController extends Controller
             } else {
                 $conversationId = DB::table('conversations')->insertGetId([
                     'subject' => $request->subject ?? 'Conversation with photographer',
-                    'booking_id' => null, // 如果需要关联预订
+                    'booking_id' => null,
                     'created_at' => now(),
                     'updated_at' => now()
                 ]);
@@ -101,16 +99,16 @@ class MessageController extends Controller
                     [
                         'conversation_id' => $conversationId,
                         'user_id' => $photographerUserId,
-                        'last_read_at' => null, // 摄影师尚未阅读
+                        'last_read_at' => null,
                         'created_at' => now()
                     ]
                 ]);
             }
 
             $messageData = [
-                'conversation_id' => $conversationId, // 注意：根据实际列名修改这里
+                'conversation_id' => $conversationId,
                 'sender_id' => $user->id,
-                'message' => $request->message, // 注意：根据实际列名修改这里
+                'message' => $request->message,
                 'is_read' => false,
                 'created_at' => now(),
                 'updated_at' => now()
@@ -149,13 +147,11 @@ class MessageController extends Controller
         $user = Auth::user();
         $conversation = Conversation::findOrFail($request->conversation_id);
 
-        // Check if user has access to this conversation
         if (($user->role === 'photographer' && $user->photographerProfile->id != $conversation->photographer_id) ||
             ($user->role === 'customer' && $user->id != $conversation->customer_id)) {
             return response()->json(['message' => 'Unauthorized'], 403);
         }
 
-        // Mark all messages from the other user as read
         Message::where('conversation_id', $request->conversation_id)
             ->where('sender_id', '!=', $user->id)
             ->where('is_read', false)
