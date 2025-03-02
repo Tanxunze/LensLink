@@ -181,8 +181,9 @@ class API {
      * @param {number} id - Service ID
      * @returns {Promise} - Service details
      */
-    static async getServiceDetails(id) {
-        return this.request(`/services/${id}`);
+    static async getServices(params = {}) {
+        const queryString = new URLSearchParams(params).toString();
+        return this.request(`/services${queryString ? `?${queryString}` : ''}`);
     }
 
     /**

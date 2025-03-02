@@ -5,6 +5,13 @@
 */ 
 let allServices = [];
 let categories = [];
+let searchParams = {
+    search: '',
+    category: 'all',
+    min_price: '',
+    max_price: '',
+    sort: 'newest'
+};
 
 $(document).ready(function () {
     // Initialize page
@@ -12,6 +19,17 @@ $(document).ready(function () {
 
     // Add event listener for retry button
     $("#retryButton").on("click", loadServices);
+    $("#searchButton").on("click", handleSearch);
+    $("#searchInput").on("keypress", function (e) {
+        if (e.which === 13) handleSearch();
+    });
+
+    $("#advancedSearchToggle").on("click", toggleAdvancedSearch);
+    $("#applyFilters").on("click", applyAdvancedFilters);
+    $("#resetFilters").on("click", resetFilters);
+    $("#sortOptions").on("change", function () {
+        searchParams.sort = $(this).val();
+    });
 
     // Update photographer profile link when opening modal
     $("#serviceModal").on("show.bs.modal", function (event) {
@@ -27,39 +45,72 @@ $(document).ready(function () {
  * Fetch services data from API
  */
 function loadServices() {
-    // Show loading, hide error
     $("#servicesLoadingIndicator").removeClass("d-none");
     $("#servicesErrorMessage").addClass("d-none");
     $(".service-item").remove();
     $(".empty-state").remove();
 
-    // Use API class method
-    API.getServices()
+    const queryParams = new URLSearchParams();
+
+    if (searchParams.search) queryParams.append('search', searchParams.search);
+    if (searchParams.category && searchParams.category !== 'all') {
+        queryParams.append('category', searchParams.category);
+    }
+    if (searchParams.min_price) queryParams.append('min_price', searchParams.min_price);
+    if (searchParams.max_price) queryParams.append('max_price', searchParams.max_price);
+    if (searchParams.sort) queryParams.append('sort', searchParams.sort);
+
+    API.getServices(Object.fromEntries(queryParams))
         .then(function (data) {
             allServices = data.services || [];
             extractCategories();
             renderCategoryFilters();
             renderServices(allServices);
             $("#servicesLoadingIndicator").addClass("d-none");
+
+            if (searchParams.search || searchParams.min_price || searchParams.max_price) {
+                showSearchResultsCount(allServices.length);
+            }
         })
         .catch(function (error) {
             console.error("Error fetching services:", error);
-
-            // Provide more detailed error messages
-            let errorMessage = "Failed to load services. Please try again later.";
-            if (error.status === 404) {
-                errorMessage = "No services found. Please check back later.";
-            } else if (error.status === 500) {
-                errorMessage = "Server error occurred. Our team has been notified.";
-            } else if (error.status === 0) {
-                errorMessage = "Network error. Please check your connection.";
-            }
-
-            // Hide loading, show error
-            $("#servicesLoadingIndicator").addClass("d-none");
-            $("#servicesErrorMessage").removeClass("d-none");
-            $("#errorText").text(errorMessage);
         });
+}
+
+function handleSearch() {
+    searchParams.search = $("#searchInput").val().trim();
+    loadServices();
+}
+
+function toggleAdvancedSearch() {
+    $("#advancedSearchOptions").toggleClass("d-none");
+}
+
+function applyAdvancedFilters() {
+    searchParams.min_price = $("#minPrice").val();
+    searchParams.max_price = $("#maxPrice").val();
+    loadServices();
+    $("#advancedSearchOptions").addClass("d-none");
+}
+
+function resetFilters() {
+    searchParams = {
+        search: '',
+        category: 'all',
+        min_price: '',
+        max_price: '',
+        sort: 'newest'
+    };
+
+    $("#searchInput").val('');
+    $("#minPrice").val('');
+    $("#maxPrice").val('');
+    $("#sortOptions").val('newest');
+    $("#categoryFilters").find('[data-filter="all"]').click();
+    $(".search-results-count").remove();
+
+    loadServices();
+    $("#advancedSearchOptions").addClass("d-none");
 }
 
 /**
@@ -88,6 +139,18 @@ function loadServiceDetails(serviceId) {
             $("#viewPhotographersBtn").text(
                 `View ${data.service.photographer.name}'s Profile`
             );
+
+            // Log service details for debugging
+            console.log("Service details loaded:", data.service);
+
+            // Add book now button with direct link
+            $("#serviceModalFooter").find(".book-now-btn").remove();
+            $("#serviceModalFooter").prepend(`
+                <a href="./photographer-detail.html?id=${data.service.photographer.id}&service=${serviceId}" 
+                   class="btn btn-primary book-now-btn">
+                   <i class="bi bi-calendar-check me-1"></i> Book This Service
+                </a>
+            `);
         })
         .catch(function (error) {
             console.error("Error fetching service details:", error);
@@ -136,6 +199,23 @@ function extractCategories() {
 
     // Convert Set to Array
     categories = Array.from(categorySet);
+}
+
+function showSearchResultsCount(count) {
+    $(".search-results-count").remove();
+
+    const $resultsInfo = $("<div>", {
+        class: "search-results-count text-center mb-4"
+    }).html(`
+        <p class="text-muted">
+            Found <strong>${count}</strong> services matching your search
+            <button class="btn btn-sm btn-link reset-search-btn">Clear search</button>
+        </p>
+    `);
+
+    $resultsInfo.find('.reset-search-btn').on('click', resetFilters);
+
+    $("#servicesContainer").before($resultsInfo);
 }
 
 /**
@@ -287,19 +367,37 @@ function renderServices(services) {
 
 /**
  * Filter services by category
+ * @param {string} filter - The category to filter by, or "all" for all categories
  */
 function filterServices(filter) {
+    // Update the search parameters with the selected category
+    searchParams.category = filter;
+
+    // If we have active search criteria besides category, reload from server
+    if (searchParams.search || searchParams.min_price || searchParams.max_price) {
+        loadServices();
+        return;
+    }
+
+    // Otherwise, filter client-side for better performance
     $(".service-item").each(function () {
         const serviceElement = $(this);
-        const categories = serviceElement.data("category").split(" ");
+        // Get the category from the data attribute (handle as simple string)
+        const categoryAttr = serviceElement.data("category");
 
-        if (filter === "all" || categories.includes(filter)) {
+        // Log for debugging
+        // console.log(`Element: ${serviceElement.find('.service-title').text()}, Category: ${categoryAttr}, Filter: ${filter}`);
+
+        if (filter === "all" || categoryAttr === filter) {
             // Use CSS classes for animation
             serviceElement.removeClass("hidden").addClass("visible");
         } else {
             serviceElement.removeClass("visible").addClass("hidden");
         }
     });
+
+    // Update visibility of "no results" message
+    updateEmptyStateVisibility();
 }
 
 /**
@@ -452,3 +550,32 @@ function truncateText(text, maxLength) {
     return text.slice(0, maxLength) + "...";
 }
 
+function updateEmptyStateVisibility() {
+    // First remove any existing empty state
+    $(".empty-state").remove();
+
+    // Check if any services are visible
+    const visibleServices = $(".service-item.visible").length;
+
+    if (visibleServices === 0) {
+        const $emptyState = $("<div>", {
+            class: "col-12 text-center empty-state py-5",
+        }).html(`
+            <div class="empty-state-icon mb-3">
+                <i class="bi bi-camera fs-1 text-muted"></i>
+            </div>
+            <h3>No Services Found</h3>
+            <p class="empty-state-text text-muted mb-4">We couldn't find any services matching your criteria.</p>
+            <button class="btn btn-outline-primary reset-filters-btn">
+                <i class="bi bi-arrow-counterclockwise me-2"></i>Reset Filters
+            </button>
+        `);
+
+        // Add click handler to reset filters button
+        $emptyState.find('.reset-filters-btn').on('click', function () {
+            resetFilters();
+        });
+
+        $("#servicesContainer").append($emptyState);
+    }
+}
