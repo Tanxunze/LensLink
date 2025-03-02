@@ -15,13 +15,8 @@ class Category extends Model
         'description'
     ];
 
-    public function photographers()
+    public function services()
     {
-        return $this->belongsToMany(PhotographerProfile::class, 'photographer_categories', 'category_id', 'photographer_id');
-    }
-
-    public function portfolioItems()
-    {
-        return $this->hasMany(PortfolioItem::class);
+        return $this->belongsToMany(Service::class, 'service_categories', 'category_id', 'service_id');
     }
 }

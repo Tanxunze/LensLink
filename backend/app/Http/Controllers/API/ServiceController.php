@@ -66,8 +66,8 @@ class ServiceController extends Controller
                 'short_description' => substr($service->description, 0, 100) . (strlen($service->description) > 100 ? '...' : ''),
                 'price_range' => '€' . number_format($service->price, 2),
                 'duration' => $this->formatDuration($service->duration),
-                'category' => $service->photographer->categories->first() ? $service->photographer->categories->first()->slug : null,
-                'image_url' => $service->photographer->banner_image ?? null,
+                'category' => $service->categories->first() ? $service->categories->first()->slug : null,
+                'image_url' => $service->image_url ?? $service->photographer->banner_image ?? null,
                 'photographer' => [
                     'id' => $service->photographer->id,
                     'name' => $service->photographer->user->name,
@@ -103,8 +103,8 @@ class ServiceController extends Controller
             'short_description' => substr($service->description, 0, 100) . (strlen($service->description) > 100 ? '...' : ''),
             'price_range' => '€' . number_format($service->price, 2),
             'duration' => $this->formatDuration($service->duration),
-            'category' => $service->photographer->categories->first() ? $service->photographer->categories->first()->slug : null,
-            'image_url' => $service->photographer->banner_image ?? null,
+            'category' => $service->categories->first() ? $service->categories->first()->slug : null,
+            'image_url' => $service->image_url ?? $service->photographer->banner_image ?? null,
             'photographer' => [
                 'id' => $service->photographer->id,
                 'name' => $service->photographer->user->name,
@@ -144,8 +144,8 @@ class ServiceController extends Controller
                 'short_description' => substr($service->description, 0, 100) . (strlen($service->description) > 100 ? '...' : ''),
                 'price_range' => '€' . number_format($service->price, 2),
                 'duration' => $this->formatDuration($service->duration),
-                'category' => $service->photographer->categories->first() ? $service->photographer->categories->first()->slug : null,
-                'image_url' => $service->photographer->banner_image ?? null,
+                'category' => $service->categories->first() ? $service->categories->first()->slug : null,
+                'image_url' => $service->image_url ?? $service->photographer->banner_image ?? null,
             ];
         });
 
@@ -210,6 +210,16 @@ class ServiceController extends Controller
             'is_featured' => $request->is_featured ?? false,
             'is_active' => true,
         ]);
+
+        if ($request->has('category_id')) {
+            $service->categories()->attach($request->category_id);
+        } else {
+            // 默认使用摄影师的第一个分类
+            $defaultCategory = $photographerProfile->categories->first();
+            if ($defaultCategory) {
+                $service->categories()->attach($defaultCategory->id);
+            }
+        }
 
         // Add features
         $featuresData = [];
@@ -287,6 +297,10 @@ class ServiceController extends Controller
                 'success' => false,
                 'message' => 'Service not found or you do not own this service',
             ], 404);
+        }
+
+        if ($request->has('category_id')) {
+            $service->categories()->sync([$request->category_id]);
         }
 
         // Update service

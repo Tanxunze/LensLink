@@ -14,7 +14,8 @@ class Service extends Model
         'duration',
         'unit',
         'is_featured',
-        'is_active'
+        'is_active',
+        'image_url'
     ];
 
     public function photographer()
@@ -25,5 +26,10 @@ class Service extends Model
     public function features()
     {
         return $this->hasMany(ServiceFeature::class);
+    }
+
+    public function categories()
+    {
+        return $this->belongsToMany(Category::class, 'service_categories', 'service_id', 'category_id');
     }
 }
