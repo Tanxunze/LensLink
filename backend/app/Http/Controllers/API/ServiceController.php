@@ -20,10 +20,8 @@ class ServiceController extends Controller
         if ($request->has('search')) {
             $searchTerm = $request->input('search');
             $query->where(function($q) use ($searchTerm) {
-                // 搜索服务名称和描述
                 $q->where('name', 'LIKE', "%{$searchTerm}%")
                     ->orWhere('description', 'LIKE', "%{$searchTerm}%")
-                    // 搜索摄影师名称
                     ->orWhereHas('photographer.user', function($query) use ($searchTerm) {
                         $query->where('name', 'LIKE', "%{$searchTerm}%");
                     });
