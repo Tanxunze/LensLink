@@ -354,6 +354,33 @@ class API {
             body: JSON.stringify({ conversation_id: conversationId }),
         });
     }
+
+    /**
+ * Get available categories
+ * @returns {Promise} - Categories list
+ */
+    static async getCategories() {
+        return this.request("/categories");
+    }
+
+    /**
+     * Get sorting options for a specific entity
+     * @param {string} entity - Entity type (photographers, services, etc.)
+     * @returns {Promise} - Sort options
+     */
+    static async getSortOptions(entity) {
+        return this.request(`/sort-options/${entity}`);
+    }
+
+    /**
+     * Get rating filter options
+     * @returns {Promise} - Rating options
+     */
+    static async getRatingOptions() {
+        return this.request("/rating-options");
+    }
+
 }
+
 
 // Due to the complexity and size of dashboard JS, they have been moved to separate files.

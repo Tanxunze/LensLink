@@ -28,11 +28,7 @@
             <div class="col-md-4">
                 <select class="form-select" id="categoryFilter">
                     <option value="">All Categories</option>
-                    <option value="wedding">Wedding</option>
-                    <option value="portrait">Portrait</option>
-                    <option value="event">Event</option>
-                    <option value="commercial">Commercial</option>
-                    <option value="landscape">Landscape</option>
+                    <!-- Categories will be loaded dynamically -->
                 </select>
             </div>
         </div>
@@ -56,10 +52,7 @@
                             <label class="form-label">Minimum Rating</label>
                             <select class="form-select" id="ratingFilter">
                                 <option value="">Any Rating</option>
-                                <option value="4.5">4.5+ ⭐</option>
-                                <option value="4">4.0+ ⭐</option>
-                                <option value="3.5">3.5+ ⭐</option>
-                                <option value="3">3.0+ ⭐</option>
+                                <!-- Rating options will be loaded dynamically -->
                             </select>
                         </div>
                     </div>
@@ -67,11 +60,7 @@
                         <div class="mb-3">
                             <label class="form-label">Sort By</label>
                             <select class="form-select" id="sortFilter">
-                                <option value="rating_desc">Highest Rated</option>
-                                <option value="price_asc">Price: Low to High</option>
-                                <option value="price_desc">Price: High to Low</option>
-                                <option value="experience_desc">Most Experienced</option>
-                                <option value="reviews_desc">Most Reviewed</option>
+                                <!-- Sort options will be loaded dynamically -->
                             </select>
                         </div>
                     </div>
@@ -93,12 +82,21 @@
         <!-- Photographers list container -->
         <div class="row" id="photographersList">
             <!-- Content will be loaded dynamically -->
-            <div class="col-12 text-center">
-                <div class="spinner-border" role="status">
-                    <span class="visually-hidden">Loading...</span>
-                </div>
-                <p>Loading photographers...</p>
+        </div>
+
+        <!-- Loading indicator -->
+        <div class="text-center my-4 d-none" id="loadingIndicator">
+            <div class="spinner-border" role="status">
+                <span class="visually-hidden">Loading...</span>
             </div>
+            <p>Loading photographers...</p>
+        </div>
+
+        <!-- Error message -->
+        <div class="alert alert-danger text-center d-none" id="errorMessage">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+            <span id="errorText">Failed to load photographers. Please try again.</span>
+            <button class="btn btn-sm btn-outline-danger ms-3" id="retryBtn">Retry</button>
         </div>
 
         <!-- No results message -->
@@ -145,267 +143,7 @@
     <script src="../assets/js/config.js"></script>
     <script src="../assets/js/api.js"></script>
     <script src="../assets/js/loadComponents.js"></script>
-    <script>
-        // Global variables
-        let currentPage = 1;
-        let totalPages = 1;
-        let currentFilters = {
-            search: '',
-            category: '',
-            min_price: '',
-            max_price: '',
-            min_rating: '',
-            sort_by: 'average_rating',
-            sort_direction: 'desc',
-            per_page: 9
-        };
-
-        $(document).ready(function () {
-            // Load photographers on page load
-            loadPhotographers();
-
-            // Search button click handler
-            $("#searchBtn").on("click", function () {
-                currentFilters.search = $("#searchInput").val();
-                currentPage = 1;
-                loadPhotographers();
-            });
-
-            // Search input enter key handler
-            $("#searchInput").on("keypress", function (e) {
-                if (e.which === 13) {
-                    currentFilters.search = $(this).val();
-                    currentPage = 1;
-                    loadPhotographers();
-                }
-            });
-
-            // Category filter change handler
-            $("#categoryFilter").on("change", function () {
-                currentFilters.category = $(this).val();
-                currentPage = 1;
-                loadPhotographers();
-            });
-
-            // Toggle advanced filters
-            $("#toggleFiltersBtn").on("click", function () {
-                $("#advancedFilters").toggleClass("d-none");
-            });
-
-            // Apply filters button handler
-            $("#applyFiltersBtn").on("click", function () {
-                currentFilters.min_price = $("#minPrice").val();
-                currentFilters.max_price = $("#maxPrice").val();
-                currentFilters.min_rating = $("#ratingFilter").val();
-
-                // Parse sort filter
-                const sortValue = $("#sortFilter").val();
-                if (sortValue) {
-                    const [field, direction] = sortValue.split('_');
-
-                    // Convert field names to match API
-                    let sortBy = 'average_rating';
-                    if (field === 'price') sortBy = 'starting_price';
-                    else if (field === 'experience') sortBy = 'experience_years';
-                    else if (field === 'reviews') sortBy = 'review_count';
-
-                    currentFilters.sort_by = sortBy;
-                    currentFilters.sort_direction = direction;
-                }
-
-                currentPage = 1;
-                loadPhotographers();
-            });
-
-            // Reset filters button handler
-            $("#resetFiltersBtn").on("click", function () {
-                $("#searchInput").val('');
-                $("#categoryFilter").val('');
-                $("#minPrice").val('');
-                $("#maxPrice").val('');
-                $("#ratingFilter").val('');
-                $("#sortFilter").val('rating_desc');
-
-                currentFilters = {
-                    search: '',
-                    category: '',
-                    min_price: '',
-                    max_price: '',
-                    min_rating: '',
-                    sort_by: 'average_rating',
-                    sort_direction: 'desc',
-                    per_page: 9
-                };
-
-                currentPage = 1;
-                loadPhotographers();
-            });
-        });
-
-        function loadPhotographers() {
-            // Show loading state
-            $("#photographersList").html(`
-            <div class="col-12 text-center">
-                <div class="spinner-border" role="status">
-                    <span class="visually-hidden">Loading...</span>
-                </div>
-                <p>Loading photographers...</p>
-            </div>
-        `);
-
-            // Hide no results message
-            $("#noResultsMessage").addClass("d-none");
-
-            // Add current page to filters
-            const params = { ...currentFilters, page: currentPage };
-
-            // Call API to get photographers list
-            API.getPhotographers(params)
-                .then(function (response) {
-                    displayPhotographers(response.data);
-
-                    // Update pagination
-                    if (response.pagination) {
-                        totalPages = response.pagination.last_page;
-                        updatePagination(response.pagination);
-                    }
-                })
-                .catch(function (error) {
-                    $("#photographersList").html(`
-                    <div class="col-12">
-                        <div class="alert alert-danger">
-                            Failed to load photographers. Please try again.
-                        </div>
-                    </div>Featured
-                `);
-                    console.error('Failed to load photographers:', error);
-                });
-        }
-
-        function displayPhotographers(photographers) {
-                // Handle empty results
-                if (!photographers || photographers.length === 0) {
-                    $("#photographersList").empty();
-                    $("#noResultsMessage").removeClass("d-none");
-                    return;
-                }
-
-                // Clear previous results
-                $("#photographersList").empty();
-
-                // Use template to create photographer cards
-                photographers.forEach(photographer => {
-                    const template = document.getElementById('photographerCardTemplate');
-                    const clone = document.importNode(template.content, true);
-
-                    // Set photographer data
-                    const card = clone.querySelector('.card');
-                    const featuredBadge = clone.querySelector('.featured-badge');
-                    const image = clone.querySelector('.photographer-image');
-                    const name = clone.querySelector('.photographer-name');
-                    const specialization = clone.querySelector('.photographer-specialization');
-                    const rating = clone.querySelector('.photographer-rating');
-                    const description = clone.querySelector('.photographer-description');
-                    const price = clone.querySelector('.photographer-price');
-                    const profileBtn = clone.querySelector('.view-profile-btn');
-
-                    if (photographer.featured) {
-                        featuredBadge.classList.remove('d-none');
-                        featuredBadge.innerHTML = '<i class="bi bi-star-fill me-1"></i> Featured';
-                        card.classList.add('border-primary');
-                    }
-
-                    image.src = photographer.image || '../assets/images/default-photographer.jpg';
-                    image.alt = photographer.name;
-
-                    // Set text content
-                    name.textContent = photographer.name;
-                    specialization.textContent = photographer.specialization;
-
-                    // Generate star rating
-                    rating.innerHTML = generateStarRating(photographer.rating);
-                    rating.querySelector('.rating-text').textContent = `(${photographer.rating})`;
-
-                    // Truncate description if too long
-                    description.textContent = truncateText(photographer.description, 100);
-
-                    // Set price
-                    price.textContent = `From €${photographer.startingPrice}/hour`;
-
-                    // Set profile link
-                    profileBtn.href = `photographer-detail.html?id=${photographer.id}`;
-
-                    // Append card to list
-                    $("#photographersList").append(clone);
-                });
-            }
-
-        function generateStarRating(rating) {
-            return $.lenslink.generateStarRating(rating) +
-                '<span class="ms-1 rating-text"></span>';
-        }
-
-        function updatePagination(pagination) {
-            const ul = $("#pagination");
-            ul.empty();
-
-            // Only show pagination if there's more than one page
-            if (pagination.last_page <= 1) {
-                return;
-            }
-
-            // Previous button
-            ul.append(`
-            <li class="page-item ${pagination.current_page === 1 ? 'disabled' : ''}">
-                <a class="page-link" href="#" data-page="${pagination.current_page - 1}">Previous</a>
-            </li>
-        `);
-
-            // Page numbers
-            const startPage = Math.max(1, pagination.current_page - 2);
-            const endPage = Math.min(pagination.last_page, pagination.current_page + 2);
-
-            for (let i = startPage; i <= endPage; i++) {
-                ul.append(`
-                <li class="page-item ${i === pagination.current_page ? 'active' : ''}">
-                    <a class="page-link" href="#" data-page="${i}">${i}</a>
-                </li>
-            `);
-            }
-
-            // Next button
-            ul.append(`
-            <li class="page-item ${pagination.current_page === pagination.last_page ? 'disabled' : ''}">
-                <a class="page-link" href="#" data-page="${pagination.current_page + 1}">Next</a>
-            </li>
-        `);
-
-            // Add click handlers to pagination links
-            $(".page-link").on("click", function (e) {
-                e.preventDefault();
-
-                // Don't do anything if the link is disabled
-                if ($(this).parent().hasClass('disabled')) {
-                    return;
-                }
-
-                currentPage = parseInt($(this).data('page'));
-                loadPhotographers();
-
-                // Scroll to top of results
-                $('html, body').animate({
-                    scrollTop: $("#photographersList").offset().top - 100
-                }, 200);
-            });
-        }
-
-        function truncateText(text, maxLength) {
-            if (!text) return '';
-            return text.length > maxLength ?
-                text.substring(0, maxLength) + '...' :
-                text;
-        }
-    </script>
+    <script src="../assets/js/photographers.js"></script>
 </body>
 
 </html>

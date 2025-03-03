@@ -1,9 +1,11 @@
 <?php
 
+use App\Http\Controllers\API\CategoryController;
 use App\Http\Controllers\API\ServiceController;
 use App\Http\Controllers\API\ReviewController;
 use App\Http\Controllers\API\MessageController;
 use App\Http\Controllers\API\BookingController;
+use App\Http\Controllers\API\UtilityController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\API\AuthController;
 
@@ -15,6 +17,9 @@ Route::get('/photographers/{id}', [App\Http\Controllers\API\PhotographerControll
 Route::get('/services', [ServiceController::class, 'index']);
 Route::get('/services/{id}', [ServiceController::class, 'show']);
 Route::get('/photographers/{id}/services', [ServiceController::class, 'photographerServices']);
+Route::get('/categories', [CategoryController::class, 'index']);
+Route::get('/sort-options/{entity}', [UtilityController::class, 'getSortOptions']);
+Route::get('/rating-options', [UtilityController::class, 'getRatingOptions']);
 
 //private routes
 Route::middleware('auth:sanctum')->group(function () {
