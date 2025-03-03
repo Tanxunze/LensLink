@@ -70,19 +70,19 @@ function loadCategoryOptions() {
         })
         .catch(error => {
             console.error('Failed to load categories:', error);
-            // Fallback to default categories if API fails
-            const defaultCategories = [
-                { slug: 'wedding', name: 'Wedding' },
-                { slug: 'portrait', name: 'Portrait' },
-                { slug: 'event', name: 'Event' },
-                { slug: 'commercial', name: 'Commercial' },
-                { slug: 'landscape', name: 'Landscape' }
-            ];
+            // // debug
+            // const defaultCategories = [
+            //     { slug: 'wedding', name: 'Wedding' },
+            //     { slug: 'portrait', name: 'Portrait' },
+            //     { slug: 'event', name: 'Event' },
+            //     { slug: 'commercial', name: 'Commercial' },
+            //     { slug: 'landscape', name: 'Landscape' }
+            // ];
 
-            const $select = $("#categoryFilter");
-            defaultCategories.forEach(category => {
-                $select.append(`<option value="${category.slug}">${category.name}</option>`);
-            });
+            // const $select = $("#categoryFilter");
+            // defaultCategories.forEach(category => {
+            //     $select.append(`<option value="${category.slug}">${category.name}</option>`);
+            // });
         });
 }
 
@@ -109,22 +109,22 @@ function loadSortOptions() {
         })
         .catch(error => {
             console.error('Failed to load sort options:', error);
-            // Fallback to default options if API fails
-            const defaultOptions = [
-                { value: 'rating_desc', label: 'Highest Rated' },
-                { value: 'price_asc', label: 'Price: Low to High' },
-                { value: 'price_desc', label: 'Price: High to Low' },
-                { value: 'experience_desc', label: 'Most Experienced' },
-                { value: 'reviews_desc', label: 'Most Reviewed' }
-            ];
+            // // Fallback to default options if API fails
+            // const defaultOptions = [
+            //     { value: 'rating_desc', label: 'Highest Rated' },
+            //     { value: 'price_asc', label: 'Price: Low to High' },
+            //     { value: 'price_desc', label: 'Price: High to Low' },
+            //     { value: 'experience_desc', label: 'Most Experienced' },
+            //     { value: 'reviews_desc', label: 'Most Reviewed' }
+            // ];
 
-            const $select = $("#sortFilter");
-            defaultOptions.forEach(option => {
-                $select.append(`<option value="${option.value}">${option.label}</option>`);
-            });
+            // const $select = $("#sortFilter");
+            // defaultOptions.forEach(option => {
+            //     $select.append(`<option value="${option.value}">${option.label}</option>`);
+            // });
 
-            // Select default sort option
-            $select.val('rating_desc');
+            // // Select default sort option
+            // $select.val('rating_desc');
         });
 }
 
@@ -148,18 +148,18 @@ function loadRatingOptions() {
         })
         .catch(error => {
             console.error('Failed to load rating options:', error);
-            // Fallback to default options if API fails
-            const defaultOptions = [
-                { value: '4.5', label: '4.5+ ⭐' },
-                { value: '4', label: '4.0+ ⭐' },
-                { value: '3.5', label: '3.5+ ⭐' },
-                { value: '3', label: '3.0+ ⭐' }
-            ];
+            // // Fallback to default options if API fails
+            // const defaultOptions = [
+            //     { value: '4.5', label: '4.5+ ⭐' },
+            //     { value: '4', label: '4.0+ ⭐' },
+            //     { value: '3.5', label: '3.5+ ⭐' },
+            //     { value: '3', label: '3.0+ ⭐' }
+            // ];
 
-            const $select = $("#ratingFilter");
-            defaultOptions.forEach(option => {
-                $select.append(`<option value="${option.value}">${option.label}</option>`);
-            });
+            // const $select = $("#ratingFilter");
+            // defaultOptions.forEach(option => {
+            //     $select.append(`<option value="${option.value}">${option.label}</option>`);
+            // });
         });
 }
 
