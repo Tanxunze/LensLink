@@ -10,9 +10,7 @@ $(document).ready(function () {
     loadSectionFromUrlHash();
 });
 
-/**
- * Setting up event handling
- */
+// Setting up event handling
 function setupEventHandlers() {
     // Dashboard Refresh Button
     $("#refreshDashboardBtn").click(function () {
@@ -130,9 +128,7 @@ function setupEventHandlers() {
     });
 }
 
-/**
- * loading user data
- */
+// loading user data
 function loadUserData() {
     $("#userName").text("Loading...");
 
@@ -225,9 +221,7 @@ function loadDashboardCounts() {
         });
 }
 
-/**
- * Load Recent Bookings
- */
+// Load Recent Bookings
 function loadRecentBookings() {
     $("#recentBookingsTable").html(`
         <tr>
@@ -305,9 +299,7 @@ function loadRecentBookings() {
         });
 }
 
-/**
- * Loading Recommended Photographers
- */
+// Loading Recommended Photographers
 function loadRecommendedPhotographers() {
     // status
     $("#recommendedPhotographers").html(`

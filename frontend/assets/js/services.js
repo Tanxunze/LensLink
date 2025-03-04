@@ -14,10 +14,8 @@ let searchParams = {
 };
 
 $(document).ready(function () {
-    // Initialize page
     loadServices();
-
-    // Add event listener for retry button
+    // event listener
     $("#retryButton").on("click", loadServices);
     $("#searchButton").on("click", handleSearch);
     $("#searchInput").on("keypress", function (e) {
@@ -31,7 +29,7 @@ $(document).ready(function () {
         searchParams.sort = $(this).val();
     });
 
-    // Update photographer profile link when opening modal
+    // Update photographer profile link 
     $("#serviceModal").on("show.bs.modal", function (event) {
         const button = $(event.relatedTarget);
         const serviceId = button.data("service-id");
@@ -41,9 +39,7 @@ $(document).ready(function () {
     });
 });
 
-/**
- * Fetch services data from API
- */
+// Fetch services data from API
 function loadServices() {
     $("#servicesLoadingIndicator").removeClass("d-none");
     $("#servicesErrorMessage").addClass("d-none");
@@ -113,9 +109,7 @@ function resetFilters() {
     $("#advancedSearchOptions").addClass("d-none");
 }
 
-/**
- * Load service details from API
- */
+// Load service details from API
 function loadServiceDetails(serviceId) {
     // Show loading, hide error
     $("#modalLoadingIndicator").removeClass("d-none");
@@ -127,11 +121,7 @@ function loadServiceDetails(serviceId) {
         .then(function (data) {
             $("#modalLoadingIndicator").addClass("d-none");
             renderServiceDetails(data.service);
-
-            // Update modal title with service name
             $("#serviceModalLabel").text(data.service.title);
-
-            // Update view photographer button link
             $("#viewPhotographersBtn").attr(
                 "href",
                 `./photographer-detail.html?id=${data.service.photographer.id}`
@@ -139,11 +129,8 @@ function loadServiceDetails(serviceId) {
             $("#viewPhotographersBtn").text(
                 `View ${data.service.photographer.name}'s Profile`
             );
-
-            // Log service details for debugging
+            // debug
             console.log("Service details loaded:", data.service);
-
-            // Add book now button with direct link
             $("#serviceModalFooter").find(".book-now-btn").remove();
             $("#serviceModalFooter").prepend(`
                 <a href="./photographer-detail.html?id=${data.service.photographer.id}&service=${serviceId}" 
@@ -153,37 +140,20 @@ function loadServiceDetails(serviceId) {
             `);
         })
         .catch(function (error) {
-            console.error("Error fetching service details:", error);
-
-            // Provide more detailed error messages
-            let errorMessage = "Failed to load service details. Please try again later.";
-            if (error.status === 404) {
-                errorMessage = "Service not found.";
-            } else if (error.status === 500) {
-                errorMessage = "Server error occurred. Our team has been notified.";
-            } else if (error.status === 0) {
-                errorMessage = "Network error. Please check your connection.";
-            }
+            console.error("Error fetching service details:", error);//debug
 
             $("#modalLoadingIndicator").addClass("d-none");
             $("#modalErrorMessage").removeClass("d-none");
             $("#modalErrorText").text(errorMessage);
-
-            // Reset modal title
             $("#serviceModalLabel").text("Service Details");
-
-            // Reset view photographer button
             $("#viewPhotographersBtn").attr("href", "./photographers.html");
             $("#viewPhotographersBtn").text("Browse Photographers");
         });
 }
 
-/**
- * Extract unique categories from services
- */
+// Extract unique categories from services
 function extractCategories() {
     const categorySet = new Set(["all"]);
-
     // Extract categories from services
     $.each(allServices, function (i, service) {
         if (service.category) {
@@ -196,8 +166,6 @@ function extractCategories() {
             }
         }
     });
-
-    // Convert Set to Array
     categories = Array.from(categorySet);
 }
 
@@ -218,30 +186,20 @@ function showSearchResultsCount(count) {
     $("#servicesContainer").before($resultsInfo);
 }
 
-/**
- * Render category filter buttons
- */
+// Render category filter buttons
 function renderCategoryFilters() {
     const $categoryFilters = $("#categoryFilters");
-
-    // Remove loading spinner
     $("#categoryLoadingSpinner").remove();
-
-    // Clear existing filter buttons except 'All Services'
     $categoryFilters.find('.filter-btn:not([data-filter="all"])').remove();
-
-    // Render category buttons
     $.each(categories, function (i, category) {
         if (category === "all") return; // Skip 'all'
-
-        // Create button
         const $button = $("<button>", {
             class: "filter-btn",
             "data-filter": category,
             text: capitalizeFirstLetter(category),
         });
 
-        // Add click handler
+        // click handler
         $button.on("click", function () {
             $categoryFilters.find(".filter-btn").removeClass("active");
             $(this).addClass("active");
@@ -251,7 +209,6 @@ function renderCategoryFilters() {
         $categoryFilters.append($button);
     });
 
-    // Add event listener to 'All Services' button
     $categoryFilters.find('[data-filter="all"]').on("click", function () {
         $categoryFilters.find(".filter-btn").removeClass("active");
         $(this).addClass("active");
@@ -259,13 +216,10 @@ function renderCategoryFilters() {
     });
 }
 
-/**
- * Render services in the container
- */
+// Render services in the container
 function renderServices(services) {
     const $container = $("#servicesContainer");
 
-    // Remove existing services and empty states
     $(".service-item").remove();
     $(".empty-state").remove();
 
@@ -284,7 +238,6 @@ function renderServices(services) {
             </button>
         `);
 
-        // Add click handler to reset filters button
         $emptyState.find('.reset-filters-btn').on('click', function () {
             $("#categoryFilters").find('[data-filter="all"]').click();
         });
@@ -293,10 +246,9 @@ function renderServices(services) {
         return;
     }
 
-    // Use document fragment to reduce DOM operations
     const fragment = document.createDocumentFragment();
 
-    // Render each service
+    // Render service
     $.each(services, function (i, service) {
         let categoryAttribute = "";
         if (typeof service.category === "string") {
@@ -370,46 +322,34 @@ function renderServices(services) {
  * @param {string} filter - The category to filter by, or "all" for all categories
  */
 function filterServices(filter) {
-    // Update the search parameters with the selected category
     searchParams.category = filter;
-
-    // If we have active search criteria besides category, reload from server
     if (searchParams.search || searchParams.min_price || searchParams.max_price) {
         loadServices();
         return;
     }
 
-    // Otherwise, filter client-side for better performance
     $(".service-item").each(function () {
         const serviceElement = $(this);
-        // Get the category from the data attribute (handle as simple string)
         const categoryAttr = serviceElement.data("category");
 
-        // Log for debugging
+        // debug
         // console.log(`Element: ${serviceElement.find('.service-title').text()}, Category: ${categoryAttr}, Filter: ${filter}`);
 
         if (filter === "all" || categoryAttr === filter) {
-            // Use CSS classes for animation
             serviceElement.removeClass("hidden").addClass("visible");
         } else {
             serviceElement.removeClass("visible").addClass("hidden");
         }
     });
-
-    // Update visibility of "no results" message
     updateEmptyStateVisibility();
 }
 
-/**
- * Render service details in modal
- */
+// Render service details in modal
 function renderServiceDetails(service) {
-    // Create content element
     const $content = $("<div>", {
         class: "service-detail-content",
     });
 
-    // Build HTML for service details
     let html = `
         <div class="service-detail-header">
             <div class="service-detail-image">
@@ -527,34 +467,25 @@ function renderServiceDetails(service) {
             </a>
         </div>
     `;
-
-    // Set HTML content and append to modal
     $content.html(html);
     $("#serviceModalBody").append($content);
 }
 
-/**
- * Helper: Capitalize first letter
- */
+// Helper functions
 function capitalizeFirstLetter(string) {
     if (!string) return "";
     return string.charAt(0).toUpperCase() + string.slice(1);
 }
 
-/**
- * Helper: Truncate text
- */
 function truncateText(text, maxLength) {
     if (!text) return "";
     if (text.length <= maxLength) return text;
     return text.slice(0, maxLength) + "...";
 }
 
-function updateEmptyStateVisibility() {
-    // First remove any existing empty state
-    $(".empty-state").remove();
 
-    // Check if any services are visible
+function updateEmptyStateVisibility() {
+    $(".empty-state").remove();
     const visibleServices = $(".service-item.visible").length;
 
     if (visibleServices === 0) {
@@ -571,7 +502,6 @@ function updateEmptyStateVisibility() {
             </button>
         `);
 
-        // Add click handler to reset filters button
         $emptyState.find('.reset-filters-btn').on('click', function () {
             resetFilters();
         });

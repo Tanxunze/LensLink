@@ -11,25 +11,17 @@ let currentFilters = {
     per_page: 9
 };
 
-// Available options for filters (will be loaded from API)
 let categoryOptions = [];
 let sortOptions = [];
 let ratingOptions = [];
 
-/**
- * Initialize the page when DOM is ready
- */
+// Initialize the page when DOM is ready
 $(document).ready(function () {
     // Show loading indicator
     showLoading();
-
-    // Initialize filter options from API
     initializeFilterOptions()
         .then(() => {
-            // Load photographers after filter options are loaded
             loadPhotographers();
-
-            // Initialize event handlers
             setupEventHandlers();
         })
         .catch(error => {
@@ -95,16 +87,10 @@ function loadSortOptions() {
         .then(options => {
             sortOptions = options;
             const $select = $("#sortFilter");
-
-            // Empty dropdown
             $select.empty();
-
-            // Add sort options to dropdown
             options.forEach(option => {
                 $select.append(`<option value="${option.value}">${option.label}</option>`);
             });
-
-            // Select default sort option
             $select.val('rating_desc');
         })
         .catch(error => {
@@ -137,18 +123,14 @@ function loadRatingOptions() {
         .then(options => {
             ratingOptions = options;
             const $select = $("#ratingFilter");
-
-            // Empty dropdown except the first "Any Rating" option
             $select.find('option:not(:first)').remove();
-
-            // Add rating options to dropdown
             options.forEach(option => {
                 $select.append(`<option value="${option.value}">${option.label}</option>`);
             });
         })
         .catch(error => {
             console.error('Failed to load rating options:', error);
-            // // Fallback to default options if API fails
+            // debug
             // const defaultOptions = [
             //     { value: '4.5', label: '4.5+ ⭐' },
             //     { value: '4', label: '4.0+ ⭐' },
@@ -163,9 +145,7 @@ function loadRatingOptions() {
         });
 }
 
-/**
- * Setup all event handlers for the page
- */
+// Setup all event handlers for the page
 function setupEventHandlers() {
     // Search button click handler
     $("#searchBtn").on("click", function () {
@@ -200,13 +180,9 @@ function setupEventHandlers() {
         currentFilters.min_price = $("#minPrice").val();
         currentFilters.max_price = $("#maxPrice").val();
         currentFilters.min_rating = $("#ratingFilter").val();
-
-        // Parse sort filter
         const sortValue = $("#sortFilter").val();
         if (sortValue) {
             const [field, direction] = sortValue.split('_');
-
-            // Convert field names to match API
             let sortBy = 'average_rating';
             if (field === 'price') sortBy = 'starting_price';
             else if (field === 'experience') sortBy = 'experience_years';
@@ -220,7 +196,7 @@ function setupEventHandlers() {
         loadPhotographers();
     });
 
-    // Reset filters button handler
+    // Reset filters
     $("#resetFiltersBtn").on("click", function () {
         resetFilters();
     });
@@ -231,9 +207,7 @@ function setupEventHandlers() {
     });
 }
 
-/**
- * Reset all filters to default values
- */
+// Reset all filters to default values
 function resetFilters() {
     $("#searchInput").val('');
     $("#categoryFilter").val('');
@@ -257,28 +231,16 @@ function resetFilters() {
     loadPhotographers();
 }
 
-/**
- * Load photographers from API based on current filters
- */
+// Load photographers from API based on current filters
 function loadPhotographers() {
-    // Show loading state
     showLoading();
-
-    // Hide messages
     hideMessages();
-
-    // Add current page to filters
     const params = { ...currentFilters, page: currentPage };
-
-    // Call API to get photographers list
     API.getPhotographers(params)
         .then(function (response) {
             hideLoading();
-
-            // Display photographers
             displayPhotographers(response.data);
 
-            // Update pagination
             if (response.pagination) {
                 totalPages = response.pagination.last_page;
                 updatePagination(response.pagination);
@@ -303,10 +265,7 @@ function displayPhotographers(photographers) {
         return;
     }
 
-    // Clear previous results
     $("#photographersList").empty();
-
-    // Use template to create photographer cards
     photographers.forEach(photographer => {
         const template = document.getElementById('photographerCardTemplate');
         const clone = document.importNode(template.content, true);
@@ -339,16 +298,12 @@ function displayPhotographers(photographers) {
         rating.innerHTML = generateStarRating(photographer.rating);
         rating.querySelector('.rating-text').textContent = `(${photographer.rating})`;
 
-        // Truncate description if too long
         description.textContent = truncateText(photographer.description, 100);
 
-        // Set price
         price.textContent = `From €${photographer.startingPrice}/hour`;
 
-        // Set profile link
         profileBtn.href = `photographer-detail.html?id=${photographer.id}`;
 
-        // Append card to list
         $("#photographersList").append(clone);
     });
 }
@@ -371,12 +326,11 @@ function updatePagination(pagination) {
     const ul = $("#pagination");
     ul.empty();
 
-    // Only show pagination if there's more than one page
+    // For optimization
     if (pagination.last_page <= 1) {
         return;
     }
 
-    // Previous button
     ul.append(`
         <li class="page-item ${pagination.current_page === 1 ? 'disabled' : ''}">
             <a class="page-link" href="#" data-page="${pagination.current_page - 1}">Previous</a>
@@ -402,11 +356,10 @@ function updatePagination(pagination) {
         </li>
     `);
 
-    // Add click handlers to pagination links
+    // click handlers
     $(".page-link").on("click", function (e) {
         e.preventDefault();
 
-        // Don't do anything if the link is disabled
         if ($(this).parent().hasClass('disabled')) {
             return;
         }
@@ -434,17 +387,13 @@ function truncateText(text, maxLength) {
         text;
 }
 
-/**
- * Show loading indicator
- */
+// Show loading indicator
 function showLoading() {
     $("#loadingIndicator").removeClass("d-none");
     $("#photographersList").html(''); // Clear current results
 }
 
-/**
- * Hide loading indicator
- */
+// Hide loading indicator
 function hideLoading() {
     $("#loadingIndicator").addClass("d-none");
 }

@@ -19,7 +19,7 @@ const CONFIG = {
         BASE_URL: "http://localhost:8089/api",
     },
 
-    // Get current user info from localStorage
+    // user info from localStorage
     getCurrentUser: function () {
         return {
             isLoggedIn: localStorage.getItem("token") !== null,
@@ -36,7 +36,7 @@ const CONFIG = {
     },
 };
 
-// Add jQuery extension
+// jQuery extension
 (function ($) {
     $.lenslink = {
         // Format currency values
@@ -98,7 +98,7 @@ const CONFIG = {
                 );
             }
 
-            // Create a unique ID for this toast
+            // Create a unique ID 
             const toastId = "toast-" + Date.now();
 
             // Get appropriate color class
@@ -116,11 +116,8 @@ const CONFIG = {
                     </div>
                 </div>
             `;
-
-            // Append toast to container
             $("#notification-container").append(toastHtml);
-
-            // Initialize and show toast
+            // Initialize and show 
             const toastElement = new bootstrap.Toast(
                 document.getElementById(toastId),
                 {
@@ -128,10 +125,7 @@ const CONFIG = {
                     delay: 5000,
                 }
             );
-
             toastElement.show();
-
-            // Remove toast after it's hidden
             $(`#${toastId}`).on("hidden.bs.toast", function () {
                 $(this).remove();
             });

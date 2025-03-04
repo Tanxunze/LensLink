@@ -152,7 +152,6 @@ function displayPortfolio(portfolio) {
         return;
     }
 
-    // Generate HTML for each portfolio item
     const portfolioHtml = portfolio.map(item => {
         const imageUrl = item.image.startsWith('http') ?
             item.image :
@@ -172,8 +171,6 @@ function displayPortfolio(portfolio) {
             </div>
         `;
     }).join('');
-
-    // Update the DOM
     $("#portfolio").html(portfolioHtml);
 
     // Add click event to open portfolio item in lightbox
@@ -202,7 +199,6 @@ function displayReviews(reviews) {
         return;
     }
 
-    // Generate HTML for each review
     const reviewsHtml = reviews.map(review => `
         <div class="card mb-4">
             <div class="card-body">
@@ -227,8 +223,6 @@ function displayReviews(reviews) {
             </div>
         </div>
     `).join('');
-
-    // Update the DOM
     $("#reviewsList").html(reviewsHtml);
 }
 
@@ -261,7 +255,6 @@ function openBookingModal(serviceId) {
         updateBookingSummary();
     }
 
-    // Show modal
     const bookingModal = new bootstrap.Modal(document.getElementById('bookingModal'));
     bookingModal.show();
 }
@@ -274,10 +267,8 @@ function openContactModal() {
         return;
     }
 
-    // Reset form
     $("#contactForm")[0].reset();
 
-    // Show modal
     const contactModal = new bootstrap.Modal(document.getElementById('contactModal'));
     contactModal.show();
 }
@@ -296,12 +287,10 @@ function openReviewModal() {
         return;
     }
 
-    // Reset form
     $("#reviewForm")[0].reset();
     selectedRating = 0;
     resetStars();
 
-    // Show modal
     const reviewModal = new bootstrap.Modal(document.getElementById('reviewModal'));
     reviewModal.show();
 }
@@ -370,7 +359,6 @@ function submitReview() {
         return;
     }
 
-    // Prepare review data
     const reviewData = {
         photographer_id: photographerId,
         rating: selectedRating,
@@ -380,7 +368,6 @@ function submitReview() {
         service_date: $("#serviceDate").val()
     };
 
-    // Send review to API
     API.createReview(reviewData)
         .then(data => {
             // Close modal and show success message
@@ -403,14 +390,12 @@ function sendMessage() {
         return;
     }
 
-    // Prepare message data
     const messageData = {
         photographer_id: photographerId,
         subject: $("#contactSubject").val(),
         message: $("#contactMessage").val()
     };
 
-    // Send message to API
     API.sendMessage(messageData)
         .then(data => {
             // Close modal and show success message
