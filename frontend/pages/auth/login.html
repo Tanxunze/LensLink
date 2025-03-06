@@ -82,7 +82,8 @@
             // Get form values
             const credentials = {
                 email: $("#email").val(),
-                password: $("#password").val()
+                password: $("#password").val(),
+                remember: $("#rememberMe").is(":checked") 
             };
 
             // Call login API
@@ -92,6 +93,11 @@
                         // Store token and user role
                         localStorage.setItem("token", response.token);
                         localStorage.setItem("userRole", response.user.role);
+
+                        if (response.remember) {
+                            localStorage.setItem("remember_login", "true");
+                            localStorage.setItem("token_expires_at", response.expires_at);
+                        }
 
                         // Redirect based on user role
                         const redirectPath = response.user.role === "photographer"
@@ -117,7 +123,6 @@
                     console.error("Login error:", error);
                 })
                 .finally(function () {
-                    // Reset button state
                     submitButton.html(originalText);
                     submitButton.prop('disabled', false);
                 });

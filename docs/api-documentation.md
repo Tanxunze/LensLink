@@ -110,7 +110,7 @@ POST /reviews/{id}/reply
 }
 ```
 
-## Availability Management Endpoints
+##  Endpoints
 
 ### Get Working Hours
 
