@@ -52,4 +52,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/bookings', [BookingController::class, 'index']);
     Route::get('/bookings/{id}', [BookingController::class, 'show']);
     Route::put('/bookings/{id}/cancel', [BookingController::class, 'cancel']);
+
+    // Photographer dashboard
+    Route::post('/photographer/dashboard', [App\Http\Controllers\API\PhotographerProfileController::class, 'index']);
 });
