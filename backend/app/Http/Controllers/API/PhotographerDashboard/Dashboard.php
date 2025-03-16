@@ -3,6 +3,11 @@
 namespace App\Http\Controllers\API\PhotographerDashboard;
 
 use App\Http\Controllers\Controller;
+use App\Models\PhotographerProfile;
+use App\Models\Review;
+use App\Models\Service;
+use App\Models\User;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use App\Models\Booking;
 
@@ -12,21 +17,28 @@ class Dashboard extends Controller
     {
         $photographer_id = $request->input('photographer_id');
         $works_return=$this->getWorkAmount($photographer_id);
+        $avg_rating=$this->getReviewAverage($photographer_id);
+        $recent_bookings=$this->getRecentBookings($photographer_id);
         $data=[
-            'message'=>'success',
-            'work_amount'=>$works_return['work_amount'],
-            'works'=>$works_return['works']
+            'success'=>true,
+            'data'=>[
+                'pendingOrdersCount'=>$works_return['works']['pending'],
+                'activeOrdersCount'=>$works_return['works']['confirmed'],
+                'totalEarnings'=>$works_return['works']['earnings'],// TODO: Total earnings -> Monthly earnings
+                'recentBookings'=>$recent_bookings,
+                'overallRating'=>$avg_rating
+    ]
         ];
         return response()->json($data,200);
     }
     //
-    private function getWorkAmount(int $photographer_id)
+    private function getWorkAmount(int $photographer_id): array
     {
         $works=Booking::where('photographer_id',$photographer_id)->get();
         $count=0;
         $pending_work=0;
         $confirmed_work=0;
-        $completed_work=0;
+        $earnings=0;
         foreach($works as $work)
         {
             if($work->photographer_id==$photographer_id)
@@ -34,7 +46,7 @@ class Dashboard extends Controller
                 switch($work->status)
                 {
                     case 'confirmed': $confirmed_work++; break;
-                    case 'completed': $completed_work++; break;
+                    case 'completed': $earnings+=Service::where('id',$work->service_id)->value('price'); break;
                     case 'pending': $pending_work++; break;
                     default:
                         break;
@@ -47,8 +59,39 @@ class Dashboard extends Controller
             'works'=>[
                 'pending'=>$pending_work,
                 'confirmed'=>$confirmed_work,
-                'completed'=>$completed_work
+                'earnings'=>$earnings
             ]
         ];
+    }
+
+    private function getReviewAverage(int $photographer_id): float
+    {
+        return PhotographerProfile::where('id',$photographer_id)->value('average_rating');
+    }
+
+    private function getRecentBookings(int $photographer_id): array
+    {
+        $bookings=Booking::where('booking_date','>=',Carbon::now()->subDays(30))
+            ->where('photographer_id',$photographer_id)
+            ->get();
+        $results=[];
+        foreach($bookings as $booking)
+        {
+            $return_booking=[];
+            $return_booking['id']=$booking->id;
+            $return_booking['client']=[
+                'id'=>$booking->customer_id,
+                'name'=>User::where('id',$booking->customer_id)->value('name'),
+            ];
+            $return_booking['service']=[
+                'id'=>$booking->service_id,
+                'name'=>Service::where('id',$booking->service_id)->value('name'),
+            ];
+            $return_booking['booking_date']=$booking->booking_date;
+            $return_booking['status']=$booking->status;
+            $return_booking['total_amount']=$booking->total_amount;
+            $results[]=$return_booking;
+        }
+        return $results;
     }
 }
