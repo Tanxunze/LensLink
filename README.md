@@ -19,71 +19,95 @@ A platform connecting photographers with clients, built for CS4116 project.
 
 ```
 LensLink/
-├── backend/                           # Laravel backend
+├── frontend/
+│   ├── assets/
+│   │   ├── css/
+│   │   │   ├── customer-dashboard.css
+│   │   │   ├── dashboard-common.css
+│   │   │   ├── photographer-dashboard.css
+│   │   │   ├── photographer-detail.css
+│   │   │   ├── photographers.css
+│   │   │   ├── services.css
+│   │   │   └── style.css
+│   │   ├── images/
+│   │   │   ├── hero-image.jpg
+│   │   │   ├── logo.jpg
+│   │   │   ├── logo.png
+│   │   │   ├── logo.svg
+│   │   │   └── service-hero.jpg
+│   │   └── js/
+│   │       ├── api.js
+│   │       ├── config.js
+│   │       ├── customer-dashboard.js
+│   │       ├── dashboard-common.js
+│   │       ├── loadComponents.js
+│   │       ├── photographer-dashboard.js
+│   │       ├── photographer-detail.js
+│   │       ├── photographers.js
+│   │       └── services.js
+│   ├── components/
+│   │   ├── footer.html
+│   │   └── header.html
+│   └── pages/
+│       ├── auth/
+│       │   ├── login.html
+│       │   └── register.html
+│       ├── dashboard/
+│       │   ├── customer.html
+│       │   └── photographer.html
+│       ├── index.html
+│       ├── photographers.html
+│       ├── photographer-detail.html
+│       └── services.html
+├── backend/
+│   ├── .idea/
 │   ├── app/
 │   │   ├── Http/
 │   │   │   ├── Controllers/
-│   │   │   │   ├── API/               # API controllers
+│   │   │   │   ├── API/
 │   │   │   │   │   ├── AuthController.php
+│   │   │   │   │   ├── BookingController.php
+│   │   │   │   │   ├── ConversationController.php
 │   │   │   │   │   ├── PhotographerController.php
-│   │   │   │   │   └── ...
-│   │   │   ├── Middleware/
-│   │   │   └── ...
-│   │   ├── Models/                    # Data models
-│   │   │   ├── User.php
-│   │   │   ├── PhotographerProfile.php
+│   │   │   │   │   ├── ReviewController.php
+│   │   │   │   │   ├── ServiceController.php
+│   │   │   │   │   └── UserController.php
+│   │   │   │   └── Controller.php
+│   │   │   └── Middleware/
+│   │   ├── Models/
+│   │   │   ├── Booking.php
 │   │   │   ├── Category.php
+│   │   │   ├── Conversation.php
+│   │   │   ├── ConversationParticipant.php
+│   │   │   ├── Message.php
+│   │   │   ├── PhotographerProfile.php
 │   │   │   ├── PortfolioItem.php
+│   │   │   ├── Review.php
 │   │   │   ├── Service.php
+│   │   │   ├── ServiceCategory.php
 │   │   │   ├── ServiceFeature.php
-│   │   │   └── ...
-│   │   └── ...
-│   ├── config/                        # Configuration files
+│   │   │   └── User.php
+│   │   └── Providers/
+│   ├── bootstrap/
+│   ├── config/
 │   ├── database/
-│   │   ├── migrations/                # Database migrations
-│   │   └── ...
-│   ├── public/                        # Public assets
-│   │   └── storage/                   # Symlink to storage/app/public
+│   │   ├── migrations/
+│   │   └── seeders/
+│   ├── public/
 │   ├── resources/
 │   ├── routes/
-│   │   ├── api.php                    # API routes
-│   │   └── ...
+│   │   ├── api.php
+│   │   ├── console.php
+│   │   └── web.php
 │   ├── storage/
-│   │   └── app/
-│   │       └── public/                # Storage for uploaded files
-│   └── ...
-│
-├── frontend/                          # Frontend
-│   ├── index.html                     # Home page
-│   ├── assets/                        # Static assets
-│   │   ├── css/                       # Stylesheets
-│   │   │   ├── style.css
-│   │   │   ├── dashboard-common.css
-│   │   │   ├── customer-dashboard.css
-│   │   │   └── photographer-dashboard.css
-│   │   ├── js/                        # JavaScript files
-│   │   │   ├── api.js                 # API calls wrapper
-│   │   │   ├── config.js              # Configuration
-│   │   │   ├── customer-dashboard.js
-│   │   │   ├── dashboard-common.js
-│   │   │   ├── photographer-dashboard.js
-│   │   │   └── loadComponents.js      # Component loader
-│   │   └── images/                    # Image resources
-│   │       ├── default-avatar.jpg
-│   │       ├── default-photographer.jpg
-│   │       └── placeholder.jpg
-│   ├── components/                    # Reusable HTML components
-│   │   ├── header.html
-│   │   └── footer.html
-│   └── pages/                         # HTML pages
-│       ├── photographers.html         # Photographers listing
-│       ├── photographer-detail.html   # Photographer details
-│       ├── auth/                      # Authentication pages
-│       │   ├── login.html
-│       │   └── register.html
-│       └── dashboard/                 # Dashboard pages
-│           ├── customer.html          # Customer dashboard
-│           └── photographer.html      # Photographer dashboard
+│   ├── tests/
+│   ├── vendor/
+│   ├── .editorconfig
+│   ├── .env
+│   ├── composer.json
+│   └── artisan
+├── README.md
+└── .gitignore
 ```
 
 ## Development Guidelines

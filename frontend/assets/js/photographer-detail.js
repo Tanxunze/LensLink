@@ -99,7 +99,7 @@ function displayPhotographerInfo(photographer) {
 
 function displayServices(servicesData) {
     if (!Array.isArray(servicesData)) {
-        console.error("服务数据不是数组:", servicesData);
+        console.error(servicesData);
         $("#servicesList").html('<div class="col-12"><div class="alert alert-danger">Invalid services data format.</div></div>');
         return;
     }

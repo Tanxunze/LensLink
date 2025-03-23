@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\API\CategoryController;
+use App\Http\Controllers\API\GoogleAuthController;
 use App\Http\Controllers\API\ServiceController;
 use App\Http\Controllers\API\ReviewController;
 use App\Http\Controllers\API\MessageController;
@@ -20,7 +21,8 @@ Route::get('/photographers/{id}/services', [ServiceController::class, 'photograp
 Route::get('/categories', [CategoryController::class, 'index']);
 Route::get('/sort-options/{entity}', [UtilityController::class, 'getSortOptions']);
 Route::get('/rating-options', [UtilityController::class, 'getRatingOptions']);
-
+Route::get('auth/google/redirect', [GoogleAuthController::class, 'redirectToGoogle']);
+Route::get('auth/google/callback', [GoogleAuthController::class, 'handleGoogleCallback']);
 //private routes
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/auth/logout', [AuthController::class, 'logout']);
@@ -50,4 +52,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/bookings', [BookingController::class, 'index']);
     Route::get('/bookings/{id}', [BookingController::class, 'show']);
     Route::put('/bookings/{id}/cancel', [BookingController::class, 'cancel']);
+
+    // Photographer dashboard
+    Route::post('/photographer/dashboard', [App\Http\Controllers\API\PhotographerDashboard\Dashboard::class, 'index']);
+    Route::post('photographer/portfolio', [App\Http\Controllers\API\PhotographerDashboard\Portfolio::class, 'index']);
 });

@@ -9,6 +9,7 @@ use App\Models\User;
 use App\Models\PhotographerProfile;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Facades\DB;
 
@@ -62,7 +63,10 @@ class AuthController extends Controller
         $request->validate([
             'email' => 'required|string|email',
             'password' => 'required|string',
+            'remember' => 'boolean',
         ]);
+
+        $remember = $request->remember ?? false;
 
         $user = User::where('email', $request->email)->first();
 
@@ -72,17 +76,28 @@ class AuthController extends Controller
             ]);
         }
 
-        // 加载用户角色相关信息
         if ($user->isPhotographer()) {
             $user->load('photographerProfile');
         }
 
-        $token = $user->createToken('auth_token')->plainTextToken;
+        $user->tokens()->delete();
+
+        $tokenName = 'auth_token';
+        $tokenExpiration = $remember ? now()->addDays(30) : now()->addHours(24);
+
+        $token = $user->createToken($tokenName, ['*'], $tokenExpiration)->plainTextToken;
+
+        if ($remember) {
+            $user->remember_token = Str::random(60);
+            $user->save();
+        }
 
         return response()->json([
             'success' => true,
             'token' => $token,
-            'user' => $user
+            'user' => $user,
+            'expires_at' => $tokenExpiration->toDateTimeString(),
+            'remember' => $remember
         ]);
     }
 

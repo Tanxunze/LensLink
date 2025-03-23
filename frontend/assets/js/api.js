@@ -62,6 +62,28 @@ class API {
     }
 
     /**
+ * Redirect to Google login page
+ * @returns {string} - Redirect URL
+ */
+    static getGoogleAuthURL() {
+        return `${CONFIG.API.BASE_URL}/auth/google/redirect`;
+    }
+
+    /**
+     * Handle Google login callback
+     * @param {string} code - Authorization code
+     * @returns {Promise} - Login response
+     */
+    static async handleGoogleCallback(code) {
+        return this.request(`/auth/google/callback?code=${code}`, {
+            method: "GET",
+            headers: {
+                "Accept": "application/json",
+            }
+        });
+    }
+
+    /**
      * User registration
      * @param {Object} userData - User data
      * @returns {Promise} - Registration response
