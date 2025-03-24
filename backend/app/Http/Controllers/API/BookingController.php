@@ -99,4 +99,22 @@ class BookingController extends Controller
 
         return response()->json($booking);
     }
+
+    public function count(Request $request)
+    {
+        $user = Auth::user();
+        $query = Booking::query();
+
+        if ($user->role === 'photographer') {
+            $query->where('photographer_id', $user->photographerProfile->id);
+        } else {
+            $query->where('customer_id', $user->id);
+        }
+
+        if ($request->has('status')) {
+            $query->where('status', $request->status);
+        }
+        $count = $query->count();
+        return response()->json(['count' => $count]);
+    }
 }

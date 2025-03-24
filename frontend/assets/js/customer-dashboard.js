@@ -160,65 +160,60 @@ function loadUserData() {
  * Loading Dashboard Data
  */
 function loadDashboardData() {
-    loadDashboardCounts();
-    loadRecentBookings();
-    loadRecommendedPhotographers();
+    // 显示加载状态
+    $("#activeBookingsCount, #completedSessionsCount, #messagesCount").text("...");
+    $("#recentBookingsTable, #recommendedPhotographers").html(`
+        <div class="text-center py-3">
+            <div class="spinner-border spinner-border-sm" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <span class="ms-2">Loading data...</span>
+        </div>
+    `);
+    //parallel loading
+    Promise.all([
+        loadDashboardCounts(),
+        loadRecentBookings(),
+        loadRecommendedPhotographers()
+    ])
+        .then(() => {
+            console.log("loaded successfully");
+        })
+        .catch(error => {
+            console.error(error);
+            showNotification("Dashboard data couldn't be loaded", "warning");
+        });
 }
 
 /**
  * loading counts
  */
 function loadDashboardCounts() {
-    fetch(`${CONFIG.API.BASE_URL}/bookings/count?status=active`, {
-        headers: {
-            'Authorization': `Bearer ${localStorage.getItem("token")}`,
-            'Content-Type': 'application/json'
-        }
-    })
-        .then(response => response.json())
-        .then(data => {
+    const activeBookingsPromise = API.request("/bookings/count?status=active");
+    const completedBookingsPromise = API.request("/bookings/count?status=completed");
+    const messagesPromise = API.request("/messages/count?unread=true");
+
+    return Promise.all([
+        activeBookingsPromise.then(data => {
             $("#activeBookingsCount").text(data.count);
-        })
-        .catch(error => {
-            console.error("Failed to load active bookings count:", error);
-            $("#activeBookingsCount").text("0");
-        });
+        }).catch(() => $("#activeBookingsCount").text("0")),
 
-    fetch(`${CONFIG.API.BASE_URL}/bookings/count?status=completed`, {
-        headers: {
-            'Authorization': `Bearer ${localStorage.getItem("token")}`,
-            'Content-Type': 'application/json'
-        }
-    })
-        .then(response => response.json())
-        .then(data => {
+        completedBookingsPromise.then(data => {
             $("#completedSessionsCount").text(data.count);
-        })
-        .catch(error => {
-            console.error("Failed to load completed sessions count:", error);
-            $("#completedSessionsCount").text("0");
-        });
+        }).catch(() => $("#completedSessionsCount").text("0")),
 
-    fetch(`${CONFIG.API.BASE_URL}/messages/count?unread=true`, {
-        headers: {
-            'Authorization': `Bearer ${localStorage.getItem("token")}`,
-            'Content-Type': 'application/json'
-        }
-    })
-        .then(response => response.json())
-        .then(data => {
+        messagesPromise.then(data => {
             $("#messagesCount").text(data.count);
             if (data.count > 0) {
                 $(".message-badge").removeClass("d-none").text(data.count);
             } else {
                 $(".message-badge").addClass("d-none");
             }
-        })
-        .catch(error => {
-            console.error("Failed to load messages count:", error);
+        }).catch(() => {
             $("#messagesCount").text("0");
             $(".message-badge").addClass("d-none");
-        });
+        })
+    ]);
 }
 
 // Load Recent Bookings
@@ -234,54 +229,40 @@ function loadRecentBookings() {
         </tr>
     `);
 
-    fetch(`${CONFIG.API.BASE_URL}/bookings?limit=5&sort=date_desc`, {
-        headers: {
-            'Authorization': `Bearer ${localStorage.getItem("token")}`,
-            'Content-Type': 'application/json'
-        }
-    })
-        .then(response => {
-            if (!response.ok) {
-                throw new Error('Failed to load recent bookings');
-            }
-            return response.json();
-        })
+    return API.request("/bookings?limit=5&sort=date_desc")
         .then(data => {
-            // check if there are bookings
             if (!data.bookings || data.bookings.length === 0) {
                 $("#recentBookingsTable").html(`
-                <tr>
-                    <td colspan="5" class="text-center">No bookings found</td>
-                </tr>
-            `);
+                    <tr>
+                        <td colspan="5" class="text-center">No bookings found</td>
+                    </tr>
+                `);
                 return;
             }
 
-            // generate booking table rows
             const rows = data.bookings.map(booking => `
-            <tr>
-                <td>
-                    <a href="../../pages/photographer-detail.html?id=${booking.photographer.id}">
-                        ${booking.photographer.name}
-                    </a>
-                </td>
-                <td>${booking.service.name}</td>
-                <td>${formatDate(booking.booking_date)}</td>
-                <td>
-                    <span class="badge ${getStatusBadgeClass(booking.status)}">
-                        ${capitalizeFirstLetter(booking.status)}
-                    </span>
-                </td>
-                <td>
-                    <button class="btn btn-sm btn-outline-primary viewBookingBtn" data-id="${booking.id}">
-                        View
-                    </button>
-                </td>
-            </tr>
-        `).join('');
+                <tr>
+                    <td>
+                        <a href="../../pages/photographer-detail.html?id=${booking.photographer.id}">
+                            ${booking.photographer.name}
+                        </a>
+                    </td>
+                    <td>${booking.service.name}</td>
+                    <td>${formatDate(booking.booking_date)}</td>
+                    <td>
+                        <span class="badge ${getStatusBadgeClass(booking.status)}">
+                            ${capitalizeFirstLetter(booking.status)}
+                        </span>
+                    </td>
+                    <td>
+                        <button class="btn btn-sm btn-outline-primary viewBookingBtn" data-id="${booking.id}">
+                            View
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
 
             $("#recentBookingsTable").html(rows);
-
             $(".viewBookingBtn").click(function () {
                 const bookingId = $(this).data("id");
                 openBookingDetailsModal(bookingId);
@@ -290,18 +271,25 @@ function loadRecentBookings() {
         .catch(error => {
             console.error("Failed to load recent bookings:", error);
             $("#recentBookingsTable").html(`
-            <tr>
-                <td colspan="5" class="text-center text-danger">
-                    Failed to load bookings. Please try again.
-                </td>
-            </tr>
-        `);
+                <tr>
+                    <td colspan="5" class="text-center text-danger">
+                        Failed to load bookings. Please try again.
+                    </td>
+                </tr>
+            `);
         });
+}
+
+//tools func
+function truncateText(text, maxLength) {
+    if (!text) return '';
+    return text.length > maxLength ?
+        text.substring(0, maxLength) + '...' :
+        text;
 }
 
 // Loading Recommended Photographers
 function loadRecommendedPhotographers() {
-    // status
     $("#recommendedPhotographers").html(`
         <div class="col-12 text-center">
             <div class="spinner-border" role="status">
@@ -311,64 +299,53 @@ function loadRecommendedPhotographers() {
         </div>
     `);
 
-    fetch(`${CONFIG.API.BASE_URL}/photographers/recommended?limit=3`, {
-        headers: {
-            'Authorization': `Bearer ${localStorage.getItem("token")}`,
-            'Content-Type': 'application/json'
-        }
-    })
-        .then(response => {
-            if (!response.ok) {
-                throw new Error('Failed to load recommended photographers');
-            }
-            return response.json();
-        })
+    return API.request("/photographers/recommended?limit=3")
         .then(data => {
             if (!data.photographers || data.photographers.length === 0) {
                 $("#recommendedPhotographers").html(`
-                <div class="col-12">
-                    <div class="alert alert-info">
-                        No recommendations available at this time. Try browsing our photographers!
+                    <div class="col-12">
+                        <div class="alert alert-info">
+                            No recommendations available at this time. Try browsing our photographers!
+                        </div>
                     </div>
-                </div>
-            `);
+                `);
                 return;
             }
 
-            // generate recommend cards
             const cards = data.photographers.map(photographer => `
-            <div class="col-md-4 mb-4">
-                <div class="card recommended-card">
-                    <div class="recommended-badge">${photographer.specialization}</div>
-                    <img src="${photographer.image || '../../assets/images/default-photographer.jpg'}" class="card-img-top recommended-image" alt="${photographer.name}">
-                    <div class="card-body">
-                        <h5 class="card-title">${photographer.name}</h5>
-                        <div class="mb-2">
-                            ${generateStarRating(photographer.rating)}
-                            <small class="ms-1">(${photographer.rating})</small>
-                        </div>
-                        <p class="card-text small">${photographer.bio ? photographer.bio.substring(0, 80) + '...' : ''}</p>
-                        <div class="d-flex justify-content-between align-items-center">
-                            <span class="text-primary">From €${photographer.starting_price}/hr</span>
-                            <a href="../../pages/photographer-detail.html?id=${photographer.id}" class="btn btn-sm btn-outline-primary">View Profile</a>
+                <div class="col-md-4 mb-4">
+                    <div class="card recommended-card">
+                        <div class="recommended-badge">${photographer.specialization || 'Photographer'}</div>
+                        <img src="${photographer.image || '../../assets/images/default-photographer.jpg'}" 
+                             class="card-img-top recommended-image" alt="${photographer.name}">
+                        <div class="card-body">
+                            <h5 class="card-title">${photographer.name}</h5>
+                            <div class="mb-2">
+                                ${generateStarRating(photographer.rating)}
+                                <small class="ms-1">(${photographer.rating})</small>
+                            </div>
+                            <p class="card-text small">${photographer.bio ? truncateText(photographer.bio, 80) : 'Professional photographer on LensLink'}</p>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span class="text-primary">From €${photographer.starting_price}/hr</span>
+                                <a href="../../pages/photographer-detail.html?id=${photographer.id}" 
+                                   class="btn btn-sm btn-outline-primary">View Profile</a>
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
-        `).join('');
+            `).join('');
 
-            //update cards
             $("#recommendedPhotographers").html(cards);
         })
         .catch(error => {
             console.error("Failed to load recommended photographers:", error);
             $("#recommendedPhotographers").html(`
-            <div class="col-12">
-                <div class="alert alert-danger">
-                    Failed to load recommendations. Please try again later.
+                <div class="col-12">
+                    <div class="alert alert-danger">
+                        Failed to load recommendations. Please try again later.
+                    </div>
                 </div>
-            </div>
-        `);
+            `);
         });
 }
 
