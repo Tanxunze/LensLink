@@ -205,7 +205,8 @@ class API {
      */
     static async getServiceDetails(id) {
         return this.request(`/services${id}`);
-
+    }
+    
     /**
      * Create new service (Photographer)
      * @param {Object} serviceData - Service data
