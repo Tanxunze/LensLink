@@ -19,10 +19,15 @@ class PhotographerController extends Controller
         // search filtter
         if ($request->has('search') && !empty($request->search)) {
             $searchTerm = $request->search;
-            $query->where(function($q) use ($searchTerm) {
-                $q->where('users.name', 'like', "%{$searchTerm}%")
-                    ->orWhere('photographer_profiles.specialization', 'like', "%{$searchTerm}%")
-                    ->orWhere('photographer_profiles.location', 'like', "%{$searchTerm}%");
+            $keywords = preg_split('/[\s,]+/', $searchTerm, -1, PREG_SPLIT_NO_EMPTY);
+
+            $query->where(function($q) use ($keywords) {
+                foreach ($keywords as $keyword) {
+                    $q->orWhere('users.name', 'like', "%{$keyword}%")
+                        ->orWhere('photographer_profiles.specialization', 'like', "%{$keyword}%")
+                        ->orWhere('photographer_profiles.location', 'like', "%{$keyword}%")
+                        ->orWhere('users.bio', 'like', "%{$keyword}%");
+                }
             });
         }
 

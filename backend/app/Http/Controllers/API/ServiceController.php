@@ -19,12 +19,19 @@ class ServiceController extends Controller
         //search
         if ($request->has('search')) {
             $searchTerm = $request->input('search');
-            $query->where(function($q) use ($searchTerm) {
-                $q->where('name', 'LIKE', "%{$searchTerm}%")
-                    ->orWhere('description', 'LIKE', "%{$searchTerm}%")
-                    ->orWhereHas('photographer.user', function($query) use ($searchTerm) {
-                        $query->where('name', 'LIKE', "%{$searchTerm}%");
-                    });
+            $keywords = preg_split('/[\s,]+/', $searchTerm, -1, PREG_SPLIT_NO_EMPTY);
+
+            $query->where(function($q) use ($keywords) {
+                foreach ($keywords as $keyword) {
+                    $q->orWhere('name', 'LIKE', "%{$keyword}%")
+                        ->orWhere('description', 'LIKE', "%{$keyword}%")
+                        ->orWhereHas('features', function($query) use ($keyword) {
+                            $query->where('feature', 'LIKE', "%{$keyword}%");
+                        })
+                        ->orWhereHas('photographer.user', function($query) use ($keyword) {
+                            $query->where('name', 'LIKE', "%{$keyword}%");
+                        });
+                }
             });
         }
 
@@ -304,10 +311,8 @@ class ServiceController extends Controller
             ], 422);
         }
 
-        // Get photographer profile ID
         $photographerProfile = PhotographerProfile::where('user_id', Auth::id())->first();
 
-        // Find service and verify ownership
         $service = Service::where('id', $id)
             ->where('photographer_id', $photographerProfile->id)
             ->first();
@@ -323,17 +328,12 @@ class ServiceController extends Controller
             $service->categories()->sync([$request->category_id]);
         }
 
-        // Update service
         $service->update($request->only([
             'name', 'description', 'price', 'duration', 'unit', 'is_featured'
         ]));
 
-        // Update features if provided
         if ($request->has('features')) {
-            // Remove old features
             ServiceFeature::where('service_id', $service->id)->delete();
-
-            // Add new features
             $featuresData = [];
             foreach ($request->features as $index => $feature) {
                 $featuresData[] = [
@@ -393,7 +393,6 @@ class ServiceController extends Controller
             ], 404);
         }
 
-        // Delete service (this will cascade delete features due to foreign key constraint)
         $service->delete();
 
         return response()->json([
