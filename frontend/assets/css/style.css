@@ -94,3 +94,39 @@ main {
 #googleLogin .fab {
     margin-right: 8px;
 }
+/* Light Mode Theme */
+.light-mode {
+    background-color: #f8f9fa !important;
+    color: #212529 !important;
+}
+
+.light-mode .navbar,
+.light-mode nav.bg-dark {
+    background-color: #ffffff !important;
+    color: #212529 !important;
+}
+
+.light-mode .nav-link,
+.light-mode .text-white {
+    color: #000 !important;
+}
+
+.light-mode .dropdown-menu {
+    background-color: #ffffff !important;
+    color: #000;
+}
+
+.light-mode .dropdown-item {
+    color: #000 !important;
+}
+
+.light-mode .card {
+    background-color: #ffffff;
+    color: #000;
+}
+
+/* Make dashboard icons prettier */
+.card .bi {
+    font-size: 2rem;
+    margin-bottom: 0.5rem;
+}
