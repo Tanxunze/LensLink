@@ -55,6 +55,13 @@ jobs:
             OPENRESTY_CONTAINER=$(docker ps | grep openresty | awk '{print $1}')
             MYSQL_CONTAINER=$(docker ps | grep mysql | awk '{print $1}')
             
+            # debug
+            echo "GitHub workspace: $GITHUB_WORKSPACE"
+            echo "Current directory:"
+            pwd
+            echo "Directory contents:"
+            ls -la
+
             FRONTEND_ROOT="/opt/1panel/apps/openresty/openresty/www/sites/lenslink.mionet.top/index"
             BACKEND_ROOT="/opt/1panel/apps/openresty/openresty/www/sites/api.lenslink.mionet.top/index"
             
