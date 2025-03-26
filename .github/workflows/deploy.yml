@@ -16,65 +16,35 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
         with:
-          fetch-depth: 0
-
+          fetch-depth: 1
+      
+      # 设置PHP环境用于安装依赖
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.4'
+          php-version: '8.2'
           extensions: mbstring, xml, ctype, iconv, intl, pdo_mysql, dom, filter, gd, json, zip
           coverage: none
-
+      
+      # 安装Composer依赖，但在本地安装，不部署vendor目录
       - name: Install Backend Dependencies
         working-directory: ./backend
         run: composer install --no-dev --prefer-dist --no-scripts --no-progress
-
-      - name: Create .env file
-        working-directory: ./backend
-        run: |
-          echo "APP_NAME=LensLink" > .env
-          echo "APP_ENV=production" >> .env
-          echo "APP_KEY=" >> .env
-          echo "APP_DEBUG=false" >> .env
-          echo "APP_URL=https://api.lenslink.mionet.top" >> .env
-          echo "DB_CONNECTION=mysql" >> .env
-          echo "DB_HOST=127.0.0.1" >> .env
-          echo "DB_PORT=3306" >> .env
-          echo "DB_DATABASE=lenslink" >> .env
-          echo "DB_USERNAME=lenslink_user" >> .env
-          echo "DB_PASSWORD=${{ secrets.DB_PASSWORD }}" >> .env
-
+      
+      # 配置SSH
       - name: Install SSH Key
         uses: shimataro/ssh-key-action@v2
         with:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           known_hosts: unnecessary
           if_key_exists: replace
-
+      
+      # 添加服务器到已知主机
       - name: Adding Known Hosts
         run: ssh-keyscan -p ${{ secrets.SSH_PORT || 22 }} ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
-
-      - name: Deploy Frontend
-        run: |
-          echo "Deploying frontend files..."
-          scp -P ${{ secrets.SSH_PORT || 22 }} -r frontend/* ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:/opt/1panel/apps/openresty/openresty/www/sites/lenslink.mionet.top/index/
-
-      - name: Deploy Backend
-        run: |
-          echo "Preparing backend files..."
-          mkdir -p ~/backend-deploy
-          cp -r backend/* ~/backend-deploy/
-          
-          rm -rf ~/backend-deploy/storage/app/*
-          rm -rf ~/backend-deploy/storage/framework/cache/*
-          rm -rf ~/backend-deploy/storage/framework/sessions/*
-          rm -rf ~/backend-deploy/storage/framework/views/*
-          rm -rf ~/backend-deploy/storage/logs/*
-          
-          echo "Deploying backend files..."
-          scp -P ${{ secrets.SSH_PORT || 22 }} -r ~/backend-deploy/* ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:/opt/1panel/apps/openresty/openresty/www/sites/api.lenslink.mionet.top/index/
-
-      - name: Post-deploy Configuration
+      
+      # 确保远程目录存在
+      - name: Prepare remote directories
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.SSH_HOST }}
@@ -82,35 +52,109 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: ${{ secrets.SSH_PORT || 22 }}
           script: |
-            OPENRESTY_CONTAINER=$(docker ps | grep openresty | awk '{print $1}')
+            mkdir -p /opt/1panel/apps/openresty/openresty/www/sites/lenslink.mionet.top/index
+            mkdir -p /opt/1panel/apps/openresty/openresty/www/sites/api.lenslink.mionet.top/index/public
+      
+      # 部署前端文件 - 使用rsync
+      - name: Deploy Frontend Files
+        uses: Burnett01/rsync-deployments@6.0.0
+        with:
+          switches: -avz --delete
+          path: frontend/
+          remote_path: /opt/1panel/apps/openresty/openresty/www/sites/lenslink.mionet.top/index/
+          remote_host: ${{ secrets.SSH_HOST }}
+          remote_port: ${{ secrets.SSH_PORT || 22 }}
+          remote_user: ${{ secrets.SSH_USER }}
+          remote_key: ${{ secrets.SSH_PRIVATE_KEY }}
+      
+      # 部署后端文件 - 使用rsync，排除敏感和不需要更新的目录
+      - name: Deploy Backend Files
+        uses: Burnett01/rsync-deployments@6.0.0
+        with:
+          switches: -avz --delete --exclude=".env" --exclude="storage/app/*" --exclude="storage/framework/cache/*" --exclude="storage/framework/sessions/*" --exclude="storage/framework/views/*" --exclude="storage/logs/*"
+          path: backend/
+          remote_path: /opt/1panel/apps/openresty/openresty/www/sites/api.lenslink.mionet.top/index/
+          remote_host: ${{ secrets.SSH_HOST }}
+          remote_port: ${{ secrets.SSH_PORT || 22 }}
+          remote_user: ${{ secrets.SSH_USER }}
+          remote_key: ${{ secrets.SSH_PRIVATE_KEY }}
+      
+      # Laravel后端配置和服务重载
+      - name: Laravel Post-deployment
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.SSH_PORT || 22 }}
+          script: |
+            # 进入后端目录
+            cd /opt/1panel/apps/openresty/openresty/www/sites/api.lenslink.mionet.top/index
             
-            BACKEND_ROOT="/opt/1panel/apps/openresty/openresty/www/sites/api.lenslink.mionet.top/index"
+            # 重新安装依赖(在服务器环境下)
+            composer install --no-dev --optimize-autoloader
             
-            cd $BACKEND_ROOT
+            # 确保存在.env文件
+            if [ ! -f .env ]; then
+              echo "Creating .env file from example..."
+              cp .env.example .env
+              
+              # 设置数据库配置
+              sed -i "s/DB_DATABASE=.*/DB_DATABASE=lenslink/" .env
+              sed -i "s/DB_USERNAME=.*/DB_USERNAME=lenslink_user/" .env
+              sed -i "s/DB_PASSWORD=.*/DB_PASSWORD=${{ secrets.DB_PASSWORD }}/" .env
+              
+              # 设置应用URL
+              sed -i "s|APP_URL=.*|APP_URL=https://api.lenslink.mionet.top|" .env
+              
+              # 生成应用密钥
+              php artisan key:generate --force
+            fi
             
-            [ ! -f .env ] && cp .env.example .env
-
-            php artisan key:generate --force
-
+            # 创建必要的目录并设置权限
+            mkdir -p storage/framework/cache
+            mkdir -p storage/framework/sessions
+            mkdir -p storage/framework/views
+            mkdir -p storage/logs
+            
+            # 清除Laravel缓存
             php artisan config:clear
             php artisan cache:clear
             php artisan route:clear
             php artisan view:clear
             php artisan optimize
             
-            sudo chown -R www-data:www-data $BACKEND_ROOT/storage
-            sudo chmod -R 775 $BACKEND_ROOT/storage
-            sudo chown -R www-data:www-data $BACKEND_ROOT/bootstrap/cache
-            sudo chmod -R 775 $BACKEND_ROOT/bootstrap/cache
+            # 设置目录权限
+            OPENRESTY_USER=$(ps aux | grep openresty | grep -v grep | head -1 | awk '{print $1}')
             
-            if [ ! -z "$OPENRESTY_CONTAINER" ]; then
-              echo "Reloading OpenResty configuration..."
-              docker exec $OPENRESTY_CONTAINER nginx -s reload
+            # 如果未找到OpenResty用户，默认使用www-data
+            if [ -z "$OPENRESTY_USER" ]; then
+              OPENRESTY_USER="www-data"
             fi
             
+            echo "Setting permissions for user: $OPENRESTY_USER"
+            sudo chown -R $OPENRESTY_USER:$OPENRESTY_USER storage
+            sudo chmod -R 775 storage
+            sudo chown -R $OPENRESTY_USER:$OPENRESTY_USER bootstrap/cache
+            sudo chmod -R 775 bootstrap/cache
+            
+            # 获取容器信息并重载服务
+            OPENRESTY_CONTAINER=$(docker ps | grep openresty | awk '{print $1}')
+            
+            # 重载OpenResty配置
+            if [ ! -z "$OPENRESTY_CONTAINER" ]; then
+              echo "Reloading OpenResty configuration..."
+              docker exec $OPENRESTY_CONTAINER nginx -t && docker exec $OPENRESTY_CONTAINER nginx -s reload
+            else
+              echo "OpenResty container not found, skipping reload."
+            fi
+            
+            # 重载PHP-FPM
             if [ -f "/opt/1panel/apps/php/sbin/php-fpm" ]; then
               echo "Refreshing PHP-FPM..."
               sudo /opt/1panel/apps/php/sbin/php-fpm -s reload
+            else
+              echo "PHP-FPM not found at expected path, skipping reload."
             fi
             
             echo "Deployment completed successfully!"
