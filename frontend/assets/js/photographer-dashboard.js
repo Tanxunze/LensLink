@@ -292,6 +292,7 @@ function loadDashboardCounts() {
         });
 
     fetch(`${CONFIG.API.BASE_URL}/reviews/rating`, {
+        method: "POST",
         headers: {
             'Authorization': `Bearer ${localStorage.getItem("token")}`,
             'Content-Type': 'application/json'
@@ -299,7 +300,7 @@ function loadDashboardCounts() {
     })
         .then(response => response.json())
         .then(data => {
-            $("#overallRating").text(data.rating.toFixed(1));
+            $("#overallRating").text(parseFloat(data.rating).toFixed(1));
         })
         .catch(error => {
             console.error("Failed to load overall rating:", error);
