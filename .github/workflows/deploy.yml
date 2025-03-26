@@ -1,0 +1,103 @@
+name: Deploy LensLink
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+    types: [ closed ]
+
+jobs:
+  deploy:
+    if: github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.pull_request.merged == true)
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: mbstring, xml, ctype, iconv, intl, pdo_mysql, dom, filter, gd, json, zip
+          coverage: none
+
+      - name: Install Backend Dependencies
+        working-directory: ./backend
+        run: composer install --no-dev --prefer-dist --no-scripts --no-progress
+
+      - name: Create .env file
+        working-directory: ./backend
+        run: |
+          echo "APP_NAME=LensLink" > .env
+          echo "APP_ENV=production" >> .env
+          echo "APP_KEY=" >> .env
+          echo "APP_DEBUG=false" >> .env
+          echo "APP_URL=https://api.lenslink.mionet.top" >> .env
+          echo "DB_CONNECTION=mysql" >> .env
+          echo "DB_HOST=127.0.0.1" >> .env
+          echo "DB_PORT=3306" >> .env
+          echo "DB_DATABASE=lenslink" >> .env
+          echo "DB_USERNAME=lenslink" >> .env
+          echo "DB_PASSWORD=${{ secrets.DB_PASSWORD }}" >> .env
+
+      - name: Deploy to server
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            OPENRESTY_CONTAINER=$(docker ps | grep openresty | awk '{print $1}')
+            MYSQL_CONTAINER=$(docker ps | grep mysql | awk '{print $1}')
+            
+            FRONTEND_ROOT="/opt/1panel/apps/openresty/openresty/www/sites/lenslink.mionet.top/index"
+            BACKEND_ROOT="/opt/1panel/apps/openresty/openresty/www/sites/api.lenslink.mionet.top/index"
+            
+            echo "Using deployment paths:"
+            echo "Frontend: $FRONTEND_ROOT"
+            echo "Backend: $BACKEND_ROOT"
+            
+            mkdir -p $FRONTEND_ROOT
+            mkdir -p $BACKEND_ROOT/public
+            
+            echo "Deploying frontend..."
+            rsync -avz --exclude='.git/' --delete ${{ github.workspace }}/frontend/ $FRONTEND_ROOT/
+            
+            echo "Deploying backend..."
+            rsync -avz --exclude='.git/' --exclude='storage/app/*' --exclude='storage/framework/cache/*' --exclude='storage/framework/sessions/*' --exclude='storage/framework/views/*' --exclude='storage/logs/*' --exclude='.env' --delete ${{ github.workspace }}/backend/ $BACKEND_ROOT/
+            
+            cd $BACKEND_ROOT
+            composer install --no-dev --optimize-autoloader
+            
+            [ ! -f .env ] && cp .env.example .env
+            
+            php artisan key:generate --force
+            
+            php artisan config:clear
+            php artisan cache:clear
+            php artisan route:clear
+            php artisan view:clear
+            php artisan optimize
+            
+            sudo chown -R www-data:www-data $BACKEND_ROOT/storage
+            sudo chmod -R 775 $BACKEND_ROOT/storage
+            sudo chown -R www-data:www-data $BACKEND_ROOT/bootstrap/cache
+            sudo chmod -R 775 $BACKEND_ROOT/bootstrap/cache
+            
+            # OpenResty
+            if [ ! -z "$OPENRESTY_CONTAINER" ]; then
+              echo "Reloading OpenResty..."
+              docker exec $OPENRESTY_CONTAINER nginx -s reload
+            fi
+            
+            # PHP-FPM
+            if [ -f "/opt/1panel/apps/php/sbin/php-fpm" ]; then
+              echo "Reloading PHP-FPM..."
+              sudo /opt/1panel/apps/php/sbin/php-fpm -s reload
+            fi
+            
+            echo "Deployment completed successfully!"

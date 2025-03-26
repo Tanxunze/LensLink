@@ -204,7 +204,7 @@ class API {
      * @returns {Promise} - Service details
      */
     static async getServiceDetails(id) {
-        return this.request(`/services${id}`);
+        return this.request(`/services/${id}`);
     }
 
     /**
