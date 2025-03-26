@@ -49,11 +49,11 @@ function determineApiUrl() {
     }
     else if (currentDomain === 'lenslink.mionet.top') {
         console.log('prod env');
-        return "https://api.lenslink.mionet.top/api";
+        return "https://api-lenslink.mionet.top/api";
     }
     else {
         console.log('fallback env - domain is:', currentDomain);
-        return "https://api.lenslink.mionet.top/api";
+        return "https://api-lenslink.mionet.top/api";
     }
 }
 
