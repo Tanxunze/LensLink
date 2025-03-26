@@ -152,4 +152,30 @@ class PhotographerController extends Controller
             'reviews' => $reviews
         ]);
     }
+
+    public function recommended(Request $request)
+    {
+        $limit = $request->limit ?? 3;
+
+        $photographers = PhotographerProfile::with(['user'])
+            ->orderBy('average_rating', 'desc')
+            ->limit($limit)
+            ->get();
+
+        $formattedData = $photographers->map(function($photographer) {
+            return [
+                'id' => $photographer->id,
+                'name' => $photographer->user->name,
+                'image' => $photographer->user->profile_image,
+                'specialization' => $photographer->specialization,
+                'rating' => $photographer->average_rating ?: 0,
+                'bio' => $photographer->user->bio,
+                'starting_price' => $photographer->starting_price ?: 0
+            ];
+        });
+
+        return response()->json([
+            'photographers' => $formattedData
+        ]);
+    }
 }

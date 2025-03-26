@@ -14,6 +14,7 @@ use App\Http\Controllers\API\AuthController;
 Route::post('/auth/login', [AuthController::class, 'login']);
 Route::post('/auth/register', [AuthController::class, 'register']);
 Route::get('/photographers', [App\Http\Controllers\API\PhotographerController::class, 'index']);
+Route::get('/photographers/recommended', [App\Http\Controllers\API\PhotographerController::class, 'recommended']);
 Route::get('/photographers/{id}', [App\Http\Controllers\API\PhotographerController::class, 'show']);
 Route::get('/services', [ServiceController::class, 'index']);
 Route::get('/services/{id}', [ServiceController::class, 'show']);
@@ -44,12 +45,15 @@ Route::middleware('auth:sanctum')->group(function () {
     // Messages
     Route::post('/messages', [MessageController::class, 'store']);
     Route::get('/messages/conversations', [MessageController::class, 'getConversations']);
+    Route::get('/messages/count', [MessageController::class, 'count']);
     Route::get('/messages/conversation/{id}', [MessageController::class, 'getConversationMessages']);
     Route::post('/messages/mark-as-read', [MessageController::class, 'markAsRead']);
+
 
     // Bookings
     Route::post('/bookings', [BookingController::class, 'store']);
     Route::get('/bookings', [BookingController::class, 'index']);
+    Route::get('/bookings/count', [BookingController::class, 'count']);
     Route::get('/bookings/{id}', [BookingController::class, 'show']);
     Route::put('/bookings/{id}/cancel', [BookingController::class, 'cancel']);
 

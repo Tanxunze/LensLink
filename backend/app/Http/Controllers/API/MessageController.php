@@ -159,4 +159,24 @@ class MessageController extends Controller
 
         return response()->json(['message' => 'Messages marked as read']);
     }
+
+    public function count(Request $request)
+    {
+        $user = Auth::user();
+
+        $participatedConversations = DB::table('conversation_participants')
+            ->where('user_id', $user->id)
+            ->pluck('conversation_id');
+
+        $query = Message::whereIn('conversation_id', $participatedConversations)
+            ->where('sender_id', '!=', $user->id);
+
+        if ($request->has('unread') && $request->unread === 'true') {
+            $query->where('is_read', false);
+        }
+
+        $count = $query->count();
+
+        return response()->json(['count' => $count]);
+    }
 }

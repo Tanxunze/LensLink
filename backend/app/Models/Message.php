@@ -10,7 +10,7 @@ class Message extends Model
         'conversation_id',
         'sender_id',
         'message',
-        'is_read'
+        'is_read',
     ];
 
     protected $casts = [

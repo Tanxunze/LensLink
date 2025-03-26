@@ -206,7 +206,7 @@ class API {
     static async getServiceDetails(id) {
         return this.request(`/services${id}`);
     }
-    
+
     /**
      * Create new service (Photographer)
      * @param {Object} serviceData - Service data
@@ -284,6 +284,15 @@ class API {
         return this.request(`/bookings/${id}/cancel`, {
             method: "PUT"
         });
+    }
+
+    /**
+    * Get count of bookings by status
+    * @param {string} status - Booking status
+    * @returns {Promise} - Count response
+    */
+    static async getBookingsCount(status) {
+        return this.request(`/bookings/count${status ? `?status=${status}` : ''}`);
     }
 
     // Review APIs
@@ -377,9 +386,17 @@ class API {
     }
 
     /**
- * Get available categories
- * @returns {Promise} - Categories list
- */
+    * Get count of unread messages
+    * @returns {Promise} - Count response
+    */
+    static async getUnreadMessagesCount() {
+        return this.request('/messages/count?unread=true');
+    }
+
+    /**
+     * Get available categories
+     * @returns {Promise} - Categories list
+     */
     static async getCategories() {
         return this.request("/categories");
     }
@@ -400,8 +417,13 @@ class API {
     static async getRatingOptions() {
         return this.request("/rating-options");
     }
-
+    
+    /**
+    * Get recommended photographers
+    * @param {number} limit - Maximum number of photographers to return
+    * @returns {Promise} - Recommended photographers
+    */
+    static async getRecommendedPhotographers(limit = 3) {
+        return this.request(`/photographers/recommended?limit=${limit}`);
+    }
 }
-
-
-// Due to the complexity and size of dashboard JS, they have been moved to separate files.
