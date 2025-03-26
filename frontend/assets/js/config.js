@@ -16,7 +16,7 @@ const CONFIG = {
 
     // API configuration
     API: {
-        BASE_URL: "http://localhost:8089/api",
+        BASE_URL: determineApiUrl()
     },
 
     // user info from localStorage
@@ -35,6 +35,19 @@ const CONFIG = {
         supportEmail: "support@lenslink.com",
     },
 };
+
+function determineApiUrl() {
+    const currentDomain = window.location.hostname;
+    if (currentDomain === 'localhost' || currentDomain === '127.0.0.1') {
+        return "http://localhost:8089/api";
+    }
+    else if (currentDomain === 'lenslink.mionet.top') {
+        return "https://api.lenslink.mionet.top/api";
+    }
+    else {
+        return "https://api.lenslink.mionet.top/api";
+    }
+}
 
 // jQuery extension
 (function ($) {
