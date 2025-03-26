@@ -66,10 +66,10 @@ jobs:
             mkdir -p $BACKEND_ROOT/public
             
             echo "Deploying frontend..."
-            rsync -avz --exclude='.git/' --delete ${{ github.workspace }}/frontend/ $FRONTEND_ROOT/
+            rsync -avz --exclude='.git/' --delete ./frontend/ $FRONTEND_ROOT/
             
             echo "Deploying backend..."
-            rsync -avz --exclude='.git/' --exclude='storage/app/*' --exclude='storage/framework/cache/*' --exclude='storage/framework/sessions/*' --exclude='storage/framework/views/*' --exclude='storage/logs/*' --exclude='.env' --delete ${{ github.workspace }}/backend/ $BACKEND_ROOT/
+            rsync -avz --exclude='.git/' --exclude='storage/app/*' --exclude='storage/framework/cache/*' --exclude='storage/framework/sessions/*' --exclude='storage/framework/views/*' --exclude='storage/logs/*' --exclude='.env' --delete ./backend/ $BACKEND_ROOT/
             
             cd $BACKEND_ROOT
             composer install --no-dev --optimize-autoloader
