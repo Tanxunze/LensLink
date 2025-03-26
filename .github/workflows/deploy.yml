@@ -50,6 +50,7 @@ jobs:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
+          protocol: tcp6
           script: |
             OPENRESTY_CONTAINER=$(docker ps | grep openresty | awk '{print $1}')
             MYSQL_CONTAINER=$(docker ps | grep mysql | awk '{print $1}')
