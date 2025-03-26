@@ -41,6 +41,7 @@ Route::middleware('auth:sanctum')->group(function () {
     // Reviews
     Route::post('/reviews', [ReviewController::class, 'store']);
     Route::post('/reviews/{id}/reply', [ReviewController::class, 'reply']);
+    Route::post('/reviews/rating',[ReviewController::class,'show']);
 
     // Messages
     Route::post('/messages', [MessageController::class, 'store']);
