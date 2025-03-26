@@ -39,9 +39,11 @@ const CONFIG = {
 function determineApiUrl() {
     const currentDomain = window.location.hostname;
     if (currentDomain === 'localhost' || currentDomain === '127.0.0.1') {
+        console.log('dev env');
         return "http://localhost:8089/api";
     }
     else if (currentDomain === 'lenslink.mionet.top') {
+        console.log('prod env');
         return "https://api.lenslink.mionet.top/api";
     }
     else {
