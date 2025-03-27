@@ -22,10 +22,15 @@ class ReviewController extends Controller
         return response()->json($reviews);
     }
 
-    public function show($id)
+    public function show(Request $request)
     {
-        $review = Review::with(['customer'])->findOrFail($id);
-        return response()->json($review);
+        $id=$request->user()->id;
+        $review = Review::with(['customer'])
+            ->where('photographer_id', $id)
+            ->avg('rating');
+        return response()->json([
+            'rating' => $review
+        ]);
     }
 
     public function store(Request $request)
