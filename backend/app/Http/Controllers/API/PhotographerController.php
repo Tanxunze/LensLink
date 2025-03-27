@@ -21,7 +21,7 @@ class PhotographerController extends Controller
             $searchTerm = $request->search;
             $keywords = preg_split('/[\s,]+/', $searchTerm, -1, PREG_SPLIT_NO_EMPTY);
 
-            $query->where(function($q) use ($keywords) {
+            $query->where(function ($q) use ($keywords) {
                 foreach ($keywords as $keyword) {
                     $q->orWhere('users.name', 'like', "%{$keyword}%")
                         ->orWhere('photographer_profiles.specialization', 'like', "%{$keyword}%")
@@ -33,7 +33,7 @@ class PhotographerController extends Controller
 
         // categories filtter
         if ($request->has('category') && !empty($request->category)) {
-            $query->whereHas('categories', function($q) use ($request) {
+            $query->whereHas('categories', function ($q) use ($request) {
                 $q->where('categories.slug', $request->category);
             });
         }
@@ -66,7 +66,7 @@ class PhotographerController extends Controller
         $photographers = $query->paginate($perPage);
 
         // format data
-        $formattedData = $photographers->map(function($photographer) {
+        $formattedData = $photographers->map(function ($photographer) {
             return [
                 'id' => $photographer->id,
                 'name' => $photographer->name,
@@ -95,12 +95,18 @@ class PhotographerController extends Controller
         ]);
     }
 
-    public function show($id)
+    public function show(Request $request)
     {
+        $user = $request->user();
+        if (!$user || !$user->isPhotographer() || !$user->photographerProfile) {
+            return response()->json(['message' => 'You are not a photographer'], 403);
+        }
+        $id = $request->user()->photographerProfile->id ?? null;
+
         $photographer = PhotographerProfile::with(['user', 'categories', 'services', 'portfolioItems'])
             ->findOrFail($id);
 
-        $services = $photographer->services->map(function($service) {
+        $services = $photographer->services->map(function ($service) {
             return [
                 'id' => $service->id,
                 'name' => $service->name,
@@ -113,7 +119,7 @@ class PhotographerController extends Controller
             ];
         });
 
-        $portfolio = $photographer->portfolioItems->map(function($item) {
+        $portfolio = $photographer->portfolioItems->map(function ($item) {
             return [
                 'id' => $item->id,
                 'title' => $item->title,
@@ -162,7 +168,7 @@ class PhotographerController extends Controller
             ->limit($limit)
             ->get();
 
-        $formattedData = $photographers->map(function($photographer) {
+        $formattedData = $photographers->map(function ($photographer) {
             return [
                 'id' => $photographer->id,
                 'name' => $photographer->user->name,

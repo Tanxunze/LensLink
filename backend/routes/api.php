@@ -61,6 +61,7 @@ Route::middleware('auth:sanctum')->group(function () {
     // Photographer dashboard
     Route::post('/photographer/dashboard', [App\Http\Controllers\API\PhotographerDashboard\Dashboard::class, 'index']);
     Route::post('photographer/portfolio', [App\Http\Controllers\API\PhotographerDashboard\Portfolio::class, 'index']);
+    Route::post('photographer/profile',[\App\Http\Controllers\API\PhotographerController::class,'show']);
 
     // Admin dashboard
     Route::middleware('auth:sanctum')->group(function () {
