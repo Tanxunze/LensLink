@@ -1,0 +1,90 @@
+name: Deploy to Production
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+    types: [ closed ]
+
+jobs:
+  deploy:
+    if: github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.pull_request.merged == true)
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0  
+      
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: mbstring, intl, gd, xml, zip
+          tools: composer:v2
+      
+      - name: Install backend dependencies
+        working-directory: ./backend
+        run: |
+          composer install --no-dev --optimize-autoloader
+      
+      - name: Create .env file
+        working-directory: ./backend
+        run: |
+          echo "${{ secrets.LARAVEL_ENV_PRODUCTION }}" > .env
+          php artisan key:generate --force
+      
+      - name: Setup SSH key
+        uses: webfactory/ssh-agent@v0.7.0
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+      
+      - name: Add server to known hosts
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
+      
+      - name: Deploy frontend
+        run: |
+          rsync -avz --delete --exclude='.git' \
+            --exclude='.github' \
+            ./frontend/ \
+            ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:/opt/1panel/apps/openresty/openresty/www/sites/lenslink.mionet.top/index/
+      
+      - name: Deploy backend
+        run: |
+          rsync -avz --delete --exclude='.git' \
+            --exclude='.github' \
+            --exclude='tests' \
+            --exclude='storage/logs/*' \
+            --exclude='storage/framework/cache/*' \
+            --exclude='storage/framework/sessions/*' \
+            --exclude='storage/framework/views/*' \
+            ./backend/ \
+            ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:/opt/1panel/apps/openresty/openresty/www/sites/api-lenslink.mionet.top/index/
+      
+      - name: Run post-deploy commands for backend
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.SSH_PORT }}
+          script: |
+            docker exec 1Panel-php8-qpeJ bash -c "cd /www/sites/api-lenslink.mionet.top/index && \
+            php artisan config:clear && \
+            php artisan route:clear && \
+            php artisan view:clear && \
+            php artisan cache:clear && \
+            php artisan config:cache && \
+            php artisan route:cache && \
+            php artisan view:cache && \
+            php artisan optimize && \
+            php artisan storage:link"
+            
+            chown -R 1000:1000 /opt/1panel/apps/openresty/openresty/www/sites/api-lenslink.mionet.top/index
+            chmod -R 755 /opt/1panel/apps/openresty/openresty/www/sites/api-lenslink.mionet.top/index
+            chmod -R 775 /opt/1panel/apps/openresty/openresty/www/sites/api-lenslink.mionet.top/index/storage
+            chmod -R 775 /opt/1panel/apps/openresty/openresty/www/sites/api-lenslink.mionet.top/index/bootstrap/cache
