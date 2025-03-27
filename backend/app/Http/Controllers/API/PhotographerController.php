@@ -4,7 +4,6 @@ namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
 use App\Models\PhotographerProfile;
-use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -61,7 +60,6 @@ class PhotographerController extends Controller
             $query->orderBy($sortBy, $sortDirection);
         }
 
-        // 分页
         $perPage = $request->per_page ?? 9; // page limit
         $photographers = $query->paginate($perPage);
 
@@ -98,9 +96,6 @@ class PhotographerController extends Controller
     public function show(Request $request)
     {
         $user = $request->user();
-        if (!$user || !$user->isPhotographer() || !$user->photographerProfile) {
-            return response()->json(['message' => 'You are not a photographer'], 403);
-        }
         $id = $request->user()->photographerProfile->id ?? null;
 
         $photographer = PhotographerProfile::with(['user', 'categories', 'services', 'portfolioItems'])

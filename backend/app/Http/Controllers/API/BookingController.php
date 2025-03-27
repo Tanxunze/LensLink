@@ -13,29 +13,65 @@ class BookingController extends Controller
     public function index(Request $request)
     {
         $user = Auth::user();
-        $query = Booking::with(['photographer', 'customer', 'service']);
+        $query = Booking::with(['photographer.user', 'customer', 'service']);
 
+        // 根据用户角色获取相应的预订
         if ($user->role === 'photographer') {
             $query->where('photographer_id', $user->photographerProfile->id);
         } else {
             $query->where('customer_id', $user->id);
         }
 
-        if ($request->has('status')) {
+        // 按状态筛选
+        if ($request->has('status') && $request->status) {
             $query->where('status', $request->status);
         }
 
-        $bookings = $query->orderBy('booking_date', 'desc')->get();
+        // 搜索功能
+        if ($request->has('search') && $request->search) {
+            $search = $request->search;
+            $query->where(function($q) use ($search) {
+                $q->whereHas('photographer.user', function($q) use ($search) {
+                    $q->where('name', 'like', "%{$search}%");
+                })
+                    ->orWhereHas('service', function($q) use ($search) {
+                        $q->where('name', 'like', "%{$search}%");
+                    })
+                    ->orWhere('location', 'like', "%{$search}%")
+                    ->orWhere('booking_date', 'like', "%{$search}%");
+            });
+        }
 
-        return response()->json($bookings);
+        // 排序 (默认按预订日期降序)
+        $sortField = $request->input('sort_field', 'booking_date');
+        $sortOrder = $request->input('sort_order', 'desc');
+        $query->orderBy($sortField, $sortOrder);
+
+        // 分页
+        $perPage = $request->input('limit', 10);
+        $page = $request->input('page', 1);
+        $bookings = $query->paginate($perPage, ['*'], 'page', $page);
+
+        return response()->json([
+            'bookings' => $bookings->items(),
+            'pagination' => [
+                'total' => $bookings->total(),
+                'per_page' => $bookings->perPage(),
+                'current_page' => $bookings->currentPage(),
+                'last_page' => $bookings->lastPage(),
+                'from' => $bookings->firstItem(),
+                'to' => $bookings->lastItem(),
+                'total_pages' => ceil($bookings->total() / $bookings->perPage())
+            ]
+        ]);
     }
 
     public function show($id)
     {
-        $booking = Booking::with(['photographer', 'customer', 'service'])->findOrFail($id);
+        $booking = Booking::with(['photographer.user', 'customer', 'service'])->findOrFail($id);
         $user = Auth::user();
 
-        // Check if user has access to this booking
+        // 检查用户是否有权限访问此预订
         if (($user->role === 'photographer' && $user->photographerProfile->id != $booking->photographer_id) ||
             ($user->role === 'customer' && $user->id != $booking->customer_id)) {
             return response()->json(['message' => 'Unauthorized'], 403);
@@ -81,13 +117,13 @@ class BookingController extends Controller
         $booking = Booking::findOrFail($id);
         $user = Auth::user();
 
-        // Check if user has access to this booking
+        // 检查用户是否有权限访问此预订
         if (($user->role === 'photographer' && $user->photographerProfile->id != $booking->photographer_id) ||
             ($user->role === 'customer' && $user->id != $booking->customer_id)) {
             return response()->json(['message' => 'Unauthorized'], 403);
         }
 
-        // Check if booking can be cancelled
+        // 检查预订是否可以取消
         if (!in_array($booking->status, ['pending', 'confirmed'])) {
             return response()->json(['message' => 'Cannot cancel booking with status: ' . $booking->status], 400);
         }
@@ -111,9 +147,10 @@ class BookingController extends Controller
             $query->where('customer_id', $user->id);
         }
 
-        if ($request->has('status')) {
+        if ($request->has('status') && $request->status) {
             $query->where('status', $request->status);
         }
+
         $count = $query->count();
         return response()->json(['count' => $count]);
     }
