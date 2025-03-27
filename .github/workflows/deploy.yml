@@ -16,12 +16,12 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
         with:
-          fetch-depth: 0  
+          fetch-depth: 0 
       
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.4'
+          php-version: '8.2'
           extensions: mbstring, intl, gd, xml, zip
           tools: composer:v2
       
@@ -41,15 +41,20 @@ jobs:
         with:
           ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
       
-      - name: Add server to known hosts
+      - name: Setup SSH known hosts
         run: |
           mkdir -p ~/.ssh
-          ssh-keyscan -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
+          ssh-keyscan -t rsa,ecdsa,ed25519 -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
+          chmod 644 ~/.ssh/known_hosts
+          
+      - name: Verify SSH connection
+        run: ssh -T -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "echo SSH connection successful"
       
       - name: Deploy frontend
         run: |
           rsync -avz --delete --exclude='.git' \
             --exclude='.github' \
+            -e "ssh -p ${{ secrets.SSH_PORT }}" \
             ./frontend/ \
             ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:/opt/1panel/apps/openresty/openresty/www/sites/lenslink.mionet.top/index/
       
@@ -62,6 +67,7 @@ jobs:
             --exclude='storage/framework/cache/*' \
             --exclude='storage/framework/sessions/*' \
             --exclude='storage/framework/views/*' \
+            -e "ssh -p ${{ secrets.SSH_PORT }}" \
             ./backend/ \
             ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:/opt/1panel/apps/openresty/openresty/www/sites/api-lenslink.mionet.top/index/
       
@@ -72,7 +78,9 @@ jobs:
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: ${{ secrets.SSH_PORT }}
+          command_timeout: "15m"
           script: |
+            # 在Docker容器内执行PHP命令
             docker exec 1Panel-php8-qpeJ bash -c "cd /www/sites/api-lenslink.mionet.top/index && \
             php artisan config:clear && \
             php artisan route:clear && \
@@ -84,6 +92,7 @@ jobs:
             php artisan optimize && \
             php artisan storage:link"
             
+            # 设置宿主机上文件的权限
             chown -R 1000:1000 /opt/1panel/apps/openresty/openresty/www/sites/api-lenslink.mionet.top/index
             chmod -R 755 /opt/1panel/apps/openresty/openresty/www/sites/api-lenslink.mionet.top/index
             chmod -R 775 /opt/1panel/apps/openresty/openresty/www/sites/api-lenslink.mionet.top/index/storage
