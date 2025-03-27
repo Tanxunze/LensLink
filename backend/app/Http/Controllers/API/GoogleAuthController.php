@@ -46,7 +46,7 @@ class GoogleAuthController extends Controller
 
             $token = $user->createToken('auth_token')->plainTextToken;
             $frontendUrl = config('app.frontend_url', 'http://localhost:5500');
-            return redirect($frontendUrl . '/frontend/pages/auth/login.html?token=' . $token . '&user=' . urlencode(json_encode([
+            return redirect($frontendUrl . 'pages/auth/login.html?token=' . $token . '&user=' . urlencode(json_encode([
                     'id' => $user->id,
                     'name' => $user->name,
                     'email' => $user->email,
@@ -55,7 +55,7 @@ class GoogleAuthController extends Controller
 
         } catch (\Exception $e) {
             $frontendUrl = config('app.frontend_url', 'http://localhost:5500');
-            return redirect($frontendUrl . '/frontend/pages/auth/login.html?error=' . urlencode('Login failed: ' . $e->getMessage()));
+            return redirect($frontendUrl . 'pages/auth/login.html?error=' . urlencode('Login failed: ' . $e->getMessage()));
         }
     }
 }
