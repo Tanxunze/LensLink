@@ -418,7 +418,7 @@ function loadRecentBookings() {
             return response.json();
         })
         .then(data => {
-            if (!data.bookings || data.bookings.length === 0) {
+            if (!data || data.length === 0) {
                 $("#recentBookingsTable").html(`
                 <tr>
                     <td colspan="6" class="text-center">No bookings found</td>
@@ -427,9 +427,9 @@ function loadRecentBookings() {
                 return;
             }
 
-            const rows = data.bookings.map(booking => `
+            const rows = data.map(booking => `
             <tr>
-                <td>${booking.client.name}</td>
+                <td>${booking.customer.name}</td>
                 <td>${booking.service.name}</td>
                 <td>${formatDate(booking.booking_date)}</td>
                 <td>
@@ -442,7 +442,7 @@ function loadRecentBookings() {
                     <button class="btn btn-sm btn-outline-primary viewBookingBtn" data-id="${booking.id}">
                         <i class="bi bi-eye"></i>
                     </button>
-                    <button class="btn btn-sm btn-outline-success messageClientBtn" data-id="${booking.client.id}">
+                    <button class="btn btn-sm btn-outline-success messageClientBtn" data-id="${booking.customer.id}">
                         <i class="bi bi-chat"></i>
                     </button>
                 </td>
@@ -486,7 +486,8 @@ function loadRecentReviews() {
         </div>
     `);
 
-    fetch(`${CONFIG.API.BASE_URL}/reviews?limit=3&sort=date_desc`, {
+    fetch(`${CONFIG.API.BASE_URL}/photographer/profile`, {
+        method: 'POST',
         headers: {
             'Authorization': `Bearer ${localStorage.getItem("token")}`,
             'Content-Type': 'application/json'
@@ -531,8 +532,8 @@ function loadRecentReviews() {
                         </div>
                         <p class="card-text">${review.review}</p>
                         <div class="d-flex align-items-center">
-                            <img src="${review.customer.image || '../../assets/images/default-avatar.jpg'}" class="rounded-circle me-2" width="30" height="30" alt="${review.customer.name}">
-                            <small>${review.customer.name} • ${review.service_type}</small>
+                            <img src="${review.customer_image || '../../assets/images/default-avatar.jpg'}" class="rounded-circle me-2" width="30" height="30" alt="${review.customer_name}">
+                            <small>${review.customer_name} • ${review.service_type}</small>
                         </div>
                         ${hasReply ? `
                             <div class="review-reply mt-3">
