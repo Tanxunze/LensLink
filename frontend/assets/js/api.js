@@ -295,6 +295,16 @@ class API {
         return this.request(`/bookings/count${status ? `?status=${status}` : ''}`);
     }
 
+    /**
+     * Get bookings list
+     * @param {Object} params - Query parameters (status, search, page, limit, sort_field, sort_order)
+     * @returns {Promise} - Bookings list
+     */
+    static async getBookings(params = {}) {
+        const queryString = new URLSearchParams(params).toString();
+        return this.request(`/bookings${queryString ? `?${queryString}` : ''}`);
+    }
+
     // Review APIs
 
     /**
@@ -382,6 +392,18 @@ class API {
         return this.request("/messages/mark-as-read", {
             method: "POST",
             body: JSON.stringify({ conversation_id: conversationId }),
+        });
+    }
+
+    /**
+     * Reply to an existing conversation
+     * @param {Object} replyData - Reply data (conversation_id and message)
+     * @returns {Promise} - Reply response
+     */
+    static async replyToConversation(replyData) {
+        return this.request("/messages/reply", {
+            method: "POST",
+            body: JSON.stringify(replyData),
         });
     }
 

@@ -49,6 +49,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/messages/count', [MessageController::class, 'count']);
     Route::get('/messages/conversation/{id}', [MessageController::class, 'getConversationMessages']);
     Route::post('/messages/mark-as-read', [MessageController::class, 'markAsRead']);
+    Route::post('/messages/reply', [MessageController::class, 'replyToConversation']);
 
 
     // Bookings
@@ -57,6 +58,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/bookings/count', [BookingController::class, 'count']);
     Route::get('/bookings/{id}', [BookingController::class, 'show']);
     Route::put('/bookings/{id}/cancel', [BookingController::class, 'cancel']);
+    Route::get('earnings/chart', [BookingController::class, 'earnings']);
 
     // Photographer dashboard
     Route::post('/photographer/dashboard', [App\Http\Controllers\API\PhotographerDashboard\Dashboard::class, 'index']);
@@ -64,29 +66,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('photographer/profile',[\App\Http\Controllers\API\PhotographerController::class,'show']);
 
     // Admin dashboard
-    Route::middleware('auth:sanctum')->group(function () {
-        // back-end stastics
-        Route::get('/admin/stats', [AdminController::class, 'getStats']);
 
-        // Get recently registered users
-        Route::get('/admin/users/recent', [AdminController::class, 'getRecentUsers']);
-
-        // Getting system logs
-        Route::get('/admin/logs', [AdminController::class, 'getLogs']);
-
-        // Get comments
-        Route::get('/admin/comments', [AdminController::class, 'getComments']);
-
-        // Delete comments
-        Route::delete('/admin/comments/{id}', [AdminController::class, 'deleteComment']);
-
-        // Ban users
-        Route::post('/admin/users/{id}/ban', [AdminController::class, 'banUser']);
-    });
-});
-
-    // Admin dashboard
-Route::middleware('auth:sanctum')->group(function () {
     // back-end stastics
     Route::get('/admin/stats', [AdminController::class, 'getStats']);
 
@@ -105,3 +85,4 @@ Route::middleware('auth:sanctum')->group(function () {
     // Ban users
     Route::post('/admin/users/{id}/ban', [AdminController::class, 'banUser']);
 });
+
