@@ -405,7 +405,8 @@ function loadRecentBookings() {
         </tr>
     `);
 
-    fetch(`${CONFIG.API.BASE_URL}/bookings?limit=5&sort=date_desc`, {
+    fetch(`${CONFIG.API.BASE_URL}/photographer/profile/recent-bookings`, {
+        method: "POST",
         headers: {
             'Authorization': `Bearer ${localStorage.getItem("token")}`,
             'Content-Type': 'application/json'
@@ -429,8 +430,8 @@ function loadRecentBookings() {
 
             const rows = data.map(booking => `
             <tr>
-                <td>${booking.customer.name}</td>
-                <td>${booking.service.name}</td>
+                <td>${booking.customer_name}</td>
+                <td>${booking.service_name}</td>
                 <td>${formatDate(booking.booking_date)}</td>
                 <td>
                     <span class="badge ${getStatusBadgeClass(booking.status)}">

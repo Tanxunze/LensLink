@@ -10,6 +10,7 @@ use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use App\Models\Booking;
+use Illuminate\Support\Facades\DB;
 
 class Dashboard extends Controller
 {
@@ -93,5 +94,88 @@ class Dashboard extends Controller
             $results[]=$return_booking;
         }
         return $results;
+    }
+
+    public function show(Request $request)
+    {
+        $photographer_id=$request->user()->photographerProfile->id;
+
+        $photographer = PhotographerProfile::with(['user', 'categories', 'services', 'portfolioItems'])
+            ->findOrFail($photographer_id);
+
+        $services = $photographer->services->map(function ($service) {
+            return [
+                'id' => $service->id,
+                'name' => $service->name,
+                'description' => $service->description,
+                'price' => $service->price,
+                'unit' => $service->unit,
+                'duration' => $service->duration,
+                'is_featured' => $service->is_featured,
+                'features' => $service->features->pluck('feature')
+            ];
+        });
+
+        $portfolio = $photographer->portfolioItems->map(function ($item) {
+            return [
+                'id' => $item->id,
+                'title' => $item->title,
+                'description' => $item->description,
+                'image' => $item->image_path,
+                'category' => $item->category->name ?? null,
+                'featured' => $item->featured
+            ];
+        });
+
+        $reviews = DB::table('reviews')
+            ->join('users', 'reviews.customer_id', '=', 'users.id')
+            ->where('reviews.photographer_id', $photographer_id)
+            ->where('reviews.is_published', true)
+            ->select('reviews.*', 'users.name as customer_name', 'users.profile_image as customer_image')
+            ->limit(5)
+            ->get();
+
+        return response()->json([
+            'id' => $photographer->id,
+            'name' => $photographer->user->name,
+            'email' => $photographer->user->email,
+            'profile_image' => $photographer->user->profile_image,
+            'banner_image' => $photographer->banner_image,
+            'bio' => $photographer->user->bio,
+            'specialization' => $photographer->specialization,
+            'location' => $photographer->location,
+            'experience_years' => $photographer->experience_years,
+            'photoshoot_count' => $photographer->photoshoot_count,
+            'rating' => $photographer->average_rating,
+            'review_count' => $photographer->review_count,
+            'starting_price' => $photographer->starting_price,
+            'categories' => $photographer->categories->pluck('name'),
+            'services' => $services,
+            'portfolio' => $portfolio,
+            'reviews' => $reviews,
+        ]);
+    }
+
+    public function recentBookings(Request $request)
+    {
+        $photographer_id=$request->user()->photographerProfile->id;
+
+        $bookings=DB::table('bookings')
+            ->join('users','bookings.customer_id','=','users.id')
+            ->join('services','bookings.service_id','=','services.id')
+            ->where('bookings.photographer_id',$photographer_id)
+            ->select('bookings.*','users.name as customer_name','users.profile_image as customer_image','services.name as service_name')
+            ->get();
+
+        $bookings = $bookings->map(function($booking) {
+            $booking->customer = (object)[
+                'id' => $booking->customer_id,
+                'name' => $booking->customer_name,
+                'image' => $booking->customer_image
+            ];
+            return $booking;
+        });
+
+        return response()->json($bookings);
     }
 }
