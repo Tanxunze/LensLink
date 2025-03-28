@@ -859,7 +859,6 @@ function showMessagesSection() {
 }
 
 function loadMessages() {
-    // 显示加载状态
     $("#conversationsList").html(`
         <div class="text-center p-3">
             <div class="spinner-border spinner-border-sm" role="status">
@@ -869,7 +868,6 @@ function loadMessages() {
         </div>
     `);
 
-    // 重置消息显示区
     $("#conversationTitle").text("Select a conversation");
     $("#messagesContainer").html(`
         <div class="text-center p-5">
@@ -879,10 +877,8 @@ function loadMessages() {
     `);
     $("#messageInputContainer").addClass("d-none");
 
-    // 使用API获取会话列表
     API.getConversations()
         .then(data => {
-            // 保存会话数据供后续使用
             window.conversationsData = data;
 
             if (!data || data.length === 0) {
@@ -901,9 +897,7 @@ function loadMessages() {
                 return;
             }
 
-            // 显示会话列表
             const conversationsHtml = data.map(conversation => {
-                // 确定对话另一方的信息
                 const otherParty = conversation.photographer && conversation.photographer.user
                     ? conversation.photographer.user
                     : (conversation.customer || {});
@@ -923,11 +917,11 @@ function loadMessages() {
                        data-photographer-id="${conversation.photographer ? conversation.photographer.id : ''}"
                        data-other-name="${otherParty.name || 'User'}">
                         <div class="d-flex w-100 justify-content-between">
-                            <h6 class="mb-1">${otherParty.name || 'User'}</h6>
-                            <small>${lastMsgTime}</small>
+                            <h6 class="mb-1 conversation-name">${otherParty.name || 'User'}</h6>
+                            <small class="conversation-time">${lastMsgTime}</small>
                         </div>
-                        <div class="d-flex w-100 justify-content-between">
-                            <p class="mb-1 text-truncate">${conversation.last_message || conversation.subject || 'No messages yet'}</p>
+                        <div class="d-flex w-100 justify-content-between align-items-center">
+                            <p class="mb-1 text-truncate conversation-preview">${conversation.last_message || conversation.subject || 'No messages yet'}</p>
                             ${unreadBadge}
                         </div>
                     </a>
@@ -935,22 +929,17 @@ function loadMessages() {
             }).join('');
 
             $("#conversationsList").html(conversationsHtml);
-
-            // 添加会话点击事件
             $(".conversation-item").click(function (e) {
                 e.preventDefault();
                 const conversationId = $(this).data("id");
                 const photographerId = $(this).data("photographer-id");
                 const otherName = $(this).data("other-name");
 
-                // 存储会话信息
                 $("#sendMessageForm").data("conversation-id", conversationId);
                 $("#sendMessageForm").data("photographer-id", photographerId);
                 $("#conversationTitle").text(otherName);
 
                 loadConversation(conversationId);
-
-                // 更新选中状态
                 $(".conversation-item").removeClass("active");
                 $(this).addClass("active");
             });
@@ -1262,5 +1251,50 @@ function markMessagesAsRead(conversationId) {
         })
         .catch(error => {
             console.error("Failed to mark messages as read:", error);
+        });
+}
+
+function sendNewMessage() {
+    const photographerId = $("#messageRecipient").val();
+    const subject = $("#messageSubject").val();
+    const message = $("#messageContent").val();
+
+    if (!photographerId) {
+        showNotification("Please select photographer", "warning");
+        return;
+    }
+
+    if (!subject.trim()) {
+        showNotification("Please type subject", "warning");
+        return;
+    }
+
+    if (!message.trim()) {
+        showNotification("Please type message", "warning");
+        return;
+    }
+
+    const messageData = {
+        photographer_id: photographerId,
+        subject: subject,
+        message: message
+    };
+
+    $("#sendNewMessageBtn").prop("disabled", true).html('<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Sending...');
+
+    API.sendMessage(messageData)
+        .then(response => {
+            showNotification("消息发送成功", "success");
+            $("#newMessageForm")[0].reset();
+            const newMessageModal = bootstrap.Modal.getInstance(document.getElementById('newMessageModal'));
+            newMessageModal.hide();
+            loadMessages();
+        })
+        .catch(error => {
+            console.error("发送消息失败:", error);
+            showNotification("消息发送失败，请稍后再试", "error");
+        })
+        .finally(() => {
+            $("#sendNewMessageBtn").prop("disabled", false).html('发送消息');
         });
 }
