@@ -295,6 +295,16 @@ class API {
         return this.request(`/bookings/count${status ? `?status=${status}` : ''}`);
     }
 
+    /**
+     * Get bookings list
+     * @param {Object} params - Query parameters (status, search, page, limit, sort_field, sort_order)
+     * @returns {Promise} - Bookings list
+     */
+    static async getBookings(params = {}) {
+        const queryString = new URLSearchParams(params).toString();
+        return this.request(`/bookings${queryString ? `?${queryString}` : ''}`);
+    }
+
     // Review APIs
 
     /**
