@@ -15,38 +15,74 @@ class MessageController extends Controller
     public function getConversations()
     {
         $user = Auth::user();
-        $query = Conversation::with(['photographer', 'customer']);
+        $participatedConversationIds = DB::table('conversation_participants')
+            ->where('user_id', $user->id)
+            ->pluck('conversation_id');
 
-        if ($user->role === 'photographer') {
-            $query->where('photographer_id', $user->photographerProfile->id);
-        } else {
-            $query->where('customer_id', $user->id);
-        }
+        $conversations = Conversation::whereIn('id', $participatedConversationIds)
+            ->with(['participants.user'])
+            ->orderBy('updated_at', 'desc')
+            ->get();
 
-        $conversations = $query->orderBy('updated_at', 'desc')->get();
+        $result = [];
 
         foreach ($conversations as $conversation) {
+            $otherParticipants = DB::table('conversation_participants AS cp')
+                ->join('users AS u', 'cp.user_id', '=', 'u.id')
+                ->leftJoin('photographer_profiles AS pp', 'u.id', '=', 'pp.user_id')
+                ->where('cp.conversation_id', $conversation->id)
+                ->where('cp.user_id', '!=', $user->id)
+                ->select('u.id', 'u.name', 'u.email', 'u.profile_image', 'pp.id AS photographer_id')
+                ->first();
+
+            $lastMessage = Message::where('conversation_id', $conversation->id)
+                ->orderBy('created_at', 'desc')
+                ->first();
+
             $unreadCount = Message::where('conversation_id', $conversation->id)
                 ->where('sender_id', '!=', $user->id)
                 ->where('is_read', false)
                 ->count();
 
-            $conversation->unread_count = $unreadCount;
+            $formattedConversation = [
+                'id' => $conversation->id,
+                'subject' => $conversation->subject,
+                'last_message' => $lastMessage ? $lastMessage->message : null,
+                'last_message_time' => $lastMessage ? $lastMessage->created_at : $conversation->created_at,
+                'unread_count' => $unreadCount,
+                'updated_at' => $conversation->updated_at,
+                'created_at' => $conversation->created_at
+            ];
+
+            if ($otherParticipants) {
+                if ($user->role === 'customer') {
+                    $formattedConversation['photographer'] = [
+                        'id' => $otherParticipants->photographer_id,
+                        'user' => [
+                            'id' => $otherParticipants->id,
+                            'name' => $otherParticipants->name,
+                            'email' => $otherParticipants->email,
+                            'profile_image' => $otherParticipants->profile_image
+                        ]
+                    ];
+                } else {
+                    $formattedConversation['customer'] = [
+                        'id' => $otherParticipants->id,
+                        'name' => $otherParticipants->name,
+                        'email' => $otherParticipants->email,
+                        'profile_image' => $otherParticipants->profile_image
+                    ];
+                }
+            }
+
+            $result[] = $formattedConversation;
         }
 
-        return response()->json($conversations);
+        return response()->json($result);
     }
 
     public function getConversationMessages($id, Request $request)
     {
-        $conversation = Conversation::findOrFail($id);
-        $user = Auth::user();
-
-        if (($user->role === 'photographer' && $user->photographerProfile->id != $conversation->photographer_id) ||
-            ($user->role === 'customer' && $user->id != $conversation->customer_id)) {
-            return response()->json(['message' => 'Unauthorized'], 403);
-        }
-
         $messages = Message::where('conversation_id', $id)
             ->with('sender')
             ->orderBy('created_at', 'desc')
@@ -145,12 +181,6 @@ class MessageController extends Controller
         ]);
 
         $user = Auth::user();
-        $conversation = Conversation::findOrFail($request->conversation_id);
-
-        if (($user->role === 'photographer' && $user->photographerProfile->id != $conversation->photographer_id) ||
-            ($user->role === 'customer' && $user->id != $conversation->customer_id)) {
-            return response()->json(['message' => 'Unauthorized'], 403);
-        }
 
         Message::where('conversation_id', $request->conversation_id)
             ->where('sender_id', '!=', $user->id)
@@ -178,5 +208,42 @@ class MessageController extends Controller
         $count = $query->count();
 
         return response()->json(['count' => $count]);
+    }
+
+    public function replyToConversation(Request $request)
+    {
+        $request->validate([
+            'conversation_id' => 'required|exists:conversations,id',
+            'message' => 'required|string'
+        ]);
+
+        $user = Auth::user();
+        $conversationId = $request->conversation_id;
+
+        $isParticipant = DB::table('conversation_participants')
+            ->where('conversation_id', $conversationId)
+            ->where('user_id', $user->id)
+            ->exists();
+
+        if (!$isParticipant) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
+
+        $message = new Message([
+            'conversation_id' => $conversationId,
+            'sender_id' => $user->id,
+            'message' => $request->message,
+            'is_read' => false
+        ]);
+        $message->save();
+
+        DB::table('conversations')
+            ->where('id', $conversationId)
+            ->update(['updated_at' => now()]);
+
+        return response()->json([
+            'success' => true,
+            'message_id' => $message->id
+        ], 201);
     }
 }

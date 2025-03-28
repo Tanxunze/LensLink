@@ -396,6 +396,18 @@ class API {
     }
 
     /**
+     * Reply to an existing conversation
+     * @param {Object} replyData - Reply data (conversation_id and message)
+     * @returns {Promise} - Reply response
+     */
+    static async replyToConversation(replyData) {
+        return this.request("/messages/reply", {
+            method: "POST",
+            body: JSON.stringify(replyData),
+        });
+    }
+
+    /**
     * Get count of unread messages
     * @returns {Promise} - Count response
     */
