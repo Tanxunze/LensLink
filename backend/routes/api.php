@@ -66,24 +66,23 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('photographer/profile',[\App\Http\Controllers\API\PhotographerController::class,'show']);
 
     // Admin dashboard
-    Route::middleware('auth:sanctum')->group(function () {
-        // back-end stastics
-        Route::get('/admin/stats', [AdminController::class, 'getStats']);
 
-        // Get recently registered users
-        Route::get('/admin/users/recent', [AdminController::class, 'getRecentUsers']);
+    // back-end stastics
+    Route::get('/admin/stats', [AdminController::class, 'getStats']);
 
-        // Getting system logs
-        Route::get('/admin/logs', [AdminController::class, 'getLogs']);
+    // Get recently registered users
+    Route::get('/admin/users/recent', [AdminController::class, 'getRecentUsers']);
 
-        // Get comments
-        Route::get('/admin/comments', [AdminController::class, 'getComments']);
+    // Getting system logs
+    Route::get('/admin/logs', [AdminController::class, 'getLogs']);
 
-        // Delete comments
-        Route::delete('/admin/comments/{id}', [AdminController::class, 'deleteComment']);
+    // Get comments
+    Route::get('/admin/comments', [AdminController::class, 'getComments']);
 
-        // Ban users
-        Route::post('/admin/users/{id}/ban', [AdminController::class, 'banUser']);
-    });
+    // Delete comments
+    Route::delete('/admin/comments/{id}', [AdminController::class, 'deleteComment']);
+
+    // Ban users
+    Route::post('/admin/users/{id}/ban', [AdminController::class, 'banUser']);
 });
 
