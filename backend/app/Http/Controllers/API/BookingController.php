@@ -117,4 +117,51 @@ class BookingController extends Controller
         $count = $query->count();
         return response()->json(['count' => $count]);
     }
+
+    public function earnings(Request $request)
+    {
+        $request->validate([
+            'days' => 'required|integer|min:1|max:365',
+        ]);
+
+        $days = $request->days;
+        $user = Auth::user();
+        $photographer_id = $user->photographerProfile->id;
+
+        // Get current date and the date $days ago
+        $endDate = today();
+        $startDate = today()->subDays($days - 1);
+
+        // Generate all dates in the range for complete data set
+        $dateRange = [];
+        $currentDate = clone $startDate;
+
+        while ($currentDate->lte($endDate)) {
+            $dateRange[$currentDate->format('Y-m-d')] = 0;
+            $currentDate->addDay();
+        }
+
+        // Query to get earnings data grouped by date
+        $bookings = Booking::where('photographer_id', $photographer_id)
+            ->where('status', 'completed')
+            ->get();
+
+        // Fill in the data array with actual earnings
+        $earnings = $dateRange;
+        foreach ($bookings as $booking) {
+            $bookingDate = $booking->created_at->format('Y-m-d');
+            if (isset($earnings[$bookingDate])) {
+                $earnings[$bookingDate] += (float) $booking->service->price;
+            }
+        }
+
+        // Prepare data in format expected by the chart
+        $labels = array_keys($earnings);
+        $values = array_values($earnings);
+
+        return response()->json([
+            'labels' => $labels,
+            'values' => $values,
+        ]);
+    }
 }
