@@ -117,20 +117,16 @@ class BookingController extends Controller
         $booking = Booking::findOrFail($id);
         $user = Auth::user();
 
-        // 检查用户是否有权限访问此预订
         if (($user->role === 'photographer' && $user->photographerProfile->id != $booking->photographer_id) ||
             ($user->role === 'customer' && $user->id != $booking->customer_id)) {
             return response()->json(['message' => 'Unauthorized'], 403);
         }
 
-        // 检查预订是否可以取消
         if (!in_array($booking->status, ['pending', 'confirmed'])) {
             return response()->json(['message' => 'Cannot cancel booking with status: ' . $booking->status], 400);
         }
 
         $booking->status = 'cancelled';
-        $booking->cancelled_by = $user->role;
-        $booking->cancelled_at = now();
         $booking->save();
 
         return response()->json($booking);

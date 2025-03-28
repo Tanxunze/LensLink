@@ -93,11 +93,8 @@ class PhotographerController extends Controller
         ]);
     }
 
-    public function show(Request $request)
+    public function show($id)
     {
-        $user = $request->user();
-        $id = $request->user()->photographerProfile->id ?? null;
-
         $photographer = PhotographerProfile::with(['user', 'categories', 'services', 'portfolioItems'])
             ->findOrFail($id);
 

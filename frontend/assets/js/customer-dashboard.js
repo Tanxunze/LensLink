@@ -3,6 +3,12 @@ $(document).ready(function () {
     loadDashboardData();
     setupEventHandlers();
     loadSectionFromUrlHash();
+    $(document).on('hidden.bs.modal', '#bookingDetailsModal', function () {
+        console.log("Booking modal closed - cleaning up");
+        $('.modal-backdrop').remove();
+        $('body').removeClass('modal-open').css('overflow', '');
+        $('body').css('padding-right', '');
+    });
 });
 
 // Setting up event handling
@@ -644,8 +650,19 @@ function openBookingDetailsModal(bookingId) {
 
     $("#bookingDetailsModal .modal-footer").hide();
 
-    const bookingModal = new bootstrap.Modal(document.getElementById('bookingDetailsModal'));
-    bookingModal.show();
+    try {
+        const modalElement = document.getElementById('bookingDetailsModal');
+        console.log("Modal element exists:", !!modalElement);
+        const bookingModal = new bootstrap.Modal(modalElement);
+        bookingModal.show();
+    } catch (err) {
+        console.error("Error showing modal:", err);
+        alert("Could not open booking details. Please try again.");
+        return;
+    }
+
+    console.log("Fetching booking details, ID:", bookingId);
+    console.log("Request URL:", `${CONFIG.API.BASE_URL}/bookings/${bookingId}`);
 
     fetch(`${CONFIG.API.BASE_URL}/bookings/${bookingId}`, {
         headers: {
@@ -654,15 +671,29 @@ function openBookingDetailsModal(bookingId) {
         }
     })
         .then(response => {
+            console.log("API response status:", response.status);
             if (!response.ok) {
                 throw new Error('Failed to load booking details');
             }
             return response.json();
         })
         .then(booking => {
-            updateBookingDetailsModal(booking);
-            $("#bookingDetailsModal .modal-footer").show();
-            setupBookingModalButtons(booking);
+            console.log("Booking data received successfully");
+            console.log("Booking object:", booking);
+
+            try {
+                updateBookingDetailsModal(booking);
+                $("#bookingDetailsModal .modal-footer").show();
+                setupBookingModalButtons(booking);
+
+            } catch (err) {
+                console.error("Error updating modal:", err);
+                $("#bookingDetailsModal .modal-body").html(`
+                <div class="alert alert-danger">
+                    An error occurred while displaying booking details.
+                </div>
+            `);
+            }
         })
         .catch(error => {
             console.error("Failed to load booking details:", error);
@@ -674,70 +705,119 @@ function openBookingDetailsModal(bookingId) {
         });
 }
 
-// Update booking details modal content
 function updateBookingDetailsModal(booking) {
-    const photographerName = booking.photographer.user ? booking.photographer.user.name : booking.photographer.name;
-    const photographerImage = booking.photographer.image || '../../assets/images/default-photographer.jpg';
+    console.log("Modal body exists:", $("#bookingDetailsModal .modal-body").length);
+    console.log("About to update modal body...");
 
-    $("#bookingPhotographerImage").attr("src", photographerImage);
-    $("#bookingPhotographerName").text(photographerName);
-    $("#bookingServiceName").text(booking.service.name);
-    $("#bookingStatus").html(`
-        <span class="badge ${getStatusBadgeClass(booking.status)}">
-            ${capitalizeFirstLetter(booking.status)}
-        </span>
-    `);
+    try {
+        const photographerName = booking.photographer.user.name || 'Unknown';
+        const photographerImage = booking.photographer.user.profile_image || '../../assets/images/default-photographer.jpg';
+        const serviceName = booking.service.name || 'Unknown service';
+        const serviceDescription = booking.service.description || 'No description available';
+        let htmlContent = `
+            <div class="row">
+                <div class="col-md-4 mb-3">
+                    <img src="${photographerImage}" alt="Photographer" class="img-fluid rounded" id="bookingPhotographerImage">
+                </div>
+                <div class="col-md-8">
+                    <h4 id="bookingPhotographerName">${photographerName}</h4>
+                    <p class="text-muted" id="bookingServiceName">${serviceName}</p>
+                    <div id="bookingStatus" class="mb-3">
+                        <span class="badge ${getStatusBadgeClass(booking.status)}">
+                            ${capitalizeFirstLetter(booking.status)}
+                        </span>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <p><strong>Date:</strong> <span id="bookingDate">${formatDate(booking.booking_date)}</span></p>
+                            <p><strong>Time:</strong> <span id="bookingTime">${booking.start_time}${booking.end_time ? ` - ${booking.end_time}` : ''}</span></p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>Location:</strong> <span id="bookingLocation">${booking.location || 'Not specified'}</span></p>
+                            <p><strong>Price:</strong> <span id="bookingPrice">€${booking.total_amount}</span></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <hr>
+            <div class="mb-3">
+                <h5>Service Details</h5>
+                <p id="bookingServiceDescription">${serviceDescription}</p>
+            </div>
+            <div class="mb-3" id="bookingServiceFeatures">
+                <p class="text-muted">Service includes professional photography as described above.</p>
+            </div>
+            <div class="mb-3">
+                <h5>Notes</h5>
+                <p id="bookingNotes">${booking.notes || 'No additional notes'}</p>
+            </div>
+        `;
 
-    $("#bookingDate").text(formatDate(booking.booking_date));
-    $("#bookingTime").text(booking.start_time + (booking.end_time ? ` - ${booking.end_time}` : ''));
-    $("#bookingLocation").text(booking.location || 'Not specified');
-    $("#bookingPrice").text(`€${booking.total_amount}`);
+        $("#bookingDetailsModal .modal-body").html(htmlContent);
+        console.log("Modal body updated with jQuery");
 
-    $("#bookingServiceDescription").text(booking.service.description || 'No description available');
-
-    // Service features
-    if (booking.service.features && booking.service.features.length > 0) {
-        const featuresList = booking.service.features
-            .map(feature => `<li><i class="bi bi-check text-success me-2"></i>${feature}</li>`)
-            .join('');
-        $("#bookingServiceFeatures").html(`<ul class="list-unstyled">${featuresList}</ul>`);
-    } else {
-        $("#bookingServiceFeatures").html('<p class="text-muted">No features listed</p>');
-    }
-
-    // Notes
-    $("#bookingNotes").text(booking.notes || 'No additional notes');
-
-    // Enable/disable buttons based on booking status
-    if (booking.status === 'completed' || booking.status === 'cancelled') {
-        $("#bookingRescheduleBtn, #bookingCancelBtn").prop('disabled', true);
-    } else {
-        $("#bookingRescheduleBtn, #bookingCancelBtn").prop('disabled', false);
+        return true;
+    } catch (err) {
+        console.error("Error in updateBookingDetailsModal:", err);
+        $("#bookingDetailsModal .modal-body").html(`
+            <div class="alert alert-danger">
+                Error displaying booking details: ${err.message}
+            </div>
+        `);
+        return false;
     }
 }
 
-// Setup booking modal buttons
 function setupBookingModalButtons(booking) {
-    $("#messagePhotographerBtn").off('click').on('click', function () {
-        bootstrap.Modal.getInstance(document.getElementById('bookingDetailsModal')).hide();
+    console.log("Setting up button handlers");
 
-        $(".nav-link").removeClass("active");
-        $('[data-section="messages"]').addClass("active");
-        $(".dashboard-section").addClass("d-none");
-        $("#messagesSection").removeClass("d-none");
+    try {
+        $("#messagePhotographerBtn").off('click').on('click', function () {
+            try {
+                const modalInstance = bootstrap.Modal.getInstance(document.getElementById('bookingDetailsModal'));
+                if (modalInstance) {
+                    modalInstance.hide();
+                }
 
-        createOrOpenConversation(booking.photographer.id);
-    });
+                $(".nav-link").removeClass("active");
+                $('[data-section="messages"]').addClass("active");
+                $(".dashboard-section").addClass("d-none");
+                $("#messagesSection").removeClass("d-none");
 
-    $("#bookingRescheduleBtn").off('click').on('click', function () {
-        alert(`Reschedule functionality for booking ID ${booking.id} will be implemented soon.`);
-    });
+                if (typeof createOrOpenConversation === 'function' && booking.photographer && booking.photographer.id) {
+                    createOrOpenConversation(booking.photographer.id);
+                } else {
+                    console.warn("createOrOpenConversation function not available or photographer ID missing");
+                    showNotification("Message feature will be available soon", "info");
+                }
+            } catch (err) {
+                console.error("Error in message button handler:", err);
+                showNotification("Could not open messaging interface", "error");
+            }
+        });
 
-    $("#bookingCancelBtn").off('click').on('click', function () {
-        if (confirm("Are you sure you want to cancel this booking?")) {
-            cancelBooking(booking.id);
+        $("#bookingRescheduleBtn").off('click').on('click', function () {
+            alert(`Reschedule functionality for booking ID ${booking.id} will be implemented soon.`);
+        });
+
+        $("#bookingCancelBtn").off('click').on('click', function () {
+            if (confirm("Are you sure you want to cancel this booking?")) {
+                cancelBooking(booking.id);
+            }
+        });
+
+        if (booking.status === 'completed' || booking.status === 'cancelled') {
+            $("#bookingRescheduleBtn, #bookingCancelBtn").prop('disabled', true);
+        } else {
+            $("#bookingRescheduleBtn, #bookingCancelBtn").prop('disabled', false);
         }
-    });
+
+        console.log("Button handlers set up");
+        return true;
+    } catch (error) {
+        console.error("Error setting up booking modal buttons:", error);
+        return false;
+    }
 }
 
 // Cancel booking
