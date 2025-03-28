@@ -955,7 +955,6 @@ function loadMessages() {
 }
 
 function loadConversation(conversationId) {
-    // 显示加载状态
     $("#messagesContainer").html(`
         <div class="text-center p-3">
             <div class="spinner-border" role="status">
@@ -965,16 +964,11 @@ function loadConversation(conversationId) {
         </div>
     `);
 
-    // 获取会话消息
     API.getConversationMessages(conversationId)
         .then(data => {
-            // 保存当前会话ID供发送消息使用
             $("#sendMessageForm").data("conversation-id", conversationId);
-
-            // 确定对话的另一方（摄影师）
             const messages = data.data || [];
 
-            // 如果没有消息，显示空状态
             if (messages.length === 0) {
                 $("#conversationTitle").text("New conversation");
                 $("#messagesContainer").html(`
@@ -984,12 +978,10 @@ function loadConversation(conversationId) {
                     </div>
                 `);
             } else {
-                // 从第一条消息获取对话信息
                 const firstMessage = messages[0];
                 const senderId = firstMessage.sender_id;
                 const currentUserId = parseInt(localStorage.getItem("userId") || "0");
 
-                // 设置会话标题
                 if (firstMessage.sender && senderId !== currentUserId) {
                     $("#conversationTitle").text(firstMessage.sender.name || "Conversation");
                 } else if (messages.length > 1 && messages[1].sender) {
@@ -998,7 +990,6 @@ function loadConversation(conversationId) {
                     $("#conversationTitle").text("Conversation");
                 }
 
-                // 显示消息列表
                 const messagesHtml = messages.map(message => {
                     const isCurrentUser = message.sender_id === currentUserId;
                     const messageClass = isCurrentUser ? 'message-sent' : 'message-received';
@@ -1026,15 +1017,11 @@ function loadConversation(conversationId) {
                     </div>
                 `);
 
-                // 滚动到最新消息
                 const messagesContainer = document.getElementById("messagesContainer");
                 messagesContainer.scrollTop = messagesContainer.scrollHeight;
             }
 
-            // 显示消息输入框
             $("#messageInputContainer").removeClass("d-none");
-
-            // 标记消息为已读
             markMessagesAsRead(conversationId);
         })
         .catch(error => {
@@ -1060,22 +1047,16 @@ function sendMessage() {
         return;
     }
 
-    // 使用新的API端点发送回复
     const replyData = {
         conversation_id: conversationId,
         message: message
     };
 
-    // 禁用输入框，防止重复发送
     $("#messageInput").prop("disabled", true);
 
-    // 使用API发送回复
     API.replyToConversation(replyData)
         .then(data => {
-            // 清空输入框
             $("#messageInput").val("").prop("disabled", false).focus();
-
-            // 重新加载会话
             loadConversation(conversationId);
         })
         .catch(error => {
@@ -1086,10 +1067,7 @@ function sendMessage() {
 }
 
 function openNewMessageModal() {
-    // 重置表单
     $("#newMessageForm")[0].reset();
-
-    // 加载摄影师列表
     $("#messageRecipient").html(`<option value="">Loading photographers...</option>`);
 
     API.getPhotographers()
@@ -1113,7 +1091,6 @@ function openNewMessageModal() {
             $("#messageRecipient").html(`<option value="">Error loading photographers</option>`);
         });
 
-    // 显示模态框
     const newMessageModal = new bootstrap.Modal(document.getElementById('newMessageModal'));
     newMessageModal.show();
 }
@@ -1131,19 +1108,11 @@ function sendMessage() {
         return;
     }
 
-    // 先获取当前对话的信息，以找到摄影师ID
     let conversation = null;
-
-    // 查找选中的对话项
     const activeConversationElement = $(".conversation-item.active");
     if (activeConversationElement.length) {
-        // 从数据属性获取对话ID
         const activeConversationId = activeConversationElement.data("id");
-
-        // 如果这个ID与我们要回复的对话ID匹配，获取摄影师ID
         if (activeConversationId == conversationId) {
-            // 获取该对话的摄影师ID (这个可能需要从其他地方获取)
-            // 假设我们在页面加载时将会话数据存储在全局变量中
             if (window.conversationsData) {
                 conversation = window.conversationsData.find(c => c.id == conversationId);
             }
@@ -1155,18 +1124,14 @@ function sendMessage() {
         return;
     }
 
-    // 用于已存在的对话，但按照API的要求构造数据
     const messageData = {
         photographer_id: conversation.photographer.id,
         message: message,
-        // 可以保留原始会话主题
         subject: conversation.subject || "Reply to conversation"
     };
 
-    // 禁用输入框，防止重复发送
     $("#messageInput").prop("disabled", true);
 
-    // 使用API发送消息
     fetch(`${CONFIG.API.BASE_URL}/messages`, {
         method: 'POST',
         headers: {
@@ -1182,10 +1147,7 @@ function sendMessage() {
             return response.json();
         })
         .then(data => {
-            // 清空输入框
             $("#messageInput").val("").prop("disabled", false).focus();
-
-            // 重新加载会话
             loadConversation(conversationId);
         })
         .catch(error => {
@@ -1201,32 +1163,25 @@ function createOrOpenConversation(photographerId) {
         return;
     }
 
-    // 从其他页面切换到消息标签
     $(".nav-link").removeClass("active");
     $('[data-section="messages"]').addClass("active");
     $(".dashboard-section").addClass("d-none");
     $("#messagesSection").removeClass("d-none");
 
-    // 先查找是否已存在对话
     API.getConversations()
         .then(conversations => {
-            // 确保返回值是数组
             const conversationList = Array.isArray(conversations) ? conversations : [];
 
-            // 查找与该摄影师的对话
             const existingConversation = conversationList.find(conv => {
                 return conv.photographer && conv.photographer.id == photographerId;
             });
 
             if (existingConversation) {
-                // 如果找到现有对话，打开它
                 setTimeout(() => {
                     $(".conversation-item[data-id='" + existingConversation.id + "']").click();
                 }, 500);
                 return;
             }
-
-            // 如果没有找到现有对话，创建新对话
             $("#messageRecipient").val(photographerId);
             $("#messageSubject").val(`Regarding photography services`);
             openNewMessageModal();
@@ -1235,7 +1190,6 @@ function createOrOpenConversation(photographerId) {
             console.error("Failed to check conversations:", error);
             showNotification("Failed to open conversation. Please try again.", "error");
 
-            // 出错时仍然打开新消息模态框
             $("#messageRecipient").val(photographerId);
             $("#messageSubject").val(`Regarding photography services`);
             openNewMessageModal();
@@ -1284,17 +1238,17 @@ function sendNewMessage() {
 
     API.sendMessage(messageData)
         .then(response => {
-            showNotification("消息发送成功", "success");
+            showNotification("success");
             $("#newMessageForm")[0].reset();
             const newMessageModal = bootstrap.Modal.getInstance(document.getElementById('newMessageModal'));
             newMessageModal.hide();
             loadMessages();
         })
         .catch(error => {
-            console.error("发送消息失败:", error);
-            showNotification("消息发送失败，请稍后再试", "error");
+            console.error(error);
+            showNotification("error");
         })
         .finally(() => {
-            $("#sendNewMessageBtn").prop("disabled", false).html('发送消息');
+            $("#sendNewMessageBtn").prop("disabled", false).html('Send Message');
         });
 }
