@@ -849,47 +849,418 @@ function cancelBooking(bookingId) {
         });
 }
 
-// Placeholder functions - implementation depends on your specific requirements
-function loadMessages() {
-    // Implementation for loading messages
-}
-
 function showMessagesSection() {
-    // Implementation for showing messages section
+    $(".nav-link").removeClass("active");
+    $('[data-section="messages"]').addClass("active");
+    $(".dashboard-section").addClass("d-none");
+    $("#messagesSection").removeClass("d-none");
+    loadMessages();
+    window.location.hash = "messages";
 }
 
-function openNewMessageModal() {
-    // Implementation for opening new message modal
+function loadMessages() {
+    // 显示加载状态
+    $("#conversationsList").html(`
+        <div class="text-center p-3">
+            <div class="spinner-border spinner-border-sm" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <span class="ms-2">Loading conversations...</span>
+        </div>
+    `);
+
+    // 重置消息显示区
+    $("#conversationTitle").text("Select a conversation");
+    $("#messagesContainer").html(`
+        <div class="text-center p-5">
+            <i class="bi bi-chat-dots display-4 text-muted"></i>
+            <p class="mt-3">Select a conversation to view messages</p>
+        </div>
+    `);
+    $("#messageInputContainer").addClass("d-none");
+
+    // 使用API获取会话列表
+    API.getConversations()
+        .then(data => {
+            // 保存会话数据供后续使用
+            window.conversationsData = data;
+
+            if (!data || data.length === 0) {
+                $("#conversationsList").html(`
+                    <div class="p-3 text-center">
+                        <p class="text-muted">No conversations yet</p>
+                        <button class="btn btn-sm btn-outline-primary" id="startNewConversationBtn">
+                            Start a new conversation
+                        </button>
+                    </div>
+                `);
+
+                $("#startNewConversationBtn").click(function () {
+                    openNewMessageModal();
+                });
+                return;
+            }
+
+            // 显示会话列表
+            const conversationsHtml = data.map(conversation => {
+                // 确定对话另一方的信息
+                const otherParty = conversation.photographer && conversation.photographer.user
+                    ? conversation.photographer.user
+                    : (conversation.customer || {});
+
+                const unreadClass = conversation.unread_count > 0 ? 'fw-bold' : '';
+                const unreadBadge = conversation.unread_count > 0
+                    ? `<span class="badge bg-primary rounded-pill ms-2">${conversation.unread_count}</span>`
+                    : '';
+
+                const lastMsgTime = conversation.last_message_time
+                    ? formatDate(conversation.last_message_time)
+                    : formatDate(conversation.created_at);
+
+                return `
+                    <a href="#" class="list-group-item list-group-item-action conversation-item ${unreadClass}" 
+                       data-id="${conversation.id}"
+                       data-photographer-id="${conversation.photographer ? conversation.photographer.id : ''}"
+                       data-other-name="${otherParty.name || 'User'}">
+                        <div class="d-flex w-100 justify-content-between">
+                            <h6 class="mb-1">${otherParty.name || 'User'}</h6>
+                            <small>${lastMsgTime}</small>
+                        </div>
+                        <div class="d-flex w-100 justify-content-between">
+                            <p class="mb-1 text-truncate">${conversation.last_message || conversation.subject || 'No messages yet'}</p>
+                            ${unreadBadge}
+                        </div>
+                    </a>
+                `;
+            }).join('');
+
+            $("#conversationsList").html(conversationsHtml);
+
+            // 添加会话点击事件
+            $(".conversation-item").click(function (e) {
+                e.preventDefault();
+                const conversationId = $(this).data("id");
+                const photographerId = $(this).data("photographer-id");
+                const otherName = $(this).data("other-name");
+
+                // 存储会话信息
+                $("#sendMessageForm").data("conversation-id", conversationId);
+                $("#sendMessageForm").data("photographer-id", photographerId);
+                $("#conversationTitle").text(otherName);
+
+                loadConversation(conversationId);
+
+                // 更新选中状态
+                $(".conversation-item").removeClass("active");
+                $(this).addClass("active");
+            });
+        })
+        .catch(error => {
+            console.error("Failed to load conversations:", error);
+            $("#conversationsList").html(`
+                <div class="alert alert-danger m-3">
+                    Failed to load conversations. Please try again.
+                </div>
+            `);
+        });
 }
 
-function sendNewMessage() {
-    // Implementation for sending new message
+function loadConversation(conversationId) {
+    // 显示加载状态
+    $("#messagesContainer").html(`
+        <div class="text-center p-3">
+            <div class="spinner-border" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <p>Loading messages...</p>
+        </div>
+    `);
+
+    // 获取会话消息
+    API.getConversationMessages(conversationId)
+        .then(data => {
+            // 保存当前会话ID供发送消息使用
+            $("#sendMessageForm").data("conversation-id", conversationId);
+
+            // 确定对话的另一方（摄影师）
+            const messages = data.data || [];
+
+            // 如果没有消息，显示空状态
+            if (messages.length === 0) {
+                $("#conversationTitle").text("New conversation");
+                $("#messagesContainer").html(`
+                    <div class="text-center p-5">
+                        <p class="text-muted">No messages yet</p>
+                        <p class="text-muted small">Start the conversation by sending a message below</p>
+                    </div>
+                `);
+            } else {
+                // 从第一条消息获取对话信息
+                const firstMessage = messages[0];
+                const senderId = firstMessage.sender_id;
+                const currentUserId = parseInt(localStorage.getItem("userId") || "0");
+
+                // 设置会话标题
+                if (firstMessage.sender && senderId !== currentUserId) {
+                    $("#conversationTitle").text(firstMessage.sender.name || "Conversation");
+                } else if (messages.length > 1 && messages[1].sender) {
+                    $("#conversationTitle").text(messages[1].sender.name || "Conversation");
+                } else {
+                    $("#conversationTitle").text("Conversation");
+                }
+
+                // 显示消息列表
+                const messagesHtml = messages.map(message => {
+                    const isCurrentUser = message.sender_id === currentUserId;
+                    const messageClass = isCurrentUser ? 'message-sent' : 'message-received';
+                    const alignClass = isCurrentUser ? 'align-self-end' : 'align-self-start';
+                    const bgClass = isCurrentUser ? 'bg-primary text-white' : 'bg-light';
+
+                    const time = message.created_at ? new Date(message.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
+                    const date = message.created_at ? formatDate(message.created_at) : '';
+
+                    return `
+                        <div class="message ${messageClass} ${alignClass}">
+                            <div class="message-bubble ${bgClass} p-2 rounded mb-2">
+                                ${message.message}
+                            </div>
+                            <div class="message-info small text-muted">
+                                ${date} ${time}
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+
+                $("#messagesContainer").html(`
+                    <div class="messages-wrapper d-flex flex-column">
+                        ${messagesHtml}
+                    </div>
+                `);
+
+                // 滚动到最新消息
+                const messagesContainer = document.getElementById("messagesContainer");
+                messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            }
+
+            // 显示消息输入框
+            $("#messageInputContainer").removeClass("d-none");
+
+            // 标记消息为已读
+            markMessagesAsRead(conversationId);
+        })
+        .catch(error => {
+            console.error("Failed to load conversation:", error);
+            $("#messagesContainer").html(`
+                <div class="alert alert-danger m-3">
+                    Failed to load messages. Please try again.
+                </div>
+            `);
+        });
 }
 
 function sendMessage() {
-    // Implementation for sending message in conversation
+    const conversationId = $("#sendMessageForm").data("conversation-id");
+    const message = $("#messageInput").val().trim();
+
+    if (!conversationId) {
+        showNotification("No conversation selected", "error");
+        return;
+    }
+
+    if (!message) {
+        return;
+    }
+
+    // 使用新的API端点发送回复
+    const replyData = {
+        conversation_id: conversationId,
+        message: message
+    };
+
+    // 禁用输入框，防止重复发送
+    $("#messageInput").prop("disabled", true);
+
+    // 使用API发送回复
+    API.replyToConversation(replyData)
+        .then(data => {
+            // 清空输入框
+            $("#messageInput").val("").prop("disabled", false).focus();
+
+            // 重新加载会话
+            loadConversation(conversationId);
+        })
+        .catch(error => {
+            console.error("Failed to send message:", error);
+            $("#messageInput").prop("disabled", false);
+            showNotification("Failed to send message. Please try again.", "error");
+        });
+}
+
+function openNewMessageModal() {
+    // 重置表单
+    $("#newMessageForm")[0].reset();
+
+    // 加载摄影师列表
+    $("#messageRecipient").html(`<option value="">Loading photographers...</option>`);
+
+    API.getPhotographers()
+        .then(data => {
+            if (!data.data || data.data.length === 0) {
+                $("#messageRecipient").html(`<option value="">No photographers available</option>`);
+                return;
+            }
+
+            const options = data.data.map(photographer =>
+                `<option value="${photographer.id}">${photographer.name}</option>`
+            ).join('');
+
+            $("#messageRecipient").html(`
+                <option value="">Select a photographer</option>
+                ${options}
+            `);
+        })
+        .catch(error => {
+            console.error("Failed to load photographers:", error);
+            $("#messageRecipient").html(`<option value="">Error loading photographers</option>`);
+        });
+
+    // 显示模态框
+    const newMessageModal = new bootstrap.Modal(document.getElementById('newMessageModal'));
+    newMessageModal.show();
+}
+
+function sendMessage() {
+    const conversationId = $("#sendMessageForm").data("conversation-id");
+    const message = $("#messageInput").val().trim();
+
+    if (!conversationId) {
+        showNotification("No conversation selected", "error");
+        return;
+    }
+
+    if (!message) {
+        return;
+    }
+
+    // 先获取当前对话的信息，以找到摄影师ID
+    let conversation = null;
+
+    // 查找选中的对话项
+    const activeConversationElement = $(".conversation-item.active");
+    if (activeConversationElement.length) {
+        // 从数据属性获取对话ID
+        const activeConversationId = activeConversationElement.data("id");
+
+        // 如果这个ID与我们要回复的对话ID匹配，获取摄影师ID
+        if (activeConversationId == conversationId) {
+            // 获取该对话的摄影师ID (这个可能需要从其他地方获取)
+            // 假设我们在页面加载时将会话数据存储在全局变量中
+            if (window.conversationsData) {
+                conversation = window.conversationsData.find(c => c.id == conversationId);
+            }
+        }
+    }
+
+    if (!conversation || !conversation.photographer || !conversation.photographer.id) {
+        showNotification("Could not determine photographer information", "error");
+        return;
+    }
+
+    // 用于已存在的对话，但按照API的要求构造数据
+    const messageData = {
+        photographer_id: conversation.photographer.id,
+        message: message,
+        // 可以保留原始会话主题
+        subject: conversation.subject || "Reply to conversation"
+    };
+
+    // 禁用输入框，防止重复发送
+    $("#messageInput").prop("disabled", true);
+
+    // 使用API发送消息
+    fetch(`${CONFIG.API.BASE_URL}/messages`, {
+        method: 'POST',
+        headers: {
+            'Authorization': `Bearer ${localStorage.getItem("token")}`,
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(messageData)
+    })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Failed to send message');
+            }
+            return response.json();
+        })
+        .then(data => {
+            // 清空输入框
+            $("#messageInput").val("").prop("disabled", false).focus();
+
+            // 重新加载会话
+            loadConversation(conversationId);
+        })
+        .catch(error => {
+            console.error("Failed to send message:", error);
+            $("#messageInput").prop("disabled", false);
+            showNotification("Failed to send message. Please try again.", "error");
+        });
 }
 
 function createOrOpenConversation(photographerId) {
-    // Implementation for creating or opening conversation
+    if (!photographerId) {
+        showNotification("Invalid photographer ID", "error");
+        return;
+    }
+
+    // 从其他页面切换到消息标签
+    $(".nav-link").removeClass("active");
+    $('[data-section="messages"]').addClass("active");
+    $(".dashboard-section").addClass("d-none");
+    $("#messagesSection").removeClass("d-none");
+
+    // 先查找是否已存在对话
+    API.getConversations()
+        .then(conversations => {
+            // 确保返回值是数组
+            const conversationList = Array.isArray(conversations) ? conversations : [];
+
+            // 查找与该摄影师的对话
+            const existingConversation = conversationList.find(conv => {
+                return conv.photographer && conv.photographer.id == photographerId;
+            });
+
+            if (existingConversation) {
+                // 如果找到现有对话，打开它
+                setTimeout(() => {
+                    $(".conversation-item[data-id='" + existingConversation.id + "']").click();
+                }, 500);
+                return;
+            }
+
+            // 如果没有找到现有对话，创建新对话
+            $("#messageRecipient").val(photographerId);
+            $("#messageSubject").val(`Regarding photography services`);
+            openNewMessageModal();
+        })
+        .catch(error => {
+            console.error("Failed to check conversations:", error);
+            showNotification("Failed to open conversation. Please try again.", "error");
+
+            // 出错时仍然打开新消息模态框
+            $("#messageRecipient").val(photographerId);
+            $("#messageSubject").val(`Regarding photography services`);
+            openNewMessageModal();
+        });
 }
 
-function loadSavedPhotographers() {
-    // Implementation for loading saved photographers
-}
-
-function loadDetailedUserData() {
-    // Implementation for loading detailed user data
-}
-
-function loadSettings() {
-    // Implementation for loading settings
-}
-
-function openEditProfileModal() {
-    // Implementation for opening edit profile modal
-}
-
-function saveProfileChanges() {
-    // Implementation for saving profile changes
+function markMessagesAsRead(conversationId) {
+    API.markMessagesAsRead(conversationId)
+        .then(() => {
+            $(`.conversation-item[data-id="${conversationId}"]`).removeClass("fw-bold")
+                .find(".badge").remove();
+            loadDashboardCounts();
+        })
+        .catch(error => {
+            console.error("Failed to mark messages as read:", error);
+        });
 }

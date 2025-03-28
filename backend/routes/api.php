@@ -49,6 +49,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/messages/count', [MessageController::class, 'count']);
     Route::get('/messages/conversation/{id}', [MessageController::class, 'getConversationMessages']);
     Route::post('/messages/mark-as-read', [MessageController::class, 'markAsRead']);
+    Route::post('/messages/reply', [MessageController::class, 'replyToConversation']);
 
 
     // Bookings

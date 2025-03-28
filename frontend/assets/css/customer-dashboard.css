@@ -446,6 +446,36 @@
     }
 }
 
+.messages-wrapper {
+    max-height: 400px;
+    overflow-y: auto;
+    padding: 15px;
+}
+
+.message {
+    max-width: 70%;
+    margin-bottom: 15px;
+}
+
+.message-sent {
+    margin-left: auto;
+}
+
+.message-received {
+    margin-right: auto;
+}
+
+.message-bubble {
+    border-radius: 18px;
+    padding: 10px 15px;
+    word-break: break-word;
+}
+
+.conversation-item.active {
+    background-color: #f8f9fa;
+    border-color: #0d6efd;
+}
+
 /* Dark mode support */
 @media (prefers-color-scheme: dark) {
     .dashboard.dark-mode {
