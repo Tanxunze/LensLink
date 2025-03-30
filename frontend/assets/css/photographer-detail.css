@@ -67,3 +67,46 @@
 .rating-star.active {
     color: #ffc107;
 }
+
+.favorite-btn {
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+.favorite-btn i {
+    margin-right: 5px;
+}
+
+.favorite-btn.active {
+    background-color: #dc3545;
+    color: white;
+    border-color: #dc3545;
+}
+
+.favorite-btn:hover:not(.active) {
+    background-color: rgba(220, 53, 69, 0.1);
+}
+
+.favorite-btn.active:hover {
+    background-color: #c82333;
+    border-color: #bd2130;
+}
+
+@keyframes heartPulse {
+    0% {
+        transform: scale(1);
+    }
+
+    50% {
+        transform: scale(1.2);
+    }
+
+    100% {
+        transform: scale(1);
+    }
+}
+
+.favorite-btn.animating i {
+    animation: heartPulse 0.5s ease-in-out;
+    color: #dc3545;
+}

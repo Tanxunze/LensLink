@@ -1,11 +1,13 @@
 <?php
 
 use App\Http\Controllers\API\CategoryController;
+use App\Http\Controllers\API\FavoriteController;
 use App\Http\Controllers\API\GoogleAuthController;
 use App\Http\Controllers\API\ServiceController;
 use App\Http\Controllers\API\ReviewController;
 use App\Http\Controllers\API\MessageController;
 use App\Http\Controllers\API\BookingController;
+use App\Http\Controllers\API\UserController;
 use App\Http\Controllers\API\UtilityController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\API\AuthController;
@@ -66,6 +68,69 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/photographer/profile',[\App\Http\Controllers\API\PhotographerDashboard\Dashboard::class,'show']);
     Route::post('/photographer/profile/recent-bookings',[\App\Http\Controllers\API\PhotographerDashboard\Dashboard::class,'recentBookings']);
 
+    //Favorites
+    Route::get('/favorites', [FavoriteController::class, 'index']);
+    Route::post('/favorites', [FavoriteController::class, 'store']);
+    Route::delete('/favorites/{id}', [FavoriteController::class, 'destroy']);
+    Route::get('/favorites/check/{id}', [FavoriteController::class, 'check']);
+
+    //User profile
+    Route::get('/user/profile', [UserController::class, 'getProfile']);
+    Route::put('/user/profile', [UserController::class, 'updateProfile']);
+    Route::post('/user/profile/image', [UserController::class, 'updateProfileImage']);
+
+    Route::get('/debug/r2-test', function() {
+        try {
+            // 1. 检查R2配置
+            $config = config('filesystems.disks.r2');
+            if (!$config) {
+                return response()->json(['error' => 'R2配置未找到'], 500);
+            }
+
+            // 2. 尝试连接
+            $s3Client = new \Aws\S3\S3Client([
+                'credentials' => [
+                    'key'    => $config['key'],
+                    'secret' => $config['secret'],
+                ],
+                'region' => $config['region'],
+                'endpoint' => $config['endpoint'],
+                'version' => 'latest',
+                'use_path_style_endpoint' => true,
+            ]);
+
+            // 3. 列出桶内容
+            $result = $s3Client->listObjects([
+                'Bucket' => $config['bucket'],
+                'MaxKeys' => 5
+            ]);
+
+            // 4. 测试文件上传
+            $testKey = 'test-' . time() . '.txt';
+            $putResult = $s3Client->putObject([
+                'Bucket' => $config['bucket'],
+                'Key'    => $testKey,
+                'Body'   => 'R2测试成功',
+            ]);
+
+            return response()->json([
+                'status' => '成功',
+                'connection' => '有效',
+                'bucket_exists' => true,
+                'can_list_objects' => count($result['Contents'] ?? []),
+                'test_file_uploaded' => $testKey,
+                'public_url' => $putResult['ObjectURL'] ?? null
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => '失败',
+                'error' => $e->getMessage(),
+                'error_type' => get_class($e),
+                'file' => $e->getFile(),
+                'line' => $e->getLine()
+            ], 500);
+        }
+    });
     // Admin dashboard
 
     // back-end stastics

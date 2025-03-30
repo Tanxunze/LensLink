@@ -92,4 +92,17 @@ class FavoriteController extends Controller
             'message' => 'Removed from favorites successfully'
         ], 200);
     }
+
+    public function check($id)
+    {
+        $userId = Auth::id();
+
+        $exists = Favorite::where('customer_id', $userId)
+            ->where('photographer_id', $id)
+            ->exists();
+
+        return response()->json([
+            'is_favorite' => $exists
+        ]);
+    }
 }
