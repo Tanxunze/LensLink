@@ -655,3 +655,41 @@
 .icon-rounded:hover {
     transform: scale(1.1);
 }
+
+.profile-image-container {
+    position: relative;
+    display: inline-block;
+}
+
+.profile-image-container .overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: rgba(0, 0, 0, 0.4);
+    opacity: 0;
+    transition: opacity 0.3s;
+    border-radius: 50%;
+}
+
+.profile-image-container:hover .overlay {
+    opacity: 1;
+}
+
+.profile-image-container .upload-spinner {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+
+.profile-image {
+    width: 150px;
+    height: 150px;
+    object-fit: cover;
+    transition: opacity 0.3s;
+}
