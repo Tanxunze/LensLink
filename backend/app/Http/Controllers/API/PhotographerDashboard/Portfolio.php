@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\API\PhotographerDashboard;
 
 use App\Http\Controllers\Controller;
+use App\Models\Category;
 use App\Models\PortfolioItem;
 use Illuminate\Http\Request;
 
@@ -11,20 +12,12 @@ class Portfolio extends Controller
     //
     public function index(Request $request)
     {
-        $p_id = $request->input('photographer_id');
-        try
-        {
-            $portfolio_items=$this->getPhotographerPortfolio($p_id);
-            $result=[
-                'success'=>true,
-                'data'=>[
-                    'portfolioItems'=>$portfolio_items
-                ]
-            ];
-            return response()->json($result,200);
-        }
-        catch(\Exception $e)
-        {
+        $p_id = $request->user()->photographerProfile->id;
+        $category = $request->input('category');
+        try {
+            $portfolio_items = $this->getPhotographerPortfolio($p_id, $category);
+            return response()->json($portfolio_items,200);
+        } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to fetch portfolio items',
@@ -33,15 +26,26 @@ class Portfolio extends Controller
         }
     }
 
-    private function getPhotographerPortfolio(int $photographer_id)
+    private function getPhotographerPortfolio(int $photographer_id, ?string $category=null)
     {
-        $portfolio = PortfolioItem::where('photographer_id', $photographer_id)->get();
+        $query = PortfolioItem::where('photographer_id', $photographer_id);
+        if ($category) {
+            $category_id = Category::where('name', $category)->value('id');
+            if($category_id) {
+                $query->where('category_id', $category_id);
+            }
+        }
+
+        $portfolio=$query->get();
         $data = [];
-        foreach($portfolio as $item)
-        {
+
+        foreach ($portfolio as $item) {
+            $categoryName=Category::find($item->category_id)->name??'';
+
             $data[] = [
                 'id' => $item->id,
                 'title' => $item->title,
+                'category' => $categoryName,
                 'image' => $item->image_path,
                 'description' => $item->description,
                 'featured' => $item->featured,

@@ -4,7 +4,7 @@
 * Description: A brief description of the function.
 * Input parameter: @param {type} name - description
 * Output parameter: @returns {type} - description
-*/ 
+*/
 $(document).ready(function () {
     loadPhotographerData();
     loadDashboardData();
@@ -142,9 +142,15 @@ function setupEventHandlers() {
         // update text
         let timeframeText = "Last 6 Months";
         switch (timeframe) {
-            case 30: timeframeText = "Last 30 Days"; break;
-            case 90: timeframeText = "Last 3 Months"; break;
-            case 365: timeframeText = "Last 12 Months"; break;
+            case 30:
+                timeframeText = "Last 30 Days";
+                break;
+            case 90:
+                timeframeText = "Last 3 Months";
+                break;
+            case 365:
+                timeframeText = "Last 12 Months";
+                break;
         }
         $("#earningsTimeframeDropdown").text(timeframeText);
 
@@ -564,6 +570,101 @@ function loadRecentReviews() {
         });
 }
 
+//Get filtered portfolio information based on category given
+function filterPortfolioItems(category){
+    loadPortfolio(category);
+}
+
+// Get portfolio information
+function loadPortfolio(category = 'all') {
+    $('#portifolioItems').html(`
+        <div class="col-12 text-center">
+            <div class="spinner-border" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <p>Loading portfolio...</p>
+        </div>
+    `);
+
+    const requestData = {
+        filter: {
+            category: category
+        }
+    };
+
+    fetch(`${CONFIG.API.BASE_URL}/photographer/portfolio`, {
+        method: 'POST',
+        headers: {
+            'Authorization': `Bearer ${localStorage.getItem("token")}`,
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(requestData)
+    })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Failed to load portfolio');
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (!data || data.length === 0) {
+                $("#portfolioItems").html(`
+                    <div class="col-12">
+                        <div class="alert alert-info">
+                            No Portfolio found. Please try again later.
+                        </div>
+                    </div>
+                `);
+                return;
+            }
+
+            const portfolioItemHtml = data.map(item => `
+                <div class="col-md-4 mb-4 portfolio-item" data-category="${item.category}">
+                    <div class="card h-100">
+                        <div class="portfolio-image-container">
+                            <img src="${item.image_path}" class="card-img-top" alt="${item.title}">
+                            <div class="overlay">
+                                <button class="btn btn-sm btn-light view-portfolio-btn" data-id="${item.id}">
+                                    <i class="bi bi-eye"></i> View
+                                </button>
+                                <button class="btn btn-sm btn-light edit-portfolio-btn" data-id="${item.id}">
+                                    <i class="bi bi-pencil"></i> Edit
+                                </button>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <h5 class="card-title">${item.title}</h5>
+                            <p class="card-text text-muted small">${formatDate(item.created_at)}</p>
+                        </div>
+                        <div class="card-footer bg-white">
+                            <span class="badge bg-primary">${capitalizeFirstLetter(item.category)}</span>
+                            ${item.featured ? '<span class="badge bg-warning ms-1">Featured</span>' : ''}
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+
+            $("#portfolioItems").html(portfolioItemHtml);
+
+            // Setup click event for View button
+            $(".view-profile-btn").click(function () {
+
+            });
+
+            //Maybe Edit button too.
+        })
+        .catch(error => {
+            console.error("Failed to load portfolio:", error);
+            $("#portfolioItems").html(`
+                <div class="col-12">
+                    <div class="alert alert-danger">
+                        Failed to load portfolio items. Please try again.
+                    </div>
+                </div>
+            `);
+        })
+}
+
 /**
  * Open the Add Portfolio Item modal box
  */
@@ -713,7 +814,7 @@ function submitReviewReply() {
             'Authorization': `Bearer ${localStorage.getItem("token")}`,
             'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ reply: replyText })
+        body: JSON.stringify({reply: replyText})
     })
         .then(response => {
             if (!response.ok) {
