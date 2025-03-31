@@ -5,6 +5,9 @@
 * Input parameter: @param {type} name - description
 * Output parameter: @returns {type} - description
 */
+// Global variable to store user's last portfolio tag selection
+let lastSelectedCategory = "all";
+
 $(document).ready(function () {
     loadPhotographerData();
     loadDashboardData();
@@ -80,6 +83,7 @@ function setupEventHandlers() {
         const category = $(this).data("category");
         $("button[data-category]").removeClass("active");
         $(this).addClass("active");
+        lastSelectedCategory = category;
         filterPortfolioItems(category);
     });
 
@@ -103,7 +107,10 @@ function setupEventHandlers() {
 
     // loading event listeners
     $(document).on("section:portfolio", function () {
-        loadPortfolio();
+        loadPortfolio(lastSelectedCategory);
+
+        $("button[data-category]").removeClass("active");
+        $(`button[data-category="${lastSelectedCategory}"]`).addClass("active");
     });
 
     $(document).on("section:bookings", function () {
@@ -571,7 +578,8 @@ function loadRecentReviews() {
 }
 
 //Get filtered portfolio information based on category given
-function filterPortfolioItems(category){
+function filterPortfolioItems(category) {
+    lastSelectedCategory = category;
     loadPortfolio(category);
 }
 
