@@ -110,8 +110,46 @@ function setupEventHandlers() {
         saveProfileChanges();
     });
 
+    $("#profileImageUpload").on("change", function (e) {
+        if ($(this).data("direct-upload") === "true") {
+            if (this.files && this.files[0]) {
+                $("#profileImage").css("opacity", "0.5");
+                $(".profile-image-container .overlay").append(
+                    '<div class="upload-spinner"><div class="spinner-border spinner-border-sm text-light" role="status"></div></div>'
+                );
+
+                const formData = new FormData();
+                formData.append("image", this.files[0]);
+
+                API.updateProfileImage(formData)
+                    .then(response => {
+                        if (response.user && response.user.profile_image) {
+                            $("#profileImage").attr("src", response.user.profile_image);
+                            $("#previewProfileImage").attr("src", response.user.profile_image);
+                        }
+                        showNotification("Updated successfully", "success");
+                    })
+                    .catch(error => {
+                        console.error("Upload failed:", error);
+                        showNotification("Upload failed", "error");
+                    })
+                    .finally(() => {
+                        $("#profileImage").css("opacity", "1");
+                        $(".profile-image-container .overlay .upload-spinner").remove();
+                        $(this).val("");
+                    });
+            }
+        } else {
+            if (this.files && this.files[0]) {
+                previewImage(this.files[0], "previewProfileImage");
+            }
+        }
+
+        $(this).data("direct-upload", "false");
+    });
+
     $("#changeProfileImageBtn").click(function () {
-        $("#profileImageUpload").click();
+        $("#profileImageUpload").data("direct-upload", "true").click();
     });
 
     // Booking filter
@@ -1425,6 +1463,7 @@ function loadDetailedUserData() {
 
             if (data.profile_image) {
                 $("#profileImage").attr("src", data.profile_image);
+                $("#previewProfileImage").attr("src", data.profile_image);
             }
 
             const memberSince = new Date(data.created_at).toLocaleDateString(undefined, {
@@ -1494,6 +1533,10 @@ function saveProfileChanges() {
         })
         .then(response => {
             bootstrap.Modal.getInstance(document.getElementById('editProfileModal')).hide();
+
+            if (response.user && response.user.profile_image) {
+                $("#profileImage").attr("src", response.user.profile_image);
+            }
 
             loadDetailedUserData();
 
