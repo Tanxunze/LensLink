@@ -577,7 +577,7 @@ function filterPortfolioItems(category){
 
 // Get portfolio information
 function loadPortfolio(category = 'all') {
-    $('#portifolioItems').html(`
+    $('#portfolioItems').html(`
         <div class="col-12 text-center">
             <div class="spinner-border" role="status">
                 <span class="visually-hidden">Loading...</span>
@@ -587,9 +587,7 @@ function loadPortfolio(category = 'all') {
     `);
 
     const requestData = {
-        filter: {
-            category: category
-        }
+        category: category
     };
 
     fetch(`${CONFIG.API.BASE_URL}/photographer/portfolio`, {

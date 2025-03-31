@@ -46,7 +46,7 @@ class Portfolio extends Controller
                 'id' => $item->id,
                 'title' => $item->title,
                 'category' => $categoryName,
-                'image' => $item->image_path,
+                'image_path' => $item->image_path,
                 'description' => $item->description,
                 'featured' => $item->featured,
                 'created_at' => $item->created_at,
