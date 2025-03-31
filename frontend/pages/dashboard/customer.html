@@ -457,7 +457,7 @@
                     <div class="row">
                         <div class="col-md-4 mb-4">
                             <div class="list-group settings-menu">
-                                <a href="#" class="list-group-item list-group-item-action active"
+                                <!-- <a href="#" class="list-group-item list-group-item-action active"
                                     data-settings="account">
                                     <i class="bi bi-person me-2"></i> Account Settings
                                 </a>
@@ -467,14 +467,14 @@
                                 </a>
                                 <a href="#" class="list-group-item list-group-item-action" data-settings="privacy">
                                     <i class="bi bi-shield-lock me-2"></i> Privacy Settings
-                                </a>
-                                <a href="#" class="list-group-item list-group-item-action" data-settings="password">
+                                </a> -->
+                                <a href="#" class="list-group-item list-group-item-action" data-settings="password" id="changePasswordLink">
                                     <i class="bi bi-key me-2"></i> Change Password
                                 </a>
-                                <a href="#" class="list-group-item list-group-item-action text-danger"
+                                <!-- <a href="#" class="list-group-item list-group-item-action text-danger"
                                     data-settings="delete">
                                     <i class="bi bi-trash me-2"></i> Delete Account
-                                </a>
+                                </a> -->
                             </div>
                         </div>
                         <div class="col-md-8">
@@ -497,10 +497,10 @@
                                             <label for="settingsPhone" class="form-label">Phone</label>
                                             <input type="tel" class="form-control" id="settingsPhone">
                                         </div>
-                                        <!-- <div class="mb-3">
+                                        <div class="mb-3">
                                             <label for="settingsAddress" class="form-label">Address</label>
                                             <textarea class="form-control" id="settingsAddress" rows="3"></textarea>
-                                        </div> -->
+                                        </div>
                                         <div class="d-flex justify-content-end">
                                             <button type="submit" class="btn btn-primary">Save Changes</button>
                                         </div>
@@ -550,8 +550,9 @@
                                     </form>
                                 </div>
                             </div>
-
-                            <!-- Other settings panels will be shown based on selection -->
+                                <div class="card settings-panel d-none" id="passwordSettings">
+                                    <!-- This will be filled by JavaScript -->
+                                </div>
                         </div>
                     </div>
                 </div>
@@ -695,7 +696,59 @@
             </div>
         </div>
     </div>
-
+    <!-- Change Password Modal -->
+    <div class="modal fade" id="changePasswordModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Change Password</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="passwordChangeForm">
+                        <div class="mb-3">
+                            <label for="currentPassword" class="form-label">Current Password</label>
+                            <div class="input-group">
+                                <input type="password" class="form-control" id="currentPassword" required>
+                                <button class="btn btn-outline-secondary toggle-password" type="button"
+                                    data-target="currentPassword">
+                                    <i class="bi bi-eye"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="newPassword" class="form-label">New Password</label>
+                            <div class="input-group">
+                                <input type="password" class="form-control" id="newPassword" required>
+                                <button class="btn btn-outline-secondary toggle-password" type="button"
+                                    data-target="newPassword">
+                                    <i class="bi bi-eye"></i>
+                                </button>
+                            </div>
+                            <div class="form-text">Password must be at least 8 characters long</div>
+                            <div class="progress mt-2" style="height: 5px;">
+                                <div class="progress-bar" id="passwordStrength" role="progressbar" style="width: 0%"></div>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="confirmNewPassword" class="form-label">Confirm New Password</label>
+                            <div class="input-group">
+                                <input type="password" class="form-control" id="confirmNewPassword" required>
+                                <button class="btn btn-outline-secondary toggle-password" type="button"
+                                    data-target="confirmNewPassword">
+                                    <i class="bi bi-eye"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="submitPasswordBtn">Change Password</button>
+                </div>
+            </div>
+        </div>
+    </div>
     <!-- Notification Toast -->
     <div class="position-fixed bottom-0 end-0 p-3" style="z-index: 11">
         <div id="notificationToast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">

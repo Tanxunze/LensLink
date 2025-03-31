@@ -32,7 +32,7 @@ Route::get('/images/{filename}', [UserController::class, 'getImage']);
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/auth/logout', [AuthController::class, 'logout']);
     Route::get('/auth/verify', [AuthController::class, 'verify']);
-
+    Route::put('/auth/password', [AuthController::class, 'updatePassword']);
     Route::get('/user/profile', function () {
         return auth()->user();
     });

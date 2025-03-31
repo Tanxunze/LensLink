@@ -117,6 +117,13 @@ class API {
         });
     }
 
+    static async changePassword(passwordData) {
+        return this.request('/auth/password', {
+            method: 'PUT',
+            body: JSON.stringify(passwordData)
+        });
+    }
+
     // User Profile APIs
     /**
      * Get user profile
