@@ -3,32 +3,55 @@ $(document).ready(function () {
     loadDashboardData();
     setupEventHandlers();
     loadSectionFromUrlHash();
-    $(document).on('hidden.bs.modal', '#bookingDetailsModal', function () {
-        console.log("Booking modal closed - cleaning up");
-        $('.modal-backdrop').remove();
-        $('body').removeClass('modal-open').css('overflow', '');
-        $('body').css('padding-right', '');
+    $(document).on('hidden.bs.modal', '.modal', function () {
+        console.log('Modal closed - cleaning up');//debug
+        if ($('.modal.show').length === 0) {
+            $('.modal-backdrop').remove();
+            $('body').removeClass('modal-open').css('overflow', '');
+            $('body').css('padding-right', '');
+        }
     });
 });
 
 // Setting up event handling
 function setupEventHandlers() {
-    // Dashboard Refresh Button
+    // Universal section navigation handler
+    $(".nav-link[data-section]").click(function (e) {
+        e.preventDefault();
+        const section = $(this).data("section");
+
+        // if (section === "bookings" || section === "messages") {
+        //     return;
+        // }
+
+        $(".nav-link").removeClass("active");
+        $(this).addClass("active");
+        $(".dashboard-section").addClass("d-none");
+        $(`#${section}Section`).removeClass("d-none");
+
+        $(document).trigger(`section:${section}`);
+
+        window.location.hash = section;
+    });
+
     $("#refreshDashboardBtn").click(function () {
         loadDashboardData();
         showNotification("Dashboard data refreshed", "info");
     });
 
-    // Profile Button
     $("#viewProfileLink, #editProfileLink").click(function (e) {
         e.preventDefault();
         $(".nav-link").removeClass("active");
         $('[data-section="profile"]').addClass("active");
         $(".dashboard-section").addClass("d-none");
         $("#profileSection").removeClass("d-none");
+
         if (this.id === "editProfileLink") {
             openEditProfileModal();
         }
+        loadDetailedUserData();
+
+        window.location.hash = "profile";
     });
 
     // Quick Links
@@ -52,11 +75,22 @@ function setupEventHandlers() {
         showBookingsSection("all");
     });
 
+    // Message management
     $("#newMessageBtn").click(function (e) {
         e.preventDefault();
         openNewMessageModal();
     });
 
+    $("#sendNewMessageBtn").click(function () {
+        sendNewMessage();
+    });
+
+    $("#sendMessageForm").submit(function (e) {
+        e.preventDefault();
+        sendMessage();
+    });
+
+    // Profile management
     $("#editProfileBtn").click(function (e) {
         e.preventDefault();
         openEditProfileModal();
@@ -76,13 +110,8 @@ function setupEventHandlers() {
         saveProfileChanges();
     });
 
-    $("#sendNewMessageBtn").click(function () {
-        sendNewMessage();
-    });
-
-    $("#sendMessageForm").submit(function (e) {
-        e.preventDefault();
-        sendMessage();
+    $("#changeProfileImageBtn").click(function () {
+        $("#profileImageUpload").click();
     });
 
     // Booking filter
@@ -106,7 +135,7 @@ function setupEventHandlers() {
         }
     });
 
-    // Partial Load Event Listening
+    // Section Load Event Listeners
     $(document).on("section:bookings", function () {
         loadBookings();
     });
@@ -558,16 +587,19 @@ function loadSectionFromUrlHash() {
     const hash = window.location.hash;
     if (!hash) return;
 
-    // Handle #bookings:active format
+    // Handle specialized format: #bookings:active
     if (hash.startsWith('#bookings:')) {
         const status = hash.split(':')[1];
         showBookingsSection(status);
+        return;
     }
-    // Handle other regular section hashes
-    else if (hash.startsWith('#')) {
+
+    if (hash.startsWith('#')) {
         const section = hash.substring(1);
+
         $(".nav-link").removeClass("active");
         $(`[data-section="${section}"]`).addClass("active");
+
         $(".dashboard-section").addClass("d-none");
         $(`#${section}Section`).removeClass("d-none");
 
@@ -1250,5 +1282,228 @@ function sendNewMessage() {
         })
         .finally(() => {
             $("#sendNewMessageBtn").prop("disabled", false).html('Send Message');
+        });
+}
+
+function loadSavedPhotographers() {
+    $("#savedPhotographersList").html(`
+        <div class="col-12 text-center">
+            <div class="spinner-border" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <p>Loading saved photographers...</p>
+        </div>
+    `);
+
+    API.getSavedPhotographers()
+        .then(data => {
+            if (!data.photographers || data.photographers.length === 0) {
+                $("#savedPhotographersList").html(`
+                    <div class="col-12">
+                        <div class="alert alert-info">
+                            <p class="mb-0">You haven't saved any photographers yet.</p>
+                            <p class="mb-0 mt-2">Browse our <a href="../photographers.html" class="alert-link">photographers</a> and save your favorites!</p>
+                        </div>
+                    </div>
+                `);
+                return;
+            }
+
+            const photographersHTML = data.photographers.map(photographer => {
+                const rating = photographer.average_rating || 0;
+                const categories = photographer.categories ? photographer.categories.split(',').join(', ') : 'Photographer';
+
+                return `
+                    <div class="col-md-4 col-lg-3 mb-4">
+                        <div class="card saved-photographer-card">
+                            <div class="remove-saved" data-id="${photographer.id}">
+                                <i class="bi bi-x-circle"></i>
+                            </div>
+                            <img src="${photographer.profile_image || '../../assets/images/default-photographer.jpg'}" 
+                                 class="card-img-top saved-photographer-image" alt="${photographer.name}">
+                            <div class="card-body">
+                                <h5 class="card-title">${photographer.name}</h5>
+                                <p class="photographer-category">${photographer.specialization || categories}</p>
+                                <div class="photographer-rating mb-2">
+                                    ${generateStarRating(rating)}
+                                    <small class="ms-1">(${rating})</small>
+                                </div>
+                                <p class="photographer-location">
+                                    <i class="bi bi-geo-alt"></i> ${photographer.location || 'Location not specified'}
+                                </p>
+                                <p class="card-text small">${photographer.bio ? truncateText(photographer.bio, 100) : 'Professional photographer on LensLink'}</p>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <span class="photographer-price">From €${photographer.starting_price || '100'}</span>
+                                    <a href="../photographer-detail.html?id=${photographer.id}" 
+                                       class="btn btn-sm btn-outline-primary">View Profile</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            $("#savedPhotographersList").html(photographersHTML);
+            $(".remove-saved").click(function (e) {
+                e.preventDefault();
+                e.stopPropagation();
+                const photographerId = $(this).data("id");
+                removeFromFavorites(photographerId);
+            });
+        })
+        .catch(error => {
+            console.error("Failed to load saved photographers:", error);
+            $("#savedPhotographersList").html(`
+                <div class="col-12">
+                    <div class="alert alert-danger">
+                        <p>Failed to load your saved photographers. Please try again later.</p>
+                        <button class="btn btn-sm btn-outline-danger mt-2" onclick="loadSavedPhotographers()">
+                            <i class="bi bi-arrow-clockwise"></i> Retry
+                        </button>
+                    </div>
+                </div>
+            `);
+        });
+}
+
+function removeFromFavorites(photographerId) {
+    if (!confirm("Are you sure you want to remove this photographer from your favorites?")) {
+        return;
+    }
+
+    const $card = $(`.remove-saved[data-id="${photographerId}"]`).closest('.col-md-4');
+    $card.addClass('opacity-50');
+    $(`.remove-saved[data-id="${photographerId}"]`).html(`
+        <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+    `);
+
+    API.removeFromFavorites(photographerId)
+        .then(response => {
+            $card.fadeOut(300, function () {
+                $(this).remove();
+                if ($("#savedPhotographersList .card").length === 0) {
+                    $("#savedPhotographersList").html(`
+                        <div class="col-12">
+                            <div class="alert alert-info">
+                                <p class="mb-0">You haven't saved any photographers yet.</p>
+                                <p class="mb-0 mt-2">Browse our <a href="../photographers.html" class="alert-link">photographers</a> and save your favorites!</p>
+                            </div>
+                        </div>
+                    `);
+                }
+
+                showNotification("Photographer removed from favorites", "success");
+            });
+        })
+        .catch(error => {
+            console.error("Failed to remove from favorites:", error);
+            $card.removeClass('opacity-50');
+            $(`.remove-saved[data-id="${photographerId}"]`).html(`
+                <i class="bi bi-x-circle"></i>
+            `);
+            showNotification("Failed to remove from favorites. Please try again.", "error");
+        });
+}
+
+function loadDetailedUserData() {
+    $("#profileName, #infoName").text("Loading...");
+    $("#profileEmail, #infoEmail").text("loading@example.com");
+    // $("#profileImage").attr("src", "../../assets/images/default-avatar.jpg");
+    $("#profileImage").attr("src");
+    $("#profileMember").text("Member since: Loading...");
+    $("#infoPhone").text("Loading...");
+    $("#infoAddress").text("Loading...");
+    $("#totalBookings").text("0");
+    $("#totalReviews").text("0");
+
+    API.getUserDetailedProfile()
+        .then(data => {
+            localStorage.setItem("userId", data.id);
+
+            $("#profileName, #infoName").text(data.name || "User");
+            $("#profileEmail, #infoEmail").text(data.email || "No email provided");
+
+            if (data.profile_image) {
+                $("#profileImage").attr("src", data.profile_image);
+            }
+
+            const memberSince = new Date(data.created_at).toLocaleDateString(undefined, {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            });
+            $("#profileMember").text(`Member since: ${memberSince}`);
+
+            $("#infoPhone").text(data.phone || "Not provided");
+            $("#infoAddress").text(data.address || "Not provided");
+
+            $("#totalBookings").text(data.bookings_count || "0");
+            $("#totalReviews").text(data.reviews_count || "0");
+
+            $("#editName").val(data.name);
+            $("#editEmail").val(data.email);
+            $("#editPhone").val(data.phone || "");
+            $("#editAddress").val(data.address || "");
+
+            if (data.profile_image) {
+                $("#previewProfileImage").attr("src", data.profile_image);
+            }
+        })
+        .catch(error => {
+            console.error("Failed to load detailed user data:", error);
+            showNotification("Failed to load profile data", "error");
+        });
+}
+
+function openEditProfileModal() {
+    const editProfileModal = new bootstrap.Modal(document.getElementById('editProfileModal'));
+    editProfileModal.show();
+}
+
+function previewImage(file, previewElementId) {
+    const reader = new FileReader();
+    reader.onload = function (e) {
+        $(`#${previewElementId}`).attr("src", e.target.result);
+    };
+    reader.readAsDataURL(file);
+}
+
+function saveProfileChanges() {
+    const profileData = {
+        name: $("#editName").val(),
+        email: $("#editEmail").val(),
+        phone: $("#editPhone").val(),
+        address: $("#editAddress").val()
+    };
+
+    $("#saveProfileBtn").prop("disabled", true).html(`
+        <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+        Saving...
+    `);
+
+    API.updateUserProfile(profileData)
+        .then(response => {
+            const profileImageInput = document.getElementById("profileImageUpload");
+            if (profileImageInput.files && profileImageInput.files[0]) {
+                const formData = new FormData();
+                formData.append("image", profileImageInput.files[0]);
+
+                return API.updateProfileImage(formData);
+            }
+            return response;
+        })
+        .then(response => {
+            bootstrap.Modal.getInstance(document.getElementById('editProfileModal')).hide();
+
+            loadDetailedUserData();
+
+            showNotification("Profile updated successfully", "success");
+        })
+        .catch(error => {
+            console.error("Failed to update profile:", error);
+            showNotification("Failed to update profile", "error");
+        })
+        .finally(() => {
+            $("#saveProfileBtn").prop("disabled", false).text("Save Changes");
         });
 }

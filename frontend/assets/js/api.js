@@ -448,4 +448,85 @@ class API {
     static async getRecommendedPhotographers(limit = 3) {
         return this.request(`/photographers/recommended?limit=${limit}`);
     }
+
+    /**
+     * Get favorite photographers list
+     * @returns {Promise} - Favorite photographers list
+     */
+    static async getSavedPhotographers() {
+        return this.request("/favorites");
+    }
+
+    /**
+     * Add a photographer to favorites
+     * @param {number} photographerId - Photographer ID
+     * @returns {Promise} - Add result
+     */
+    static async addToFavorites(photographerId) {
+        return this.request("/favorites", {
+            method: "POST",
+            body: JSON.stringify({ photographer_id: photographerId }),
+        });
+    }
+
+    /**
+     * Remove a photographer from favorites
+     * @param {number} photographerId - Photographer ID
+     * @returns {Promise} - result
+     */
+    static async removeFromFavorites(photographerId) {
+        return this.request(`/favorites/${photographerId}`, {
+            method: "DELETE"
+        });
+    }
+
+
+    /**
+     * Check if a photographer is in favorites
+     * @param {number} photographerId - Photographer ID
+     * @returns {Promise} - Result
+     */
+    static async checkFavoriteStatus(photographerId) {
+        return this.request(`/favorites/check/${photographerId}`);
+    }
+
+    /**
+     * Get user's detailed profile
+     * @returns {Promise} - User detailed profile
+     */
+    static async getUserDetailedProfile() {
+        return this.request("/user/profile");
+    }
+
+    /**
+     * Update user's profile
+     * @param {Object} profileData - Profile data
+     * @returns {Promise} - Result
+     */
+    static async updateUserProfile(profileData) {
+        return this.request("/user/profile", {
+            method: "PUT",
+            body: JSON.stringify(profileData),
+        });
+    }
+
+    /**
+     * Update user's profile image
+     * @param {FormData} formData - Form data containing the image
+     * @returns {Promise} - Result
+     */
+    static async updateProfileImage(formData) {
+        return $.ajax({
+            url: `${CONFIG.API.BASE_URL}/user/profile/image`,
+            type: "POST",
+            data: formData,
+            processData: false, 
+            contentType: false, 
+            headers: {
+                "Authorization": localStorage.getItem("token")
+                    ? `Bearer ${localStorage.getItem("token")}`
+                    : "",
+            }
+        });
+    }
 }

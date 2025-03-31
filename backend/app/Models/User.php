@@ -52,11 +52,6 @@ class User extends Authenticatable
         ];
     }
 
-    public function photographerProfile()
-    {
-        return $this->hasOne(PhotographerProfile::class);
-    }
-
     public function isPhotographer()
     {
         return $this->role === 'photographer';
@@ -65,5 +60,30 @@ class User extends Authenticatable
     public function isCustomer()
     {
         return $this->role === 'customer';
+    }
+
+    public function photographerProfile()
+    {
+        return $this->hasOne(PhotographerProfile::class);
+    }
+
+    public function favorites()
+    {
+        return $this->hasMany(Favorite::class, 'customer_id');
+    }
+
+    public function bookings()
+    {
+        return $this->hasMany(Booking::class, 'customer_id');
+    }
+
+    public function reviews()
+    {
+        return $this->hasMany(Review::class, 'customer_id');
+    }
+
+    public function userDetail()
+    {
+        return $this->hasOne(UserDetail::class);
     }
 }

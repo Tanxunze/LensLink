@@ -46,13 +46,106 @@ $(document).ready(function () {
     $("#bookingService").on("change", updateBookingSummary);
     $("#bookingDate").on("change", updateBookingSummary);
     $("#bookingTime").on("change", updateBookingSummary);
+
+    $("#favoriteBtn").on("click", toggleFavorite);
+
+    checkLoginStatus();
 });
+
+function checkLoginStatus() {
+    const token = localStorage.getItem("token");
+    if (!token) {
+        $("#favoriteBtn").hide();
+    } else {
+        checkFavoriteStatus();
+    }
+}
+
+function checkFavoriteStatus() {
+    if (!localStorage.getItem("token") || !photographerId) {
+        return;
+    }
+
+    API.request(`/favorites/check/${photographerId}`)
+        .then(response => {
+            isFavorite = response.is_favorite;
+            updateFavoriteButton();
+        })
+        .catch(error => {
+            console.error("Failed to check favorite status:", error);
+            isFavorite = false;
+            updateFavoriteButton();
+        });
+}
+
+function updateFavoriteButton() {
+    const $btn = $("#favoriteBtn");
+
+    if (isFavorite) {
+        $btn.addClass("active");
+        $btn.find("i").removeClass("bi-heart").addClass("bi-heart-fill");
+        $btn.find(".favorite-text").text("Saved");
+    } else {
+        $btn.removeClass("active");
+        $btn.find("i").removeClass("bi-heart-fill").addClass("bi-heart");
+        $btn.find(".favorite-text").text("Save");
+    }
+}
+
+function toggleFavorite() {
+    if (!localStorage.getItem("token")) {
+        alert("Please log in to save photographers");
+        window.location.href = "../pages/auth/login.html";
+        return;
+    }
+
+    const $btn = $("#favoriteBtn");
+    $btn.prop("disabled", true);
+
+    if (isFavorite) {
+        API.removeFromFavorites(photographerId)
+            .then(response => {
+                isFavorite = false;
+                $btn.addClass("animating");
+                setTimeout(() => {
+                    $btn.removeClass("animating");
+                    updateFavoriteButton();
+                }, 500);
+                $.lenslink.showNotification("Photographer removed from favorites", "success");
+            })
+            .catch(error => {
+                console.error("Failed to remove from favorites:", error);
+                $.lenslink.showNotification("Failed to update favorites", "error");
+            })
+            .finally(() => {
+                $btn.prop("disabled", false);
+            });
+    } else {
+        API.addToFavorites(photographerId)
+            .then(response => {
+                isFavorite = true;
+                $btn.addClass("animating");
+                setTimeout(() => {
+                    $btn.removeClass("animating");
+                    updateFavoriteButton();
+                }, 500);
+                $.lenslink.showNotification("Photographer added to favorites", "success");
+            })
+            .catch(error => {
+                console.error("Failed to add to favorites:", error);
+                $.lenslink.showNotification("Failed to update favorites", "error");
+            })
+            .finally(() => {
+                $btn.prop("disabled", false);
+            });
+    }
+}
 
 function loadPhotographerDetails() {
     return API.getPhotographerProfile(photographerId)
         .then(data => {
             photographerData = data;
-            console.log("API response:", data);//debug
+            console.log("API response:", data);
 
             displayPhotographerInfo(data);
 
@@ -61,12 +154,13 @@ function loadPhotographerDetails() {
                 services = data.services;
             } else {
                 console.warn("No valid services array in API response");
-                services = []; 
+                services = [];
                 $("#servicesList").html('<div class="col-12"><div class="alert alert-warning">Could not load services.</div></div>');
             }
 
             displayPortfolio(data.portfolio);
             displayReviews(data.reviews);
+            checkFavoriteStatus();
         })
         .catch(error => {
             console.error('Error fetching photographer details:', error);
