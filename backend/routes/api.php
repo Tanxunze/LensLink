@@ -26,11 +26,13 @@ Route::get('/sort-options/{entity}', [UtilityController::class, 'getSortOptions'
 Route::get('/rating-options', [UtilityController::class, 'getRatingOptions']);
 Route::get('auth/google/redirect', [GoogleAuthController::class, 'redirectToGoogle']);
 Route::get('auth/google/callback', [GoogleAuthController::class, 'handleGoogleCallback']);
+Route::get('/images/{filename}', [UserController::class, 'getImage']);
+
 //private routes
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/auth/logout', [AuthController::class, 'logout']);
     Route::get('/auth/verify', [AuthController::class, 'verify']);
-
+    Route::put('/auth/password', [AuthController::class, 'updatePassword']);
     Route::get('/user/profile', function () {
         return auth()->user();
     });
@@ -79,58 +81,6 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('/user/profile', [UserController::class, 'updateProfile']);
     Route::post('/user/profile/image', [UserController::class, 'updateProfileImage']);
 
-    Route::get('/debug/r2-test', function() {
-        try {
-            // 1. 检查R2配置
-            $config = config('filesystems.disks.r2');
-            if (!$config) {
-                return response()->json(['error' => 'R2配置未找到'], 500);
-            }
-
-            // 2. 尝试连接
-            $s3Client = new \Aws\S3\S3Client([
-                'credentials' => [
-                    'key'    => $config['key'],
-                    'secret' => $config['secret'],
-                ],
-                'region' => $config['region'],
-                'endpoint' => $config['endpoint'],
-                'version' => 'latest',
-                'use_path_style_endpoint' => true,
-            ]);
-
-            // 3. 列出桶内容
-            $result = $s3Client->listObjects([
-                'Bucket' => $config['bucket'],
-                'MaxKeys' => 5
-            ]);
-
-            // 4. 测试文件上传
-            $testKey = 'test-' . time() . '.txt';
-            $putResult = $s3Client->putObject([
-                'Bucket' => $config['bucket'],
-                'Key'    => $testKey,
-                'Body'   => 'R2测试成功',
-            ]);
-
-            return response()->json([
-                'status' => '成功',
-                'connection' => '有效',
-                'bucket_exists' => true,
-                'can_list_objects' => count($result['Contents'] ?? []),
-                'test_file_uploaded' => $testKey,
-                'public_url' => $putResult['ObjectURL'] ?? null
-            ]);
-        } catch (\Exception $e) {
-            return response()->json([
-                'status' => '失败',
-                'error' => $e->getMessage(),
-                'error_type' => get_class($e),
-                'file' => $e->getFile(),
-                'line' => $e->getLine()
-            ], 500);
-        }
-    });
     // Admin dashboard
 
     // back-end stastics
