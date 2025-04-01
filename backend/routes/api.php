@@ -32,7 +32,7 @@ Route::get('/images/{filename}', [UserController::class, 'getImage']);
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/auth/logout', [AuthController::class, 'logout']);
     Route::get('/auth/verify', [AuthController::class, 'verify']);
-
+    Route::put('/auth/password', [AuthController::class, 'updatePassword']);
     Route::get('/user/profile', function () {
         return auth()->user();
     });
@@ -69,6 +69,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/photographer/portfolio', [App\Http\Controllers\API\PhotographerDashboard\Portfolio::class, 'index']);
     Route::post('/photographer/profile',[\App\Http\Controllers\API\PhotographerDashboard\Dashboard::class,'show']);
     Route::post('/photographer/profile/recent-bookings',[\App\Http\Controllers\API\PhotographerDashboard\Dashboard::class,'recentBookings']);
+    Route::post('photographer/bookings-details',[\App\Http\Controllers\API\PhotographerDashboard\Bookings::class,'index']);
 
     //Favorites
     Route::get('/favorites', [FavoriteController::class, 'index']);
@@ -81,24 +82,14 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('/user/profile', [UserController::class, 'updateProfile']);
     Route::post('/user/profile/image', [UserController::class, 'updateProfileImage']);
 
-    // Admin dashboard
-
-    // back-end stastics
-    Route::get('/admin/stats', [AdminController::class, 'getStats']);
-
-    // Get recently registered users
-    Route::get('/admin/users/recent', [AdminController::class, 'getRecentUsers']);
-
-    // Getting system logs
-    Route::get('/admin/logs', [AdminController::class, 'getLogs']);
-
-    // Get comments
-    Route::get('/admin/comments', [AdminController::class, 'getComments']);
-
-    // Delete comments
-    Route::delete('/admin/comments/{id}', [AdminController::class, 'deleteComment']);
-
-    // Ban users
-    Route::post('/admin/users/{id}/ban', [AdminController::class, 'banUser']);
+    // Admin Dashboard
+    Route::prefix('admin')->group(function () {
+        Route::get('/stats', [AdminController::class, 'getStats']);
+        Route::get('/users/recent', [AdminController::class, 'getRecentUsers']);
+        Route::get('/logs', [AdminController::class, 'getLogs']);
+        Route::get('/comments', [AdminController::class, 'getComments']);
+        Route::delete('/comments/{id}', [AdminController::class, 'deleteComment']);
+        Route::post('/users/{id}/ban', [AdminController::class, 'banUser']);
+    });
 });
 

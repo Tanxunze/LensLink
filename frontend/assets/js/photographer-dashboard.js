@@ -5,6 +5,9 @@
 * Input parameter: @param {type} name - description
 * Output parameter: @returns {type} - description
 */
+// Global variable to store user's last portfolio tag selection
+let lastSelectedCategory = "all";
+
 $(document).ready(function () {
     loadPhotographerData();
     loadDashboardData();
@@ -80,6 +83,7 @@ function setupEventHandlers() {
         const category = $(this).data("category");
         $("button[data-category]").removeClass("active");
         $(this).addClass("active");
+        lastSelectedCategory = category;
         filterPortfolioItems(category);
     });
 
@@ -103,7 +107,10 @@ function setupEventHandlers() {
 
     // loading event listeners
     $(document).on("section:portfolio", function () {
-        loadPortfolio();
+        loadPortfolio(lastSelectedCategory);
+
+        $("button[data-category]").removeClass("active");
+        $(`button[data-category="${lastSelectedCategory}"]`).addClass("active");
     });
 
     $(document).on("section:bookings", function () {
@@ -571,13 +578,14 @@ function loadRecentReviews() {
 }
 
 //Get filtered portfolio information based on category given
-function filterPortfolioItems(category){
+function filterPortfolioItems(category) {
+    lastSelectedCategory = category;
     loadPortfolio(category);
 }
 
 // Get portfolio information
 function loadPortfolio(category = 'all') {
-    $('#portifolioItems').html(`
+    $('#portfolioItems').html(`
         <div class="col-12 text-center">
             <div class="spinner-border" role="status">
                 <span class="visually-hidden">Loading...</span>
@@ -587,9 +595,7 @@ function loadPortfolio(category = 'all') {
     `);
 
     const requestData = {
-        filter: {
-            category: category
-        }
+        category: category
     };
 
     fetch(`${CONFIG.API.BASE_URL}/photographer/portfolio`, {
@@ -674,6 +680,137 @@ function openAddPortfolioModal() {
 
     const portfolioModal = new bootstrap.Modal(document.getElementById('addPortfolioModal'));
     portfolioModal.show();
+}
+
+// Get bookings info
+function loadBookings(status = "all", page = 1) {
+    $("#bookingsTable").html(`
+        <tr>
+            <td colspan="8" class="text-center">
+                <div class="spinner-border" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <p>Loading bookings...</p>
+            </td>
+        </tr>
+    `);
+
+    $("#bookingsPagination").empty();
+
+    const requestData = {
+        filter: {
+            status: status
+        },
+        pagination: {
+            page: page,
+            limit: 10,
+        }
+    };
+
+    fetch(`${CONFIG.API.BASE_URL}/photographer/bookings-details`, {
+        method: 'POST',
+        headers: {
+            'Authorization': `Bearer ${localStorage.getItem("token")}`,
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(requestData)
+    })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Failed to load bookings. Please try again later.');
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (!data || data.length === 0) {
+                $("#bookingsTable").html(`
+                    <tr>
+                        <td colspan="8" class="text-center">
+                            No bookings found.
+                        </td>
+                    </tr>
+                `);
+
+                $("#bookingsPagination").empty();
+                return;
+            }
+
+            const bookingsHtml = data.bookings.map(booking => `
+                <tr>
+                    <td>${booking.customer_name}</td>
+                    <td>${booking.service_name}</td>
+                    <td>${formatDate(booking.booking_date)}</td>
+                    <td>${booking.booking_time}</td>
+                    <td>${booking.location || 'N/A'}</td>
+                    <td>
+                        <span class="badge ${getStatusBadgeClass(booking.status)}">
+                            ${capitalizeFirstLetter(booking.status)}
+                        </span>
+                    </td>
+                    <td>€${booking.total_amount}</td>
+                    <td>
+                        <div class="btn-group btn-group-sm">
+                            <button class="btn btn-outline-primary viewBookingBtn" data-id="${booking.id}" title="View Details">
+                                <i class="bi bi-eye"></i>
+                            </button>
+                            <button class="btn btn-outline-success messageClientBtn" data-id="${booking.customer_id}" title="Message Client">
+                                <i class="bi bi-chat"></i>
+                            </button>
+                            ${booking.status === 'pending' ? `
+                                <button class="btn btn-outline-info acceptBookingBtn" data-id="${booking.id}" title="Accept Booking">
+                                    <i class="bi bi-check2"></i>
+                                </button>
+                                <button class="btn btn-outline-danger rejectBookingBtn" data-id="${booking.id}" title="Reject Booking">
+                                    <i class="bi bi-x-lg"></i>
+                                </button>
+                            ` : ''}
+                        </div>
+                    </td>
+                </tr>
+            `).join('');
+
+            $("#bookingsTable").html(bookingsHtml);
+
+            if (data.total_pages > 1) {
+                let paginationHtml = ``;
+
+                paginationHtml += `
+                    <li class="page-item ${page === 1 ? 'disabled' : ''}">
+                        <a class="page-link" href="#" data-page="${page - 1}" aria-label="Previous">
+                            <span aria-hidden="true">&laquo;</span>
+                        </a>
+                    </li>
+                `;
+
+                for (let i = 1; i <= data.total_pages; i++) {
+                    paginationHtml += `
+                        <li class="page-item ${i === page ? 'active' : ''}">
+                            <a class="page-link" href="#" data-page="${i}">${i}</a>
+                        </li>
+                    `;
+                }
+
+                paginationHtml += `
+                    <li class="page-item ${page === data.total_pages ? 'disabled' : ''}">
+                        <a class="page-link" href="#" data-page="${page + 1}" aria-label="Next">
+                            <span aria-hidden="true">&raquo;</span>
+                        </a>
+                    </li>
+                `;
+
+                $("#bookingsPagination").html(paginationHtml);// TODO: check if it should be "$("#xxx").html"
+
+
+                // TODO: finish button functions
+                $(".page-link").click(function () {
+
+                });
+
+                $(".messageClientBtn").click(function () {
+
+                })
+            }
+        })
 }
 
 /**
