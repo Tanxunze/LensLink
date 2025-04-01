@@ -30,7 +30,7 @@ class Bookings extends Controller
             $return_data=$booking->toArray();
             $return_data['customer_name']=User::where('id',$booking->customer_id)->value('name');
             $return_data['service_name']=Service::where('id',$booking->service_id)->value('name');
-            $return_data['booking_time']=$booking->booking_date;
+            $return_data['booking_time']=Carbon::parse($booking->booking_date)->format('Y-m-d H:i:s');
 
             $results[]=$return_data;
         }
