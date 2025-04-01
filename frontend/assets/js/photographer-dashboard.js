@@ -811,6 +811,150 @@ function loadBookings(status = "all", page = 1) {
                 })
             }
         })
+        .catch(error => {
+            console.error("Failed to load bookings: ", error);
+            $("#bookingsTable").html(`
+                <tr>
+                    <td colspan="8" class="text-center text-danger">
+                        Failed to load bookings. Please try again.
+                    </td>
+                </tr>
+            `)
+        });
+}
+
+// Get services and prices info
+function loadServices(onlyFeatured = false) {
+    $("#servicesList").html(`
+        <div class="col-12 text-center">
+            <div class="spinner-border" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <p>Loading services...</p>
+        </div>
+    `);
+
+    const requestData = {
+        filter: {
+            is_featured: onlyFeatured ? 1 : null,
+            is_active: 1
+        }
+    };
+
+    fetch(`${CONFIG.API.BASE_URL}/photographer/services`, {
+        method: 'POST',
+        headers: {
+            'Authorization': `Bearer ${localStorage.getItem("token")}`,
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(requestData)
+    })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Failed to load services. Please try again later.');
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (!data || data.length === 0) {
+                $("#servicesList").html(`
+                    <div class="col-12">
+                        <div class="alert alert-info">
+                            No services found. Add some services to attract clients.
+                        </div>
+                    </div>
+                `);
+                return;
+            }
+
+            const serviceHtml = data.map(service => {
+                const featuresHtml = service.features && service.features.length > 0 ?
+                    `
+                        <ul class="list-group list-group-flush mt-3">
+                            ${service.features.map(feature => `
+                                <li class="list-group-item d-flex align-items-center">
+                                    <i class="bi bi-check-circle-fill text-success me-2"></i>
+                                    ${feature}
+                                </li>
+                            `).join('')}
+                        </ul>
+                    ` : '';
+
+                const unitDisplay = formatServiceUnit(service.unit, service.duration);
+
+                return `
+                    <div class="col-md-4 mb-4">
+                        <div class="card h-100 service-card">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <h5 class="mb-0">${service.name}</h5>
+                                <div class="dropdown">
+                                    <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                        <i class="bi bi-three-dots-vertical"></i>
+                                    </button>
+                                    <ul class="dropdown-menu dropdown-menu-end">
+                                        <li><a class="dropdown-item edit-service-btn" href="#" data-id="${service.id}">
+                                            <i class="bi bi-pencil me-2"></i> Edit
+                                        </a></li>
+                                        <li><a class="dropdown-item ${service.is_featured ? 'unfeature-service-btn' : 'feature-service-btn'}" href="#" data-id="${service.id}">
+                                            <i class="bi bi-star${service.is_featured ? '-fill' : ''} me-2"></i> 
+                                            ${service.is_featured ? 'Remove from Featured' : 'Mark as Featured'}
+                                        </a></li>
+                                        <li><hr class="dropdown-divider"></li>
+                                        <li><a class="dropdown-item text-danger delete-service-btn" href="#" data-id="${service.id}">
+                                            <i class="bi bi-trash me-2"></i> Delete
+                                        </a></li>
+                                    </ul>
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                ${service.image_url ? `
+                                    <div class="service-image-container mb-3">
+                                        <img src="${service.image_url}" class="img-fluid rounded" alt="${service.name}">
+                                    </div>
+                                ` : ''}
+                                <h6 class="price-tag">€${parseFloat(service.price).toFixed(2)} <small class="text-muted">/ ${unitDisplay}</small></h6>
+                                <p class="card-text">${service.description || 'No description provided.'}</p>
+                                ${featuresHtml}
+                            </div>
+                            <div class="card-footer bg-white">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <small class="text-muted">Last updated: ${formatDate(service.updated_at)}</small>
+                                    ${service.is_featured ? '<span class="badge bg-warning">Featured</span>' : ''}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            $("#servicesList").html(serviceHtml);
+        })
+        .catch(error => {
+            console.error("Failed to load services:", error);
+            $("#servicesList").html(`
+                <div class="col-12">
+                    <div class="alert alert-danger">
+                        Failed to load services. Please try again.
+                    </div>
+                </div>
+            `);
+        });
+
+}
+
+function formatServiceUnit(unit, duration) {
+    switch (unit) {
+        case 'hour':
+            return 'hour';
+        case 'session':
+            return duration ? `session (${Math.floor(duration / 60)}h ${duration % 60 > 0 ? duration % 60 + 'min' : ''})` : 'session';
+        case 'package':
+            return 'package';
+        case 'day':
+            return 'day';
+        default:
+            return unit || 'session';
+    }
 }
 
 /**
