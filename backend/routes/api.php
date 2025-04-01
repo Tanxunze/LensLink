@@ -82,24 +82,14 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('/user/profile', [UserController::class, 'updateProfile']);
     Route::post('/user/profile/image', [UserController::class, 'updateProfileImage']);
 
-    // Admin dashboard
-
-    // back-end stastics
-    Route::get('/admin/stats', [AdminController::class, 'getStats']);
-
-    // Get recently registered users
-    Route::get('/admin/users/recent', [AdminController::class, 'getRecentUsers']);
-
-    // Getting system logs
-    Route::get('/admin/logs', [AdminController::class, 'getLogs']);
-
-    // Get comments
-    Route::get('/admin/comments', [AdminController::class, 'getComments']);
-
-    // Delete comments
-    Route::delete('/admin/comments/{id}', [AdminController::class, 'deleteComment']);
-
-    // Ban users
-    Route::post('/admin/users/{id}/ban', [AdminController::class, 'banUser']);
+    // Admin Dashboard
+    Route::prefix('admin')->group(function () {
+        Route::get('/stats', [AdminController::class, 'getStats']);
+        Route::get('/users/recent', [AdminController::class, 'getRecentUsers']);
+        Route::get('/logs', [AdminController::class, 'getLogs']);
+        Route::get('/comments', [AdminController::class, 'getComments']);
+        Route::delete('/comments/{id}', [AdminController::class, 'deleteComment']);
+        Route::post('/users/{id}/ban', [AdminController::class, 'banUser']);
+    });
 });
 

@@ -4,51 +4,102 @@ namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use App\Models\User;
+use App\Models\Comment;
+use App\Models\SystemLog;
+use Illuminate\Support\Carbon;
 
 class AdminController extends Controller
 {
+    // Dashboard Statistic information
     public function getStats()
     {
+        $totalUsers = User::count();
+        $totalPhotographers = User::where('role', 'photographer')->count();
+        $pendingApprovals = User::where('status', 'pending')->count();
+        $revenue = 15700; // 假数据
+
         return response()->json([
-            'total_users' => 1240,
-            'total_photographers' => 320,
-            'pending_approvals' => 12,
-            'revenue' => 15700
+            'total_users' => $totalUsers,
+            'total_photographers' => $totalPhotographers,
+            'pending_approvals' => $pendingApprovals,
+            'revenue' => $revenue,
         ]);
     }
 
+    // Latest Registered Users
     public function getRecentUsers()
     {
-        return response()->json([
-            ['id' => 1, 'name' => 'Olivia', 'email' => 'olivia@example.com', 'registered_at' => '2025-03-10', 'status' => 'Active'],
-            ['id' => 2, 'name' => 'Ethan', 'email' => 'ethan@example.com', 'registered_at' => '2025-03-08', 'status' => 'Pending']
-        ]);
+        $users = User::orderBy('created_at', 'desc')
+            ->take(5)
+            ->get(['id', 'name', 'email', 'created_at', 'status']);
+
+        return response()->json($users);
     }
 
+    // System Log
     public function getLogs()
     {
-        return response()->json([
-            ['id' => 1, 'action' => 'User Olivia approved', 'admin' => 'John', 'date' => '2025-03-10'],
-            ['id' => 2, 'action' => 'Photographer Ethan suspended', 'admin' => 'Sarah', 'date' => '2025-03-08']
-        ]);
+        $logs = SystemLog::orderBy('created_at', 'desc')
+            ->take(10)
+            ->get(['id', 'action', 'admin_name', 'created_at']);
+
+        return response()->json($logs);
     }
 
+    // Get a list of comments
     public function getComments()
     {
-        return response()->json([
-            ['id' => 1, 'user' => 'Olivia', 'comment' => 'Here is inappropriate content'],
-            ['id' => 2, 'user' => 'Ethan', 'comment' => 'Spam messages']
-        ]);
+        $comments = Comment::with('user:id,name')
+            ->orderBy('created_at', 'desc')
+            ->take(10)
+            ->get(['id', 'user_id', 'content', 'created_at']);
+
+        $formatted = $comments->map(function ($comment) {
+            return [
+                'id' => $comment->id,
+                'user' => $comment->user->name ?? 'Unknown',
+                'comment' => $comment->content,
+            ];
+        });
+
+        return response()->json($formatted);
     }
 
+    // Delete comment
     public function deleteComment($id)
     {
+        $comment = Comment::find($id);
+        if (!$comment) {
+            return response()->json(['message' => 'Comment not found.'], 404);
+        }
+
+        $comment->delete();
         return response()->json(['message' => "Comment $id deleted."], 200);
     }
 
+    // user bans
     public function banUser($id, Request $request)
     {
-        $duration = $request->input('duration'); // 24H, 7D, Permanent
-        return response()->json(['message' => "User $id has been banned for $duration."], 200);
+        $user = User::find($id);
+        if (!$user) {
+            return response()->json(['message' => 'User not found.'], 404);
+        }
+
+        $duration = $request->input('duration');
+        $banUntil = match ($duration) {
+            '24H' => Carbon::now()->addDay(),
+            '7D' => Carbon::now()->addDays(7),
+            'Permanent' => null,
+            default => null,
+        };
+
+        $user->banned_until = $banUntil;
+        $user->is_banned = $duration === 'Permanent';
+        $user->save();
+
+        return response()->json([
+            'message' => "User {$user->name} has been banned for $duration."
+        ]);
     }
 }
