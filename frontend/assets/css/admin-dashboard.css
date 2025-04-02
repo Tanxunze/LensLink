@@ -1,0 +1,147 @@
+.dashboard {
+    background-color: #f8f9fa;
+    min-height: 100vh;
+}
+
+.sidebar {
+    box-shadow: inset -1px 0 0 rgba(0, 0, 0, .1);
+    position: sticky;
+    top: 0;
+    height: calc(100vh - 56px);
+    overflow-y: auto;
+}
+
+.sidebar .nav-link {
+    font-weight: 500;
+    padding: 0.75rem 1rem;
+    border-radius: 0.25rem;
+    margin-bottom: 0.25rem;
+}
+
+.sidebar .nav-link:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+.sidebar .nav-link.active {
+    background-color: rgba(255, 255, 255, 0.2);
+}
+
+.main-content {
+    padding-top: 1.5rem;
+}
+
+.card {
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    border: none;
+    margin-bottom: 1.5rem;
+}
+
+.card-header {
+    background-color: rgba(0, 0, 0, 0.03);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.125);
+}
+
+.table th {
+    font-weight: 600;
+    vertical-align: middle;
+}
+
+.table td {
+    vertical-align: middle;
+}
+
+.badge-active {
+    background-color: #198754;
+}
+
+.badge-banned {
+    background-color: #dc3545;
+}
+
+.badge-pending {
+    background-color: #fd7e14;
+}
+
+.text-truncate-custom {
+    max-width: 200px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: inline-block;
+}
+
+.action-buttons .btn {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.75rem;
+}
+
+.table-responsive {
+    scrollbar-width: thin;
+    scrollbar-color: #6c757d #f8f9fa;
+}
+
+.table-responsive::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+.table-responsive::-webkit-scrollbar-track {
+    background: #f8f9fa;
+}
+
+.table-responsive::-webkit-scrollbar-thumb {
+    background-color: #6c757d;
+    border-radius: 20px;
+}
+
+/* Pagination styling */
+.pagination {
+    margin-top: 1rem;
+    margin-bottom: 0;
+}
+
+/* Toast notifications */
+.toast {
+    min-width: 300px;
+}
+
+/* Loading spinner */
+.spinner-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+}
+
+/* Responsive adjustments */
+@media (max-width: 767.98px) {
+    .sidebar {
+        position: static;
+        height: auto;
+        box-shadow: none;
+    }
+
+    .sidebar .nav {
+        flex-direction: row;
+        overflow-x: auto;
+        white-space: nowrap;
+    }
+
+    .sidebar .nav-item {
+        display: inline-block;
+    }
+
+    .main-content {
+        padding-top: 0.5rem;
+    }
+
+    .text-truncate-custom {
+        max-width: 150px;
+    }
+}
