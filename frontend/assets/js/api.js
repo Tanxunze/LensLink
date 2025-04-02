@@ -536,4 +536,128 @@ class API {
             }
         });
     }
+
+    // Admin APIs
+    /**
+     * Check admin authentication
+     * @returns {Promise} - Admin auth check response
+     */
+    static async checkAdminAuth() {
+        return this.request("/admin/auth/check");
+    }
+
+    /**
+     * Get admin dashboard statistics
+     * @returns {Promise} - Dashboard stats
+     */
+    static async getAdminStats() {
+        return this.request("/admin/stats");
+    }
+
+    /**
+     * Get users list
+     * @param {number} page - Page number
+     * @param {string} search - Search term
+     * @returns {Promise} - Users list
+     */
+    static async getUsers(page = 1, search = '') {
+        return this.request(`/admin/users?page=${page}&search=${search}`);
+    }
+
+    /**
+     * Ban a user
+     * @param {Object} banData - Ban data
+     * @returns {Promise} - Ban response
+     */
+    static async banUser(banData) {
+        return this.request("/admin/users/ban", {
+            method: "POST",
+            body: JSON.stringify(banData)
+        });
+    }
+
+    /**
+     * Unban a user
+     * @param {number} banId - Ban ID
+     * @returns {Promise} - Unban response
+     */
+    static async unbanUser(banId) {
+        return this.request(`/admin/bans/${banId}`, {
+            method: "DELETE"
+        });
+    }
+
+    /**
+     * Get ban list
+     * @param {number} page - Page number
+     * @param {string} search - Search term
+     * @returns {Promise} - Ban list
+     */
+    static async getBanList(page = 1, search = '') {
+        return this.request(`/admin/bans?page=${page}&search=${search}`);
+    }
+
+    /**
+     * Get comments list
+     * @param {number} page - Page number
+     * @param {string} search - Search term
+     * @returns {Promise} - Comments list
+     */
+    static async getComments(page = 1, search = '') {
+        return this.request(`/admin/comments?page=${page}&search=${search}`);
+    }
+
+    /**
+     * Delete a comment
+     * @param {number} commentId - Comment ID
+     * @returns {Promise} - Delete response
+     */
+    static async deleteComment(commentId) {
+        return this.request(`/admin/comments/${commentId}`, {
+            method: "DELETE"
+        });
+    }
+
+    /**
+     * Toggle comment visibility
+     * @param {number} commentId - Comment ID
+     * @param {boolean} isPublished - Published status
+     * @returns {Promise} - Update response
+     */
+    static async toggleCommentVisibility(commentId, isPublished) {
+        return this.request(`/admin/comments/${commentId}/visibility`, {
+            method: "PUT",
+            body: JSON.stringify({ is_published: isPublished })
+        });
+    }
+
+    /**
+     * Get messages list
+     * @param {number} page - Page number
+     * @param {string} search - Search term
+     * @returns {Promise} - Messages list
+     */
+    static async getMessages(page = 1, search = '') {
+        return this.request(`/admin/messages?page=${page}&search=${search}`);
+    }
+
+    /**
+     * Delete a message
+     * @param {number} messageId - Message ID
+     * @returns {Promise} - Delete response
+     */
+    static async deleteMessage(messageId) {
+        return this.request(`/admin/messages/${messageId}`, {
+            method: "DELETE"
+        });
+    }
+
+    /**
+     * Get system logs
+     * @param {number} page - Page number
+     * @returns {Promise} - Logs list
+     */
+    static async getLogs(page = 1) {
+        return this.request(`/admin/logs?page=${page}`);
+    }
 }

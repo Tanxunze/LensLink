@@ -50,6 +50,7 @@ $(document).ready(function () {
     $("#favoriteBtn").on("click", toggleFavorite);
 
     checkLoginStatus();
+    
 });
 
 function checkLoginStatus() {
@@ -297,7 +298,7 @@ function displayReviews(reviews) {
         <div class="card mb-4">
             <div class="card-body">
                 <div class="d-flex mb-3">
-                    <img src="../assets/images/${review.customer_image || 'default-avatar.jpg'}" class="rounded-circle me-3" width="50" height="50" alt="${review.customer_name}">
+                    <img src="${review.customer_image || 'default-avatar.jpg'}" class="rounded-circle me-3" width="50" height="50" alt="${review.customer_name}">
                     <div>
                         <h6 class="mb-1">${review.customer_name}</h6>
                         <div class="mb-2">
@@ -557,3 +558,4 @@ function showErrorMessage(message) {
         </div>
     `);
 }
+
