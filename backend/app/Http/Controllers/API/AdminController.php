@@ -636,16 +636,18 @@ class AdminController extends Controller
             ], 404);
         }
 
-        $participants = ConversationParticipant::with('user')
-            ->where('conversation_id', $message->conversation_id)
+        $participants = DB::table('conversation_participants as cp')
+            ->join('users as u', 'cp.user_id', '=', 'u.id')
+            ->where('cp.conversation_id', $message->conversation_id)
+            ->select('u.id as user_id', 'u.name')
             ->get();
 
-        $recipients = $participants->filter(function($participant) use ($message) {
+        $recipients = collect($participants)->filter(function($participant) use ($message) {
             return $participant->user_id != $message->sender_id;
         })->map(function($participant) {
             return [
                 'id' => $participant->user_id,
-                'name' => $participant->user->name
+                'name' => $participant->name
             ];
         });
 
