@@ -2,11 +2,11 @@
 
 namespace App\Http\Controllers\API;
 
-namespace App\Http\Controllers\API;
-
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Models\PhotographerProfile;
+use App\Models\BanList;
+use App\Models\SystemLog;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Facades\DB;
+use Carbon\Carbon;
 
 class AuthController extends Controller
 {
@@ -43,6 +44,13 @@ class AuthController extends Controller
             }
 
             DB::commit();
+
+            SystemLog::create([
+                'user_id' => $user->id,
+                'type' => 'user',
+                'action' => 'User registered',
+                'ip_address' => $request->ip()
+            ]);
 
             return response()->json([
                 'success' => true,
@@ -78,6 +86,36 @@ class AuthController extends Controller
             ]);
         }
 
+        $ban = BanList::where('user_id', $user->id)
+            ->where(function($query) {
+                $query->whereNull('expires_at')
+                    ->orWhere('expires_at', '>', Carbon::now());
+            })
+            ->first();
+
+        if ($ban) {
+            $banDetails = [
+                'reason' => $ban->reason,
+                'duration' => $ban->duration,
+                'expires_at' => $ban->expires_at ? $ban->expires_at->toDateTimeString() : 'permanent'
+            ];
+
+            SystemLog::create([
+                'user_id' => $user->id,
+                'type' => 'auth',
+                'action' => 'Login attempted by banned user',
+                'ip_address' => $request->ip(),
+                'details' => json_encode($banDetails)
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Your account has been suspended',
+                'banned' => true,
+                'ban_details' => $banDetails
+            ], 403);
+        }
+
         if ($user->isPhotographer()) {
             $user->load('photographerProfile');
         }
@@ -94,6 +132,13 @@ class AuthController extends Controller
             $user->save();
         }
 
+        SystemLog::create([
+            'user_id' => $user->id,
+            'type' => 'auth',
+            'action' => 'User logged in',
+            'ip_address' => $request->ip()
+        ]);
+
         return response()->json([
             'success' => true,
             'token' => $token,
@@ -105,6 +150,13 @@ class AuthController extends Controller
 
     public function logout(Request $request)
     {
+        SystemLog::create([
+            'user_id' => $request->user()->id,
+            'type' => 'auth',
+            'action' => 'User logged out',
+            'ip_address' => $request->ip()
+        ]);
+
         $request->user()->currentAccessToken()->delete();
 
         return response()->json([
@@ -146,6 +198,13 @@ class AuthController extends Controller
 
         $user->password = Hash::make($request->new_password);
         $user->save();
+
+        SystemLog::create([
+            'user_id' => $user->id,
+            'type' => 'user',
+            'action' => 'Password changed',
+            'ip_address' => $request->ip()
+        ]);
 
         return response()->json([
             'message' => 'Password updated successfully'

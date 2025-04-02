@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\API\AdminController;
 use App\Http\Controllers\API\CategoryController;
 use App\Http\Controllers\API\FavoriteController;
 use App\Http\Controllers\API\GoogleAuthController;
@@ -70,6 +71,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/photographer/profile',[\App\Http\Controllers\API\PhotographerDashboard\Dashboard::class,'show']);
     Route::post('/photographer/profile/recent-bookings',[\App\Http\Controllers\API\PhotographerDashboard\Dashboard::class,'recentBookings']);
     Route::post('photographer/bookings-details',[\App\Http\Controllers\API\PhotographerDashboard\Bookings::class,'index']);
+    Route::post('photographer/services',[\App\Http\Controllers\API\PhotographerDashboard\Services::class,'index']);
 
     //Favorites
     Route::get('/favorites', [FavoriteController::class, 'index']);
@@ -84,12 +86,25 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Admin Dashboard
     Route::prefix('admin')->group(function () {
+        Route::get('/auth/check', [AdminController::class, 'checkAuth']);
         Route::get('/stats', [AdminController::class, 'getStats']);
-        Route::get('/users/recent', [AdminController::class, 'getRecentUsers']);
-        Route::get('/logs', [AdminController::class, 'getLogs']);
+        Route::get('/activities', [AdminController::class, 'getRecentActivities']);
+        Route::get('/users', [AdminController::class, 'getUsers']);
+        Route::get('/users/{id}', [AdminController::class, 'getUserDetails']);
+        Route::post('/users/ban', [AdminController::class, 'banUser']);
+        Route::get('/bans', [AdminController::class, 'getBanList']);
+        Route::get('/bans/{id}', [AdminController::class, 'getBanDetails']);
+        Route::delete('/bans/{id}', [AdminController::class, 'unbanUser']);
         Route::get('/comments', [AdminController::class, 'getComments']);
         Route::delete('/comments/{id}', [AdminController::class, 'deleteComment']);
-        Route::post('/users/{id}/ban', [AdminController::class, 'banUser']);
+        Route::put('/comments/{id}/visibility', [AdminController::class, 'toggleCommentVisibility']);
+        Route::get('/comments/{id}', [AdminController::class, 'getCommentDetails']);
+        Route::get('/messages', [AdminController::class, 'getMessages']);
+        Route::delete('/messages/{id}', [AdminController::class, 'deleteMessage']);
+        Route::get('/messages/{id}', [AdminController::class, 'getMessageDetails']);
+        Route::get('/logs', [AdminController::class, 'getLogs']);
+        Route::get('/logs/{id}', [AdminController::class, 'getLogDetails']);
+        Route::delete('/logs/clear', [AdminController::class, 'clearLogs']);
     });
 });
 

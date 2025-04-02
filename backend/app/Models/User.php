@@ -86,4 +86,18 @@ class User extends Authenticatable
     {
         return $this->hasOne(UserDetail::class);
     }
+
+    public function banInfo()
+    {
+        return $this->hasOne(BanList::class, 'user_id');
+    }
+
+    public function isBanned()
+    {
+        $ban = $this->banInfo;
+        if (!$ban) return false;
+
+        if ($ban->expires_at === null) return true; // 永久封禁
+        return $ban->expires_at->isFuture();
+    }
 }
