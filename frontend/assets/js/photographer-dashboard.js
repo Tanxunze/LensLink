@@ -13,6 +13,10 @@ $(document).ready(function () {
     loadDashboardData();
     setupEventHandlers();
     loadSectionFromUrlHash();
+
+    // $(".view-portfolio-btn").click(function () {
+    //     console.log("clicked view portfolio");
+    // });
 });
 
 function setupEventHandlers() {
@@ -442,26 +446,26 @@ function loadRecentBookings() {
             }
 
             const rows = data.map(booking => `
-            <tr>
-                <td>${booking.customer_name}</td>
-                <td>${booking.service_name}</td>
-                <td>${formatDate(booking.booking_date)}</td>
-                <td>
-                    <span class="badge ${getStatusBadgeClass(booking.status)}">
-                        ${capitalizeFirstLetter(booking.status)}
-                    </span>
-                </td>
-                <td>€${booking.total_amount}</td>
-                <td>
-                    <button class="btn btn-sm btn-outline-primary viewBookingBtn" data-id="${booking.id}">
-                        <i class="bi bi-eye"></i>
-                    </button>
-                    <button class="btn btn-sm btn-outline-success messageClientBtn" data-id="${booking.customer.id}">
-                        <i class="bi bi-chat"></i>
-                    </button>
-                </td>
-            </tr>
-        `).join('');
+                <tr>
+                    <td>${booking.customer_name}</td>
+                    <td>${booking.service_name}</td>
+                    <td>${formatDate(booking.booking_date)}</td>
+                    <td>
+                        <span class="badge ${getStatusBadgeClass(booking.status)}">
+                            ${capitalizeFirstLetter(booking.status)}
+                        </span>
+                    </td>
+                    <td>€${booking.total_amount}</td>
+                    <td>
+                        <button class="btn btn-sm btn-outline-primary viewBookingBtn" data-id="${booking.id}">
+                            <i class="bi bi-eye"></i>
+                        </button>
+                        <button class="btn btn-sm btn-outline-success messageClientBtn" data-id="${booking.customer.id}">
+                            <i class="bi bi-chat"></i>
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
 
             $("#recentBookingsTable").html(rows);
 
@@ -478,12 +482,12 @@ function loadRecentBookings() {
         .catch(error => {
             console.error("Failed to load recent bookings:", error);
             $("#recentBookingsTable").html(`
-            <tr>
-                <td colspan="6" class="text-center text-danger">
-                    Failed to load bookings. Please try again.
-                </td>
-            </tr>
-        `);
+                <tr>
+                    <td colspan="6" class="text-center text-danger">
+                        Failed to load bookings. Please try again.
+                    </td>
+                </tr>
+            `);
         });
 }
 
@@ -624,7 +628,9 @@ function loadPortfolio(category = 'all') {
                 return;
             }
 
-            const portfolioItemHtml = data.map(item => `
+            const portfolioItemHtml = data.map(item => {
+
+                return `
                 <div class="col-md-4 mb-4 portfolio-item" data-category="${item.category}">
                     <div class="card h-100">
                         <div class="portfolio-image-container">
@@ -648,16 +654,23 @@ function loadPortfolio(category = 'all') {
                         </div>
                     </div>
                 </div>
-            `).join('');
+            `;}).join('');
 
             $("#portfolioItems").html(portfolioItemHtml);
 
-            // Setup click event for View button
-            $(".view-profile-btn").click(function () {
-
+            // $("#portfolioItems").on("click", ".view-portfolio-btn", function () {//off("click", ".view-portfolio-btn").
+            //     console.log("View button clicked");
+            //     const itemId = $(this).data("id");
+            //     viewPortfolioItem(itemId);
+            // });
+            $(".view-portfolio-btn").click(function (){
+                const itemId=$(this).data("id");
+                viewPortfolioItem(itemId);
             });
-
-            //Maybe Edit button too.
+            $(".edit-portfolio-btn").click(function (){
+                const itemId=$(this).data("id");
+                console.log(itemId);
+            });
         })
         .catch(error => {
             console.error("Failed to load portfolio:", error);
@@ -669,6 +682,81 @@ function loadPortfolio(category = 'all') {
                 </div>
             `);
         })
+}
+
+function viewPortfolioItem(itemId) {
+    console.log("ItemID: ", itemId);
+    if (!document.getElementById('portfolioDetailModal')) {
+        const modalHtml = `
+            <div class="modal fade" id="portfolioDetailModal" tabindex="-1" aria-hidden="true">
+                <div class="modal-dialog modal-lg">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">Portfolio Details</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body text-center">
+                            <div class="spinner-border" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                            <p>Loading portfolio details...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+    }
+    // 显示加载状态
+    const portfolioModal = new bootstrap.Modal(document.getElementById('portfolioDetailModal'));
+    portfolioModal.show();
+
+    const requestData={
+        portfolio_id: itemId
+    }
+
+    fetch(`${CONFIG.API.BASE_URL}/photographer/portfolio`, {
+       method: 'POST',
+         headers: {
+              'Authorization': `Bearer ${localStorage.getItem("token")}`,
+              'Content-Type': 'application/json'
+         },
+        body: JSON.stringify(requestData)
+    })
+        .then(response => {
+            if(!response.ok) {
+                throw new Error('Failed to load portfolio details');
+            }
+            return response.json();
+        })
+        .then(data=>{
+            const item = Array.isArray(data)? data[0] : data;
+            const modalBody=document.querySelector('#portfolioDetailModal .modal-body');
+            modalBody.innerHTML=`
+                <div class="row">
+                    <div class="col-md-8">
+                        <img src="${item.image_path}" class="img-fluid rounded" alt="${item.title}">
+                    </div>
+                    <div class="col-md-4 text-start">
+                        <h4>${item.title}</h4>
+                        <div class="mb-3">
+                            <span class="badge bg-primary">${capitalizeFirstLetter(item.category)}</span>
+                            ${item.featured ? '<span class="badge bg-warning ms-1">Featured</span>' : ''}
+                        </div>
+                        <p>${item.description || 'No description provided.'}</p>
+                        <small class="text-muted">Added on: ${formatDate(item.created_at)}</small>
+                    </div>
+                </div>
+            `;
+        })
+        .catch(error => {
+            console.error("Failed to load portfolio details: ",error);
+            document.querySelector('#portfolioDetailModal .modal-body').innerHTML=`
+                <div class="alert alert-danger">
+                    Failed to load portfolio item details. Please try again.
+                </div>
+            `;
+        });
 }
 
 /**
@@ -798,7 +886,7 @@ function loadBookings(status = "all", page = 1) {
                     </li>
                 `;
 
-                $("#bookingsPagination").html(paginationHtml);// TODO: check if it should be "$("#xxx").html"
+                $("#bookingsPagination").html(paginationHtml);
 
 
                 // TODO: finish button functions
@@ -991,6 +1079,11 @@ function openSpecialDateModal() {
 
     const specialDateModal = new bootstrap.Modal(document.getElementById('specialDateModal'));
     specialDateModal.show();
+}
+
+//Get reviews info
+function loadReviews() {
+
 }
 
 /**
