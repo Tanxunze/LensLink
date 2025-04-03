@@ -636,7 +636,7 @@ function loadPortfolio(category = 'all') {
                         <div class="portfolio-image-container">
                             <img src="${item.image_path}" class="card-img-top" alt="${item.title}">
                             <div class="overlay">
-                                <button class="btn btn-sm btn-light view-portfolio-btn" data-id="${item.id}">
+                                <button class="btn btn-sm btn-light view-portfolio-btn me-5" data-id="${item.id}">
                                     <i class="bi bi-eye"></i> View
                                 </button>
                                 <button class="btn btn-sm btn-light edit-portfolio-btn" data-id="${item.id}">
