@@ -78,11 +78,6 @@ function setupEventHandlers() {
         openAddServiceModal();
     });
 
-    $("#addSpecialDateBtn").click(function (e) {
-        e.preventDefault();
-        openSpecialDateModal();
-    });
-
     $("button[data-category]").click(function () {
         const category = $(this).data("category");
         $("button[data-category]").removeClass("active");
@@ -131,10 +126,6 @@ function setupEventHandlers() {
 
     $(document).on("section:reviews", function () {
         loadReviews();
-    });
-
-    $(document).on("section:availability", function () {
-        loadAvailability();
     });
 
     $(document).on("section:profile", function () {
@@ -193,18 +184,6 @@ function setupEventHandlers() {
 
     $("#saveServiceBtn").click(function () {
         saveService();
-    });
-
-    $("input[name='availabilityType']").change(function () {
-        if ($(this).val() === "custom") {
-            $("#customHoursContainer").removeClass("d-none");
-        } else {
-            $("#customHoursContainer").addClass("d-none");
-        }
-    });
-
-    $("#saveSpecialDateBtn").click(function () {
-        saveSpecialDate();
     });
 
     $("#submitReplyBtn").click(function () {
@@ -1067,21 +1046,6 @@ function openAddServiceModal() {
     serviceModal.show();
 }
 
-/**
- * Open special date modal box
- */
-function openSpecialDateModal() {
-    $("#specialDateForm")[0].reset();
-    $("#customHoursContainer").addClass("d-none");
-
-    // Set the minimum date to today
-    const today = new Date().toISOString().split('T')[0];
-    $("#specialDate").attr("min", today);
-
-    const specialDateModal = new bootstrap.Modal(document.getElementById('specialDateModal'));
-    specialDateModal.show();
-}
-
 //Get reviews info
 function loadReviews(page=1) {
     $("#reviewsContainer").html(`
@@ -1533,71 +1497,4 @@ function saveService() {
             saveBtn.prop("disabled", false).text(originalText);
         });
 }
-
-/**
- * Save the Special Date
- */
-function saveSpecialDate() {
-    const date = $("#specialDate").val();
-    const availabilityType = $("input[name='availabilityType']:checked").val();
-    const startTime = $("#specialStartTime").val();
-    const endTime = $("#specialEndTime").val();
-    const note = $("#specialDateNote").val();
-
-    if (!date) {
-        alert("Please select a date");
-        return;
-    }
-
-    if (availabilityType === "custom" && (!startTime || !endTime)) {
-        alert("Please specify both start and end times");
-        return;
-    }
-
-    const saveBtn = $("#saveSpecialDateBtn");
-    const originalText = saveBtn.text();
-    saveBtn.prop("disabled", true).html('<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Saving...');
-
-    const requestData = {
-        date: date,
-        is_available: availabilityType === "custom",
-        note: note
-    };
-
-    // If it's a custom time, add a start and end time
-    if (availabilityType === "custom") {
-        requestData.start_time = startTime;
-        requestData.end_time = endTime;
-    }
-
-    fetch(`${CONFIG.API.BASE_URL}/availability/special-dates`, {
-        method: 'POST',
-        headers: {
-            'Authorization': `Bearer ${localStorage.getItem("token")}`,
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(requestData)
-    })
-        .then(response => {
-            if (!response.ok) {
-                throw new Error('Failed to save special date');
-            }
-            return response.json();
-        })
-        .then(data => {
-            bootstrap.Modal.getInstance(document.getElementById('specialDateModal')).hide();
-
-            showNotification("Special date added successfully", "success");
-
-            loadAvailability();
-        })
-        .catch(error => {
-            console.error("Failed to save special date:", error);
-            showNotification("Failed to save special date. Please try again.", "error");
-        })
-        .finally(() => {
-            saveBtn.prop("disabled", false).text(originalText);
-        });
-}
-
 // Todo
