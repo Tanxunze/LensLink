@@ -631,7 +631,7 @@ function loadPortfolio(category = 'all') {
             const portfolioItemHtml = data.map(item => {
 
                 return `
-                <div class="col-md-4 mb-4 portfolio-item" data-category="${item.category}">
+                <div class="col-md-3 mb-4 portfolio-item" data-category="${item.category}">
                     <div class="card h-100">
                         <div class="portfolio-image-container">
                             <img src="${item.image_path}" class="card-img-top" alt="${item.title}">
@@ -654,7 +654,8 @@ function loadPortfolio(category = 'all') {
                         </div>
                     </div>
                 </div>
-            `;}).join('');
+            `;
+            }).join('');
 
             $("#portfolioItems").html(portfolioItemHtml);
 
@@ -663,12 +664,12 @@ function loadPortfolio(category = 'all') {
             //     const itemId = $(this).data("id");
             //     viewPortfolioItem(itemId);
             // });
-            $(".view-portfolio-btn").click(function (){
-                const itemId=$(this).data("id");
+            $(".view-portfolio-btn").click(function () {
+                const itemId = $(this).data("id");
                 viewPortfolioItem(itemId);
             });
-            $(".edit-portfolio-btn").click(function (){
-                const itemId=$(this).data("id");
+            $(".edit-portfolio-btn").click(function () {
+                const itemId = $(this).data("id");
                 console.log(itemId);
             });
         })
@@ -711,28 +712,28 @@ function viewPortfolioItem(itemId) {
     const portfolioModal = new bootstrap.Modal(document.getElementById('portfolioDetailModal'));
     portfolioModal.show();
 
-    const requestData={
+    const requestData = {
         portfolio_id: itemId
     }
 
     fetch(`${CONFIG.API.BASE_URL}/photographer/portfolio`, {
-       method: 'POST',
-         headers: {
-              'Authorization': `Bearer ${localStorage.getItem("token")}`,
-              'Content-Type': 'application/json'
-         },
+        method: 'POST',
+        headers: {
+            'Authorization': `Bearer ${localStorage.getItem("token")}`,
+            'Content-Type': 'application/json'
+        },
         body: JSON.stringify(requestData)
     })
         .then(response => {
-            if(!response.ok) {
+            if (!response.ok) {
                 throw new Error('Failed to load portfolio details');
             }
             return response.json();
         })
-        .then(data=>{
-            const item = Array.isArray(data)? data[0] : data;
-            const modalBody=document.querySelector('#portfolioDetailModal .modal-body');
-            modalBody.innerHTML=`
+        .then(data => {
+            const item = Array.isArray(data) ? data[0] : data;
+            const modalBody = document.querySelector('#portfolioDetailModal .modal-body');
+            modalBody.innerHTML = `
                 <div class="row">
                     <div class="col-md-8">
                         <img src="${item.image_path}" class="img-fluid rounded" alt="${item.title}">
@@ -750,8 +751,8 @@ function viewPortfolioItem(itemId) {
             `;
         })
         .catch(error => {
-            console.error("Failed to load portfolio details: ",error);
-            document.querySelector('#portfolioDetailModal .modal-body').innerHTML=`
+            console.error("Failed to load portfolio details: ", error);
+            document.querySelector('#portfolioDetailModal .modal-body').innerHTML = `
                 <div class="alert alert-danger">
                     Failed to load portfolio item details. Please try again.
                 </div>
@@ -1082,8 +1083,166 @@ function openSpecialDateModal() {
 }
 
 //Get reviews info
-function loadReviews() {
+function loadReviews(page=1) {
+    $("#reviewsContainer").html(`
+        <div class="text-center">
+            <div class="spinner-border" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <p>Loading reviews...</p>
+        </div>
+    `);
 
+    const requestData = {
+        page: page
+    };
+
+    fetch(`${CONFIG.API.BASE_URL}/photographer/reviews/details`, {
+        method: 'POST',
+        headers: {
+            'Authorization': `Bearer ${localStorage.getItem("token")}`,
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(requestData)
+    })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Failed to load reviews. Please try again later.');
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (!data || data.length === 0) {
+                $("#reviewsContainer").html(`
+                    <div class="alert alert-info">
+                        No reviews found.
+                    </div>
+                `);
+                return;
+            }
+
+            let reviewHtml = '';
+
+            if (data.stats) {
+                reviewHtml = `
+                    <div class="row mb-4">
+                        <div class="col-md-4">
+                            <div class="card">
+                                <div class="card-body text-center">
+                                    <h2 class="display-4">${parseFloat(data.stats.average_rating).toFixed(1)}</h2>
+                                    <div class="mb-2">
+                                        ${generateStarRating(data.stats.average_rating)}
+                                    </div>
+                                    <p class="text-muted mb-0">Based on ${data.stats.total_reviews} reviews</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-8">
+                            <div class="card">
+                                <div class="card-body">
+                                    <h5 class="mb-3">Rating Distribution</h5>
+                                    <div class="rating-bars">
+                                        ${generateRatingBars(data.stats.rating_distribution)}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            const reviewCards = data.reviews.map(review => {
+                const hasReply = review.reply !== null && review.reply !== '';
+                const reviewClass = hasReply ? '' : 'new';
+
+                return `
+                    <div class="card review-card ${reviewClass} mb-3">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-start mb-3">
+                                <div>
+                                    <h5 class="card-title mb-1">${review.title}</h5>
+                                    <div>
+                                        ${generateStarRating(review.rating)}
+                                        <small class="text-muted ms-2">${formatDate(review.created_at)}</small>
+                                    </div>
+                                </div>
+                                <div>
+                                    <button class="btn btn-sm ${hasReply ? 'btn-outline-secondary' : 'btn-outline-primary'} replyBtn" data-id="${review.id}">
+                                        ${hasReply ? '<i class="bi bi-pencil"></i> Edit Reply' : '<i class="bi bi-reply"></i> Reply'}
+                                    </button>
+                                </div>
+                            </div>
+                            <p class="card-text">${review.review}</p>
+                            <div class="d-flex align-items-center">
+                                <img src="../../assets/images/default-avatar.jpg" class="rounded-circle me-2" width="30" height="30" alt="Customer">
+                                <small>Customer #${review.customer_id} • ${review.service_type}</small>
+                            </div>
+                            ${hasReply ? `
+                                <div class="review-reply mt-3">
+                                    <small class="text-muted">Your reply • ${formatDate(review.reply_date)}</small>
+                                    <p class="mb-0 mt-1">${review.reply}</p>
+                                </div>
+                            ` : ''}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            reviewHtml += reviewCards;
+
+            if(data.total_pages>1){
+                reviewsHtml+=`
+                    <nav aria-label="Reviews pagination" class="mt-4">
+                        <ul class="pagination justify-content-center" id="reviewsPagination">
+                            <li class="page-item ${page === 1 ? 'disabled' : ''}">
+                                <a class="page-link" href="#" data-page="${page - 1}" aria-label="Previous">
+                                    <span aria-hidden="true">&laquo;</span>
+                                </a>
+                            </li>
+                            <li class="page-item ${page === data.total_pages ? 'disabled' : ''}">
+                                <a class="page-link" href="#" data-page="${page + 1}" aria-label="Next">
+                                    <span aria-hidden="true">&raquo;</span>
+                                </a>
+                            </li>
+                        </ul>
+                    </nav>
+                `;
+            }
+
+            $("#reviewsContainer").html(reviewHtml);
+        })
+        .catch((error) => {
+            console.error("Failed to load reviews:", error);
+            $("#reviewsContainer").html(`
+                <div class="alert alert-danger">
+                    Failed to load reviews. Please try again.
+                </div>
+            `);
+        });
+}
+
+function generateRatingBars(distribution) {
+    let html = '';
+    const totalReviews = Object.values(distribution).reduce((a, b) => a + b, 0);
+
+    // 从5星到1星显示
+    for (let i = 5; i >= 1; i--) {
+        const count = distribution[i] || 0;
+        const percentage = totalReviews ? (count / totalReviews * 100).toFixed(1) : 0;
+
+        html += `
+            <div class="rating-bar-row d-flex align-items-center mb-2">
+                <div class="rating-label me-2">${i} <i class="bi bi-star-fill text-warning"></i></div>
+                <div class="progress flex-grow-1" style="height: 10px;">
+                    <div class="progress-bar bg-warning" role="progressbar" style="width: ${percentage}%" 
+                         aria-valuenow="${percentage}" aria-valuemin="0" aria-valuemax="100"></div>
+                </div>
+                <div class="rating-count ms-2">${count}</div>
+            </div>
+        `;
+    }
+
+    return html;
 }
 
 /**
