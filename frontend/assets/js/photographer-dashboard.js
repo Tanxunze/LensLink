@@ -1497,4 +1497,75 @@ function saveService() {
             saveBtn.prop("disabled", false).text(originalText);
         });
 }
-// Todo
+
+// Get the detailed photographer information
+function loadDetailedPhotographerData(){
+    document.getElementById('profileName').textContent = 'Loading...';
+    document.getElementById('profileEmail').textContent = 'loading@example.com';
+    document.getElementById('infoName').textContent = 'Loading...';
+    document.getElementById('infoEmail').textContent = 'Loading...';
+    document.getElementById('infoPhone').textContent = 'Loading...';
+    document.getElementById('infoLocation').textContent = 'Loading...';
+    document.getElementById('infoSpecialization').textContent = 'Loading...';
+    document.getElementById('infoExperience').textContent = 'Loading...';
+    document.getElementById('infoBio').textContent = 'Loading...';
+    document.getElementById('photographerCategories').innerHTML = `
+        <div class="text-center">
+            <div class="spinner-border spinner-border-sm" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+        </div>
+    `;
+
+    fetch(`${CONFIG.API.BASE_URL}/photographer/profile`, {
+        method: 'POST',
+        headers: {
+            'Authorization': `Bearer ${localStorage.getItem("token")}`,
+            'Content-Type': 'application/json'
+        }
+    })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Failed to load photographer data');
+            }
+            return response.json();
+        })
+        .then(data=>{
+            document.getElementById('profileName').textContent = data.name;
+            document.getElementById('profileEmail').textContent = data.email;
+            document.getElementById('profileMember').textContent = `Member since: ${new Date(data.created_at).toLocaleDateString()}`;
+
+            // 填充专业信息
+            document.getElementById('infoName').textContent = data.name;
+            document.getElementById('infoEmail').textContent = data.email;
+            document.getElementById('infoPhone').textContent = data.phone || 'Not provided';
+            document.getElementById('infoLocation').textContent = data.location || 'Not provided';
+            document.getElementById('infoSpecialization').textContent = data.specialization || 'Not provided';
+            document.getElementById('infoExperience').textContent = `${data.experience_years || 0} years`;
+            document.getElementById('infoBio').textContent = data.bio || 'No bio provided';
+
+            if (data.profileImage) {
+                document.getElementById('profileImage').src = data.profileImage; 
+            }
+
+            const categoriesContainer = document.getElementById('photographerCategories');
+            if (data.categories && data.categories.length > 0) { // data.categories
+                const categoriesHtml = data.categories.map(category => {
+                    return `<span class="badge bg-primary me-1 mb-1">${category}</span>`;
+                }).join('');
+                categoriesContainer.innerHTML = categoriesHtml;
+            } else {
+                categoriesContainer.innerHTML = '<p class="text-muted mb-0">No categories specified</p>';
+            }
+            document.getElementById('totalSessions').textContent = data.photoshoot_count || 0;
+            document.getElementById('totalEarnings').textContent = `€${(data.total_earnings || 0).toFixed(2)}`; // data.totalEarnings
+            document.getElementById('totalReviews').textContent = data.review_count|| 0;
+            document.getElementById('profileViews').textContent = data.view_count || 0; // data.viewCount
+        })
+        .catch(error => {
+            console.error("Failed to load photographer data",error);
+            document.getElementById('profileName').textContent = 'Error loading data';
+            document.getElementById('profileEmail').textContent = 'Please try again later';
+            document.getElementById('photographerCategories').innerHTML = '<p class="text-danger">Failed to load categories</p>';
+        })
+}
