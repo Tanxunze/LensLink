@@ -1,0 +1,70 @@
+<?php
+
+namespace App\Http\Controllers\API\PhotographerDashboard;
+
+use App\Http\Controllers\Controller;
+use App\Models\Review;
+use Illuminate\Http\Request;
+
+class Reviews extends Controller
+{
+    public function index(Request $request)
+    {
+        $photographer_id = $request->user()->photographerProfile->id;
+        $allReviews=$this->getReviews($photographer_id);
+
+        $count_5=0;
+        $count_4=0;
+        $count_3=0;
+        $count_2=0;
+        $count_1=0;
+        foreach($allReviews as $review)
+        {
+            if(ceil($review->rating)==5)
+            {
+                $count_5++;
+            }
+            elseif(ceil($review->rating)==4)
+            {
+                $count_4++;
+            }
+            elseif(ceil($review->rating)==3)
+            {
+                $count_3++;
+            }
+            elseif(ceil($review->rating)==2)
+            {
+                $count_2++;
+            }
+            elseif(ceil($review->rating)==1)
+            {
+                $count_1++;
+            }
+        }
+
+        $result=[
+            'stats'=>[
+                'average_rating'=>round(Review::where('photographer_id', $photographer_id)->avg('rating'),1),
+                'total_reviews'=>Review::where('photographer_id', $photographer_id)->count(),
+                'rating_distribution'=>[
+                    '5'=>$count_5,
+                    '4'=>$count_4,
+                    '3'=>$count_3,
+                    '2'=>$count_2,
+                    '1'=>$count_1
+                ]
+            ],
+            'reviews'=>$allReviews,
+            'total_pages'=>[
+                'current_page'=>$request->input('page', 1),
+                'total_pages'=>ceil(Review::where('photographer_id', $photographer_id)->count() / 10)
+            ]
+        ];
+        return response()->json($result, 200);
+    }
+
+    private function getReviews(int $photographer_id)
+    {
+        return Review::where('photographer_id', $photographer_id)->get();
+    }
+}

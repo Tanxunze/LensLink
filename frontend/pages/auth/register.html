@@ -222,24 +222,25 @@
                     }
                 })
                 .catch(function (error) {
-                    // show error message
+                    const errorData = error.responseJSON || error;
                     let errorMessage = 'Registration failed. Please try again.';
-
-                    if (error.errors) {
-                        const errorMessages = [];
-                        for (const field in error.errors) {
-                            errorMessages.push(error.errors[field][0]);
+                    if (errorData.message) {
+                        errorMessage = errorData.message;
+                    }
+                    else if (errorData.errors) {
+                        const errorList = [];
+                        for (const field in errorData.errors) {
+                            errorList.push(...errorData.errors[field]);
                         }
-                        errorMessage = errorMessages.join('<br>');
-                        $("#registerError").html(errorMessage);
-                    } else if (error.message) {
-                        $("#registerError").text(error.message);
-                    } else {
-                        $("#registerError").text(errorMessage);
+                        errorMessage = errorList.join('<br>');
                     }
 
-                    $("#registerError").removeClass("d-none");
-                    console.error("Registration error:", error);
+                    $("#registerError")
+                        .html(errorMessage)
+                        .removeClass("d-none");
+
+                    console.error(error);
+                    console.log(errorData);//debug
                 })
                 .finally(function () {
                     submitButton.html(originalText);
