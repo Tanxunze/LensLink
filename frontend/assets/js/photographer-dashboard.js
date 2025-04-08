@@ -13,6 +13,10 @@ $(document).ready(function () {
     loadDashboardData();
     setupEventHandlers();
     loadSectionFromUrlHash();
+
+    // $(".view-portfolio-btn").click(function () {
+    //     console.log("clicked view portfolio");
+    // });
 });
 
 function setupEventHandlers() {
@@ -74,11 +78,6 @@ function setupEventHandlers() {
         openAddServiceModal();
     });
 
-    $("#addSpecialDateBtn").click(function (e) {
-        e.preventDefault();
-        openSpecialDateModal();
-    });
-
     $("button[data-category]").click(function () {
         const category = $(this).data("category");
         $("button[data-category]").removeClass("active");
@@ -127,10 +126,6 @@ function setupEventHandlers() {
 
     $(document).on("section:reviews", function () {
         loadReviews();
-    });
-
-    $(document).on("section:availability", function () {
-        loadAvailability();
     });
 
     $(document).on("section:profile", function () {
@@ -189,18 +184,6 @@ function setupEventHandlers() {
 
     $("#saveServiceBtn").click(function () {
         saveService();
-    });
-
-    $("input[name='availabilityType']").change(function () {
-        if ($(this).val() === "custom") {
-            $("#customHoursContainer").removeClass("d-none");
-        } else {
-            $("#customHoursContainer").addClass("d-none");
-        }
-    });
-
-    $("#saveSpecialDateBtn").click(function () {
-        saveSpecialDate();
     });
 
     $("#submitReplyBtn").click(function () {
@@ -442,26 +425,26 @@ function loadRecentBookings() {
             }
 
             const rows = data.map(booking => `
-            <tr>
-                <td>${booking.customer_name}</td>
-                <td>${booking.service_name}</td>
-                <td>${formatDate(booking.booking_date)}</td>
-                <td>
-                    <span class="badge ${getStatusBadgeClass(booking.status)}">
-                        ${capitalizeFirstLetter(booking.status)}
-                    </span>
-                </td>
-                <td>€${booking.total_amount}</td>
-                <td>
-                    <button class="btn btn-sm btn-outline-primary viewBookingBtn" data-id="${booking.id}">
-                        <i class="bi bi-eye"></i>
-                    </button>
-                    <button class="btn btn-sm btn-outline-success messageClientBtn" data-id="${booking.customer.id}">
-                        <i class="bi bi-chat"></i>
-                    </button>
-                </td>
-            </tr>
-        `).join('');
+                <tr>
+                    <td>${booking.customer_name}</td>
+                    <td>${booking.service_name}</td>
+                    <td>${formatDate(booking.booking_date)}</td>
+                    <td>
+                        <span class="badge ${getStatusBadgeClass(booking.status)}">
+                            ${capitalizeFirstLetter(booking.status)}
+                        </span>
+                    </td>
+                    <td>€${booking.total_amount}</td>
+                    <td>
+                        <button class="btn btn-sm btn-outline-primary viewBookingBtn" data-id="${booking.id}">
+                            <i class="bi bi-eye"></i>
+                        </button>
+                        <button class="btn btn-sm btn-outline-success messageClientBtn" data-id="${booking.customer.id}">
+                            <i class="bi bi-chat"></i>
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
 
             $("#recentBookingsTable").html(rows);
 
@@ -478,12 +461,12 @@ function loadRecentBookings() {
         .catch(error => {
             console.error("Failed to load recent bookings:", error);
             $("#recentBookingsTable").html(`
-            <tr>
-                <td colspan="6" class="text-center text-danger">
-                    Failed to load bookings. Please try again.
-                </td>
-            </tr>
-        `);
+                <tr>
+                    <td colspan="6" class="text-center text-danger">
+                        Failed to load bookings. Please try again.
+                    </td>
+                </tr>
+            `);
         });
 }
 
@@ -624,13 +607,15 @@ function loadPortfolio(category = 'all') {
                 return;
             }
 
-            const portfolioItemHtml = data.map(item => `
-                <div class="col-md-4 mb-4 portfolio-item" data-category="${item.category}">
+            const portfolioItemHtml = data.map(item => {
+
+                return `
+                <div class="col-md-3 mb-4 portfolio-item" data-category="${item.category}">
                     <div class="card h-100">
                         <div class="portfolio-image-container">
                             <img src="${item.image_path}" class="card-img-top" alt="${item.title}">
                             <div class="overlay">
-                                <button class="btn btn-sm btn-light view-portfolio-btn" data-id="${item.id}">
+                                <button class="btn btn-sm btn-light view-portfolio-btn me-5" data-id="${item.id}">
                                     <i class="bi bi-eye"></i> View
                                 </button>
                                 <button class="btn btn-sm btn-light edit-portfolio-btn" data-id="${item.id}">
@@ -648,16 +633,24 @@ function loadPortfolio(category = 'all') {
                         </div>
                     </div>
                 </div>
-            `).join('');
+            `;
+            }).join('');
 
             $("#portfolioItems").html(portfolioItemHtml);
 
-            // Setup click event for View button
-            $(".view-profile-btn").click(function () {
-
+            // $("#portfolioItems").on("click", ".view-portfolio-btn", function () {//off("click", ".view-portfolio-btn").
+            //     console.log("View button clicked");
+            //     const itemId = $(this).data("id");
+            //     viewPortfolioItem(itemId);
+            // });
+            $(".view-portfolio-btn").click(function () {
+                const itemId = $(this).data("id");
+                viewPortfolioItem(itemId);
             });
-
-            //Maybe Edit button too.
+            $(".edit-portfolio-btn").click(function () {
+                const itemId = $(this).data("id");
+                console.log(itemId);
+            });
         })
         .catch(error => {
             console.error("Failed to load portfolio:", error);
@@ -669,6 +662,81 @@ function loadPortfolio(category = 'all') {
                 </div>
             `);
         })
+}
+
+function viewPortfolioItem(itemId) {
+    console.log("ItemID: ", itemId);
+    if (!document.getElementById('portfolioDetailModal')) {
+        const modalHtml = `
+            <div class="modal fade" id="portfolioDetailModal" tabindex="-1" aria-hidden="true">
+                <div class="modal-dialog modal-lg">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">Portfolio Details</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body text-center">
+                            <div class="spinner-border" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                            <p>Loading portfolio details...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+    }
+    // 显示加载状态
+    const portfolioModal = new bootstrap.Modal(document.getElementById('portfolioDetailModal'));
+    portfolioModal.show();
+
+    const requestData = {
+        portfolio_id: itemId
+    }
+
+    fetch(`${CONFIG.API.BASE_URL}/photographer/portfolio`, {
+        method: 'POST',
+        headers: {
+            'Authorization': `Bearer ${localStorage.getItem("token")}`,
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(requestData)
+    })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Failed to load portfolio details');
+            }
+            return response.json();
+        })
+        .then(data => {
+            const item = Array.isArray(data) ? data[0] : data;
+            const modalBody = document.querySelector('#portfolioDetailModal .modal-body');
+            modalBody.innerHTML = `
+                <div class="row">
+                    <div class="col-md-8">
+                        <img src="${item.image_path}" class="img-fluid rounded" alt="${item.title}">
+                    </div>
+                    <div class="col-md-4 text-start">
+                        <h4>${item.title}</h4>
+                        <div class="mb-3">
+                            <span class="badge bg-primary">${capitalizeFirstLetter(item.category)}</span>
+                            ${item.featured ? '<span class="badge bg-warning ms-1">Featured</span>' : ''}
+                        </div>
+                        <p>${item.description || 'No description provided.'}</p>
+                        <small class="text-muted">Added on: ${formatDate(item.created_at)}</small>
+                    </div>
+                </div>
+            `;
+        })
+        .catch(error => {
+            console.error("Failed to load portfolio details: ", error);
+            document.querySelector('#portfolioDetailModal .modal-body').innerHTML = `
+                <div class="alert alert-danger">
+                    Failed to load portfolio item details. Please try again.
+                </div>
+            `;
+        });
 }
 
 /**
@@ -798,7 +866,7 @@ function loadBookings(status = "all", page = 1) {
                     </li>
                 `;
 
-                $("#bookingsPagination").html(paginationHtml);// TODO: check if it should be "$("#xxx").html"
+                $("#bookingsPagination").html(paginationHtml);
 
 
                 // TODO: finish button functions
@@ -978,19 +1046,167 @@ function openAddServiceModal() {
     serviceModal.show();
 }
 
-/**
- * Open special date modal box
- */
-function openSpecialDateModal() {
-    $("#specialDateForm")[0].reset();
-    $("#customHoursContainer").addClass("d-none");
+//Get reviews info
+function loadReviews(page=1) {
+    $("#reviewsContainer").html(`
+        <div class="text-center">
+            <div class="spinner-border" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <p>Loading reviews...</p>
+        </div>
+    `);
 
-    // Set the minimum date to today
-    const today = new Date().toISOString().split('T')[0];
-    $("#specialDate").attr("min", today);
+    const requestData = {
+        page: page
+    };
 
-    const specialDateModal = new bootstrap.Modal(document.getElementById('specialDateModal'));
-    specialDateModal.show();
+    fetch(`${CONFIG.API.BASE_URL}/photographer/reviews/details`, {
+        method: 'POST',
+        headers: {
+            'Authorization': `Bearer ${localStorage.getItem("token")}`,
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(requestData)
+    })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Failed to load reviews. Please try again later.');
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (!data || data.length === 0) {
+                $("#reviewsContainer").html(`
+                    <div class="alert alert-info">
+                        No reviews found.
+                    </div>
+                `);
+                return;
+            }
+
+            let reviewHtml = '';
+
+            if (data.stats) {
+                reviewHtml = `
+                    <div class="row mb-4">
+                        <div class="col-md-4">
+                            <div class="card">
+                                <div class="card-body text-center">
+                                    <h2 class="display-4">${parseFloat(data.stats.average_rating).toFixed(1)}</h2>
+                                    <div class="mb-2">
+                                        ${generateStarRating(data.stats.average_rating)}
+                                    </div>
+                                    <p class="text-muted mb-0">Based on ${data.stats.total_reviews} reviews</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-8">
+                            <div class="card">
+                                <div class="card-body">
+                                    <h5 class="mb-3">Rating Distribution</h5>
+                                    <div class="rating-bars">
+                                        ${generateRatingBars(data.stats.rating_distribution)}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            const reviewCards = data.reviews.map(review => {
+                const hasReply = review.reply !== null && review.reply !== '';
+                const reviewClass = hasReply ? '' : 'new';
+
+                return `
+                    <div class="card review-card ${reviewClass} mb-3">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-start mb-3">
+                                <div>
+                                    <h5 class="card-title mb-1">${review.title}</h5>
+                                    <div>
+                                        ${generateStarRating(review.rating)}
+                                        <small class="text-muted ms-2">${formatDate(review.created_at)}</small>
+                                    </div>
+                                </div>
+                                <div>
+                                    <button class="btn btn-sm ${hasReply ? 'btn-outline-secondary' : 'btn-outline-primary'} replyBtn" data-id="${review.id}">
+                                        ${hasReply ? '<i class="bi bi-pencil"></i> Edit Reply' : '<i class="bi bi-reply"></i> Reply'}
+                                    </button>
+                                </div>
+                            </div>
+                            <p class="card-text">${review.review}</p>
+                            <div class="d-flex align-items-center">
+                                <img src="../../assets/images/default-avatar.jpg" class="rounded-circle me-2" width="30" height="30" alt="Customer">
+                                <small>Customer #${review.customer_id} • ${review.service_type}</small>
+                            </div>
+                            ${hasReply ? `
+                                <div class="review-reply mt-3">
+                                    <small class="text-muted">Your reply • ${formatDate(review.reply_date)}</small>
+                                    <p class="mb-0 mt-1">${review.reply}</p>
+                                </div>
+                            ` : ''}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            reviewHtml += reviewCards;
+
+            if(data.total_pages>1){
+                reviewsHtml+=`
+                    <nav aria-label="Reviews pagination" class="mt-4">
+                        <ul class="pagination justify-content-center" id="reviewsPagination">
+                            <li class="page-item ${page === 1 ? 'disabled' : ''}">
+                                <a class="page-link" href="#" data-page="${page - 1}" aria-label="Previous">
+                                    <span aria-hidden="true">&laquo;</span>
+                                </a>
+                            </li>
+                            <li class="page-item ${page === data.total_pages ? 'disabled' : ''}">
+                                <a class="page-link" href="#" data-page="${page + 1}" aria-label="Next">
+                                    <span aria-hidden="true">&raquo;</span>
+                                </a>
+                            </li>
+                        </ul>
+                    </nav>
+                `;
+            }
+
+            $("#reviewsContainer").html(reviewHtml);
+        })
+        .catch((error) => {
+            console.error("Failed to load reviews:", error);
+            $("#reviewsContainer").html(`
+                <div class="alert alert-danger">
+                    Failed to load reviews. Please try again.
+                </div>
+            `);
+        });
+}
+
+function generateRatingBars(distribution) {
+    let html = '';
+    const totalReviews = Object.values(distribution).reduce((a, b) => a + b, 0);
+
+    // 从5星到1星显示
+    for (let i = 5; i >= 1; i--) {
+        const count = distribution[i] || 0;
+        const percentage = totalReviews ? (count / totalReviews * 100).toFixed(1) : 0;
+
+        html += `
+            <div class="rating-bar-row d-flex align-items-center mb-2">
+                <div class="rating-label me-2">${i} <i class="bi bi-star-fill text-warning"></i></div>
+                <div class="progress flex-grow-1" style="height: 10px;">
+                    <div class="progress-bar bg-warning" role="progressbar" style="width: ${percentage}%" 
+                         aria-valuenow="${percentage}" aria-valuemin="0" aria-valuemax="100"></div>
+                </div>
+                <div class="rating-count ms-2">${count}</div>
+            </div>
+        `;
+    }
+
+    return html;
 }
 
 /**
@@ -1282,70 +1498,74 @@ function saveService() {
         });
 }
 
-/**
- * Save the Special Date
- */
-function saveSpecialDate() {
-    const date = $("#specialDate").val();
-    const availabilityType = $("input[name='availabilityType']:checked").val();
-    const startTime = $("#specialStartTime").val();
-    const endTime = $("#specialEndTime").val();
-    const note = $("#specialDateNote").val();
+// Get the detailed photographer information
+function loadDetailedPhotographerData(){
+    document.getElementById('profileName').textContent = 'Loading...';
+    document.getElementById('profileEmail').textContent = 'loading@example.com';
+    document.getElementById('infoName').textContent = 'Loading...';
+    document.getElementById('infoEmail').textContent = 'Loading...';
+    document.getElementById('infoPhone').textContent = 'Loading...';
+    document.getElementById('infoLocation').textContent = 'Loading...';
+    document.getElementById('infoSpecialization').textContent = 'Loading...';
+    document.getElementById('infoExperience').textContent = 'Loading...';
+    document.getElementById('infoBio').textContent = 'Loading...';
+    document.getElementById('photographerCategories').innerHTML = `
+        <div class="text-center">
+            <div class="spinner-border spinner-border-sm" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+        </div>
+    `;
 
-    if (!date) {
-        alert("Please select a date");
-        return;
-    }
-
-    if (availabilityType === "custom" && (!startTime || !endTime)) {
-        alert("Please specify both start and end times");
-        return;
-    }
-
-    const saveBtn = $("#saveSpecialDateBtn");
-    const originalText = saveBtn.text();
-    saveBtn.prop("disabled", true).html('<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Saving...');
-
-    const requestData = {
-        date: date,
-        is_available: availabilityType === "custom",
-        note: note
-    };
-
-    // If it's a custom time, add a start and end time
-    if (availabilityType === "custom") {
-        requestData.start_time = startTime;
-        requestData.end_time = endTime;
-    }
-
-    fetch(`${CONFIG.API.BASE_URL}/availability/special-dates`, {
+    fetch(`${CONFIG.API.BASE_URL}/photographer/profile`, {
         method: 'POST',
         headers: {
             'Authorization': `Bearer ${localStorage.getItem("token")}`,
             'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(requestData)
+        }
     })
         .then(response => {
             if (!response.ok) {
-                throw new Error('Failed to save special date');
+                throw new Error('Failed to load photographer data');
             }
             return response.json();
         })
-        .then(data => {
-            bootstrap.Modal.getInstance(document.getElementById('specialDateModal')).hide();
+        .then(data=>{
+            document.getElementById('profileName').textContent = data.name;
+            document.getElementById('profileEmail').textContent = data.email;
+            document.getElementById('profileMember').textContent = `Member since: ${new Date(data.created_at).toLocaleDateString()}`;
 
-            showNotification("Special date added successfully", "success");
+            // 填充专业信息
+            document.getElementById('infoName').textContent = data.name;
+            document.getElementById('infoEmail').textContent = data.email;
+            document.getElementById('infoPhone').textContent = data.phone || 'Not provided';
+            document.getElementById('infoLocation').textContent = data.location || 'Not provided';
+            document.getElementById('infoSpecialization').textContent = data.specialization || 'Not provided';
+            document.getElementById('infoExperience').textContent = `${data.experience_years || 0} years`;
+            document.getElementById('infoBio').textContent = data.bio || 'No bio provided';
 
-            loadAvailability();
+            if (data.profileImage) {
+                document.getElementById('profileImage').src = data.profileImage; 
+            }
+
+            const categoriesContainer = document.getElementById('photographerCategories');
+            if (data.categories && data.categories.length > 0) { // data.categories
+                const categoriesHtml = data.categories.map(category => {
+                    return `<span class="badge bg-primary me-1 mb-1">${category}</span>`;
+                }).join('');
+                categoriesContainer.innerHTML = categoriesHtml;
+            } else {
+                categoriesContainer.innerHTML = '<p class="text-muted mb-0">No categories specified</p>';
+            }
+            document.getElementById('totalSessions').textContent = data.photoshoot_count || 0;
+            document.getElementById('totalEarnings').textContent = `€${(data.total_earnings || 0).toFixed(2)}`; // data.totalEarnings
+            document.getElementById('totalReviews').textContent = data.review_count|| 0;
+            document.getElementById('profileViews').textContent = data.view_count || 0; // data.viewCount
         })
         .catch(error => {
-            console.error("Failed to save special date:", error);
-            showNotification("Failed to save special date. Please try again.", "error");
+            console.error("Failed to load photographer data",error);
+            document.getElementById('profileName').textContent = 'Error loading data';
+            document.getElementById('profileEmail').textContent = 'Please try again later';
+            document.getElementById('photographerCategories').innerHTML = '<p class="text-danger">Failed to load categories</p>';
         })
-        .finally(() => {
-            saveBtn.prop("disabled", false).text(originalText);
-        });
 }
-
-// Todo

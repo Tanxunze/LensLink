@@ -14,9 +14,10 @@ class Portfolio extends Controller
     {
         $p_id = $request->user()->photographerProfile->id;
         $category = $request->input('category');
+        $portfolio_id = $request->has('portfolio_id') ?$request->input('portfolio_id'): null;
         try {
-            $portfolio_items = $this->getPhotographerPortfolio($p_id, $category);
-            return response()->json($portfolio_items,200);
+            $portfolio_items = $this->getPhotographerPortfolio($p_id, $category, $portfolio_id);
+            return response()->json($portfolio_items, 200);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
@@ -26,27 +27,30 @@ class Portfolio extends Controller
         }
     }
 
-    private function getPhotographerPortfolio(int $photographer_id, ?string $category=null)
+    private function getPhotographerPortfolio(int $photographer_id, ?string $category = null, ?int $portfolio_id)
     {
         $query = PortfolioItem::where('photographer_id', $photographer_id);
         if ($category) {
             $category_id = Category::where('name', $category)->value('id');
-            if($category_id) {
+            if ($category_id) {
                 $query->where('category_id', $category_id);
             }
         }
+        if($portfolio_id) {
+            $query->where('id', $portfolio_id);
+        }
 
-        $portfolio=$query->get();
+        $portfolio = $query->get();
         $data = [];
 
         foreach ($portfolio as $item) {
-            $categoryName=Category::find($item->category_id)->name??'';
+            $categoryName = Category::find($item->category_id)->name ?? '';
 
             $data[] = [
                 'id' => $item->id,
                 'title' => $item->title,
                 'category' => $categoryName,
-                'image_path' => $item->image_path,
+                'image_path' => trim($item->image_path),
                 'description' => $item->description,
                 'featured' => $item->featured,
                 'created_at' => $item->created_at,
