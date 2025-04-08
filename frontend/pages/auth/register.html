@@ -30,10 +30,23 @@
                             <div class="mb-3">
                                 <label for="password" class="form-label">Password</label>
                                 <input type="password" class="form-control" id="password" required>
+                                <!-- 密码强度指示器 -->
+                                <div class="mt-2">
+                                    <div class="progress" style="height: 5px;">
+                                        <div id="passwordStrength" class="progress-bar d-none" role="progressbar"
+                                            style="width: 0%"></div>
+                                    </div>
+                                    <small id="passwordRequirements" class="form-text text-muted mt-1">
+                                        Password must be at least 8 characters and include uppercase, lowercase, number
+                                        and special character.
+                                    </small>
+                                </div>
                             </div>
                             <div class="mb-3">
                                 <label for="confirmPassword" class="form-label">Confirm Password</label>
                                 <input type="password" class="form-control" id="confirmPassword" required>
+                                <!-- 密码匹配指示器 -->
+                                <small id="passwordMatchFeedback" class="form-text d-none mt-1"></small>
                             </div>
                             <div class="mb-3">
                                 <label class="form-label">Account Type</label>
@@ -52,8 +65,9 @@
                                     </label>
                                 </div>
                             </div>
+                            <div id="registerSuccess" class="alert alert-success d-none"></div>
                             <div id="registerError" class="alert alert-danger d-none"></div>
-                            <button type="submit" class="btn btn-primary w-100">Register</button>
+                            <button type="submit" class="btn btn-primary w-100" id="registerButton">Register</button>
                         </form>
                         <div class="text-center mt-3">
                             <p>Already have an account? <a href="./login.html">Login</a></p>
@@ -86,7 +100,9 @@
             // Handle form submission
             $("#registerForm").submit(function (event) {
                 event.preventDefault();
-                handleRegister();
+                if (validateForm()) {
+                    handleRegister();
+                }
             });
 
             // Password strength validation
@@ -100,46 +116,95 @@
             });
         });
 
-        function validatePasswordStrength() {
-            const password = $("#password").val();
-            const strengthMeter = $("#passwordStrength");
+        function validateForm() {
+            $("#registerError").addClass("d-none");
 
-            if (!password) {
-                strengthMeter.addClass('d-none');
-                return;
+            const password = $("#password").val();
+            const strength = getPasswordStrength(password);
+
+            if (strength < 3) {
+                $("#registerError")
+                    .text("Password is too weak. Please use a stronger password.")
+                    .removeClass("d-none");
+                return false;
             }
 
-            // Show strength meter
-            strengthMeter.removeClass('d-none');
+            const confirmPassword = $("#confirmPassword").val();
+            if (password !== confirmPassword) {
+                $("#registerError")
+                    .text("Passwords do not match.")
+                    .removeClass("d-none");
+                return false;
+            }
 
-            // Check password strength
+            return true;
+        }
+
+        function getPasswordStrength(password) {
+            if (!password) return 0;
+
             let strength = 0;
             const regexes = [
                 /[a-z]/, 
                 /[A-Z]/, 
                 /[0-9]/, 
-                /[^a-zA-Z0-9]/ 
+                /[^a-zA-Z0-9]/
             ];
 
-            // Add points for each regex match
             regexes.forEach(regex => {
                 if (regex.test(password)) strength++;
             });
 
-            // Add points for length
             if (password.length >= 8) strength++;
             if (password.length >= 12) strength++;
 
-            // Update UI based on strength
+            return strength;
+        }
+
+        function validatePasswordStrength() {
+            const password = $("#password").val();
+            const strengthMeter = $("#passwordStrength");
+            const requirementsElement = $("#passwordRequirements");
+
+            if (!password) {
+                strengthMeter.addClass('d-none');
+                requirementsElement.removeClass('text-success text-danger').addClass('text-muted');
+                return;
+            }
+
+            strengthMeter.removeClass('d-none');
+
+            const strength = getPasswordStrength(password);
+
             const percentage = (strength / 6) * 100;
             strengthMeter.css('width', percentage + '%');
 
             if (percentage < 40) {
                 strengthMeter.removeClass('bg-warning bg-success').addClass('bg-danger');
+                requirementsElement.removeClass('text-muted text-success').addClass('text-danger');
             } else if (percentage < 70) {
                 strengthMeter.removeClass('bg-danger bg-success').addClass('bg-warning');
+                requirementsElement.removeClass('text-muted text-danger').addClass('text-warning');
             } else {
                 strengthMeter.removeClass('bg-danger bg-warning').addClass('bg-success');
+                requirementsElement.removeClass('text-muted text-danger').addClass('text-success');
+            }
+
+            let requirementText = "Password requirements: ";
+            const missing = [];
+
+            if (!/[a-z]/.test(password)) missing.push("lowercase letter");
+            if (!/[A-Z]/.test(password)) missing.push("uppercase letter");
+            if (!/[0-9]/.test(password)) missing.push("number");
+            if (!/[^a-zA-Z0-9]/.test(password)) missing.push("special character");
+            if (password.length < 8) missing.push("minimum 8 characters");
+
+            if (missing.length > 0) {
+                requirementText += "Missing " + missing.join(", ");
+                requirementsElement.text(requirementText);
+            } else {
+                requirementsElement.text("Password strength: " +
+                    (percentage < 40 ? "Weak" : percentage < 70 ? "Medium" : "Strong"));
             }
         }
 
@@ -153,56 +218,39 @@
                 return;
             }
 
+            feedbackElement.removeClass('d-none');
+
             if (password === confirmPassword) {
-                feedbackElement.text('Passwords match').removeClass('text-danger d-none').addClass('text-success');
+                feedbackElement.text('Passwords match').removeClass('text-danger').addClass('text-success');
+                return true;
             } else {
-                feedbackElement.text('Passwords do not match').removeClass('text-success d-none').addClass('text-danger');
+                feedbackElement.text('Passwords do not match').removeClass('text-success').addClass('text-danger');
+                return false;
             }
         }
 
         function handleRegister() {
-            // Hide any previous error messages
             $("#registerError").addClass("d-none");
 
-            // Show loading state
             const submitButton = $("#registerForm button[type='submit']");
             const originalText = submitButton.text();
             submitButton.html('<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Registering...');
             submitButton.prop('disabled', true);
 
-            // check password match
-            const password = $("#password").val();
-            const confirmPassword = $("#confirmPassword").val();
-
-            if (password !== confirmPassword) {
-                $("#registerError")
-                    .text("Passwords do not match.")
-                    .removeClass("d-none");
-
-                // Reset button state
-                submitButton.html(originalText);
-                submitButton.prop('disabled', false);
-                return;
-            }
-
-            // Get form data
             const userData = {
                 name: $("#name").val(),
                 email: $("#email").val(),
-                password: password,
+                password: $("#password").val(),
                 role: $("input[name='role']:checked").val()
             };
 
-            // Call register API
             API.register(userData)
                 .then(function (response) {
                     if (response.success) {
-                        // Show success message briefly
                         $("#registerSuccess")
                             .text("Registration successful! Logging you in...")
                             .removeClass("d-none");
 
-                        // Auto-login after successful registration
                         return API.login({
                             email: userData.email,
                             password: userData.password
@@ -214,7 +262,6 @@
                         localStorage.setItem("token", loginResponse.token);
                         localStorage.setItem("userRole", userData.role);
 
-                        // Redirect based on user role
                         const redirectPath = userData.role === "photographer"
                             ? "../dashboard/photographer.html"
                             : "../dashboard/customer.html";
@@ -240,7 +287,6 @@
                         .removeClass("d-none");
 
                     console.error(error);
-                    console.log(errorData);//debug
                 })
                 .finally(function () {
                     submitButton.html(originalText);
