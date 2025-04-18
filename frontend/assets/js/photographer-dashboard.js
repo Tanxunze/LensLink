@@ -1046,8 +1046,228 @@ function openAddServiceModal() {
     serviceModal.show();
 }
 
+// Get Messages
+function loadMessages() {
+    $("#conversationsList").html(`
+        <div class="text-center p-3">
+            <div class="spinner-border spinner-border-sm" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <span class="ms-2">Loading conversations...</span>
+        </div>
+    `);
+    $("#messagesContainer").html(`
+        <div class="text-center p-5">
+            <i class="bi bi-chat-dots display-4 text-muted"></i>
+            <p class="mt-3">Select a conversation to view messages</p>
+        </div>
+    `);
+
+    $("#messageInputContainer").addClass("d-none");
+
+    fetch(`${CONFIG.API.BASE_URL}/photographer/messages`, {
+        method: "POST",
+        headers: {
+            'Authorization': `Bearer ${localStorage.getItem("token")}`,
+            'Content-Type': 'application/json'
+        }
+    })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Failed to load messages');
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (!data.success || !data.data || Object.keys(data.data).length === 0) {
+                $("#conversationsList").html(`
+                    <div class="text-center p-3">
+                        <p class="text-muted mb-0">No conversations found</p>
+                    </div>
+                `);
+                return;
+            }
+
+            console.log("Messages userId: ", data.data.user_id);
+            const conversationIds = data.data.booking_ids || [];
+            const conversations = [];
+            const userId = data.data.user_id;
+
+            console.log(conversationIds);
+            for (let i = 0; i < conversationIds.length; i++) {
+                console.log("Debug");
+                console.log("Conversation ID: ", data.data.conversations[i]);
+                if (data.data.conversations[i]) {
+                    const conversationData = data.data.conversations[i];
+                    const messages = conversationData.messages || [];
+
+                    if (messages.length > 0) {
+                        const latestMessage = messages[messages.length - 1];
+                        const hasUnread = messages.some(msg => !msg.is_read && msg.sender_id !== userId);
+                        const clientName = messages.find(msg => msg.sender_id !== userId)?.username || "Unknown";
+
+                        conversations.push({
+                            id: conversationData.conversation_id,
+                            clientName: clientName,
+                            latestMessage: latestMessage.message,
+                            timestamp: latestMessage.created_at,
+                            hasUnread: hasUnread,
+                            messages: messages
+                        })
+                    }
+                }
+            }
+
+            conversations.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+            const conversationHtml = conversations.map(conversation => `
+                <a href="#"
+                   class="list-group-item list-group-item-action conversation-item ${conversation.hasUnread ? 'unread-conversation' : ''}"
+                   data-id="${conversation.id}">
+                    <div class="d-flex w-100 justify-content-between align-items-center">
+                        <h6 class="mb-1">${conversation.clientName} ${conversation.hasUnread ? '<span class="badge rounded-pill bg-danger">New</span>' : ''}</h6>
+                        <small class="text-muted">${formatDate(conversation.timestamp)}</small>
+                    </div>
+                    <p class="mb-1 text-truncate">${conversation.latestMessage}</p>
+                </a>
+            `).join('');
+
+            $("#conversationsList").html(conversationHtml);
+
+            $(".conversation-item").click(function (e) {
+                e.preventDefault();
+                const conversationId = $(this).data("id");
+                const clientName = $(this).data('client-name');
+
+                $(".conversation-item").removeClass("active");
+                $(this).addClass("active");
+                $(this).removeClass("unread-conversation");
+                $(this).find(".badge").remove();
+
+                displayConversationMessages(conversations.find(c => c.id === conversationId), data.data.user_id);
+
+                $("#conversationTitle").text($(this).find("h6").text().replace());
+
+                $("#conversationMenu").removeClass("d-none");
+
+                $("#viewClientProfileBtn").data("client-name", clientName);
+
+                $("#messageInputContainer").removeClass("d-none");
+
+                $("#sendMessageForm").data("conversation-id", conversationId);
+
+                $("#sendMessageForm").off("submit").on("submit", function (e) {
+                    e.preventDefault();
+                    const messageText = $("#messageInput").val().trim();
+                    const conversationId = $(this).data("conversation-id");
+
+                    if (messageText && conversationId) {
+                        sendMessage(conversationId, messageText, $(this).data("user-id"));
+                    }
+                })
+
+                $("viewClientProfileBtn").click(function (e) {
+                    e.preventDefault();
+                    // TODO: Open client profile
+                })
+
+                $("markAsReadBtn").click(function (e) {
+                    e.preventDefault();
+                    // TODO: Mark conversation as read
+                })
+            })
+        })
+        .catch((error) => {
+            console.error("Failed to load messages: ", error);
+            $("#conversationsList").html(`
+                <div class="alert alert-danger m-2">
+                    Failed to load conversations. Please try again.
+                </div>
+            `);
+        });
+}
+
+function displayConversationMessages(conversation, user_id) {
+    if (!conversation || !conversation.messages || conversation.messages.length === 0) {
+        $("#messagesContainer").html(`
+            <div class="text-center p-5">
+                <i class="bi bi-chat-dots display-4 text-muted"></i>
+                <p class="mt-3">No messages in this conversation</p>
+            </div>
+        `);
+        return;
+    }
+
+    const photographerId = user_id;
+    console.log(photographerId);
+
+    const messagesHtml = conversation.messages.map(msg => {
+        const isOwn = msg.sender_id === photographerId;
+
+        return `
+            <div class="d-flex ${isOwn ? 'justify-content-end' : 'justify-content-start'} mb-3">
+                <div class="message-bubble ${isOwn ? 'message-own' : 'message-other'}" style="background: ${isOwn ? '#007bff' : '#f1f1f1'}; color: ${isOwn ? '#fff' : '#000'};">
+                    <div class="message-content">
+                        <p class="mb-0">${msg.message}</p>
+                        <small class="text-muted d-block text-${isOwn ? 'end' : 'start'} mt-1" style="color: ${isOwn ? '#fff' : '#000'} !important;">
+                            ${formatDate(msg.created_at)}
+                        </small>
+                    </div>
+                </div>
+            </div>
+        `;
+    }).join('');
+
+    $("#messagesContainer").html(`
+        <div class="messages-wrapper">
+            ${messagesHtml}
+        </div>
+    `);
+
+    const messageWrapper = document.querySelector("#messages-wrapper");
+    if (messageWrapper) {
+        messageWrapper.scrollTop = messageWrapper.scrollHeight;
+    }
+}
+
+function sendMessage(conversationId, messageText, userId) {
+    const sendButton = $("#sendMessageForm button[type='submit']");
+    sendButton.prop("disabled", true);
+
+    $("#messageInput").val("");
+
+    fetch(`${CONFIG.API.BASE_URL}/photographer/messages/send`, {
+        method: 'POST',
+        headers: {
+            'Authorization': `Bearer ${localStorage.getItem("token")}`,
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            conversation_id: conversationId,
+            message_text: messageText
+        })
+    })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Failed to send message');
+            }
+            return response.json();
+        })
+        .then(data => {
+            loadMessages();
+            $("#messageInput").focus();
+        })
+        .catch(error => {
+            console.error("Failed to send message:", error);
+            alert("Failed to send message. Please try again.");
+        })
+        .finally(() => {
+            sendButton.prop("disabled", false);
+        })
+}
+
 //Get reviews info
-function loadReviews(page=1) {
+function loadReviews(page = 1) {
     $("#reviewsContainer").html(`
         <div class="text-center">
             <div class="spinner-border" role="status">
@@ -1154,8 +1374,8 @@ function loadReviews(page=1) {
 
             reviewHtml += reviewCards;
 
-            if(data.total_pages>1){
-                reviewsHtml+=`
+            if (data.total_pages > 1) {
+                reviewsHtml += `
                     <nav aria-label="Reviews pagination" class="mt-4">
                         <ul class="pagination justify-content-center" id="reviewsPagination">
                             <li class="page-item ${page === 1 ? 'disabled' : ''}">
@@ -1499,7 +1719,7 @@ function saveService() {
 }
 
 // Get the detailed photographer information
-function loadDetailedPhotographerData(){
+function loadDetailedPhotographerData() {
     document.getElementById('profileName').textContent = 'Loading...';
     document.getElementById('profileEmail').textContent = 'loading@example.com';
     document.getElementById('infoName').textContent = 'Loading...';
@@ -1530,7 +1750,7 @@ function loadDetailedPhotographerData(){
             }
             return response.json();
         })
-        .then(data=>{
+        .then(data => {
             document.getElementById('profileName').textContent = data.name;
             document.getElementById('profileEmail').textContent = data.email;
             document.getElementById('profileMember').textContent = `Member since: ${new Date(data.created_at).toLocaleDateString()}`;
@@ -1545,7 +1765,7 @@ function loadDetailedPhotographerData(){
             document.getElementById('infoBio').textContent = data.bio || 'No bio provided';
 
             if (data.profileImage) {
-                document.getElementById('profileImage').src = data.profileImage; 
+                document.getElementById('profileImage').src = data.profileImage;
             }
 
             const categoriesContainer = document.getElementById('photographerCategories');
@@ -1559,11 +1779,11 @@ function loadDetailedPhotographerData(){
             }
             document.getElementById('totalSessions').textContent = data.photoshoot_count || 0;
             document.getElementById('totalEarnings').textContent = `€${(data.total_earnings || 0).toFixed(2)}`; // data.totalEarnings
-            document.getElementById('totalReviews').textContent = data.review_count|| 0;
+            document.getElementById('totalReviews').textContent = data.review_count || 0;
             document.getElementById('profileViews').textContent = data.view_count || 0; // data.viewCount
         })
         .catch(error => {
-            console.error("Failed to load photographer data",error);
+            console.error("Failed to load photographer data", error);
             document.getElementById('profileName').textContent = 'Error loading data';
             document.getElementById('profileEmail').textContent = 'Please try again later';
             document.getElementById('photographerCategories').innerHTML = '<p class="text-danger">Failed to load categories</p>';

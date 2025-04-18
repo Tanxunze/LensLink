@@ -73,6 +73,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('photographer/bookings-details',[\App\Http\Controllers\API\PhotographerDashboard\Bookings::class,'index']);
     Route::post('photographer/services',[\App\Http\Controllers\API\PhotographerDashboard\Services::class,'index']);
     Route::post('photographer/reviews/details',[\App\Http\Controllers\API\PhotographerDashboard\Reviews::class,'index']);
+    Route::post('photographer/messages',[\App\Http\Controllers\API\PhotographerDashboard\Messages::class,'index']);
+    Route::post('photographer/messages/send',[\App\Http\Controllers\API\PhotographerDashboard\Messages::class,'send']);
 
     //Favorites
     Route::get('/favorites', [FavoriteController::class, 'index']);
