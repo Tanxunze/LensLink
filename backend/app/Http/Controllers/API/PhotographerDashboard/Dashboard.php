@@ -11,6 +11,7 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use App\Models\Booking;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Validator;
 
 class Dashboard extends Controller
 {
@@ -179,5 +180,162 @@ class Dashboard extends Controller
         });
 
         return response()->json($bookings);
+    }
+
+    public function update(Request $request)
+    {
+        $user = $request->user();
+        $photographer = $user->photographerProfile;
+
+        if (!$photographer) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No photographer information found'
+            ], 404);
+        }
+
+        $validator = Validator::make($request->all(), [
+            'name' => 'sometimes|string|max:255',
+            'email' => 'sometimes|email|max:255|unique:users,email,'.$user->id,
+            'phone' => 'nullable|string|max:20',
+            'bio' => 'nullable|string|max:1000',
+            'specialization' => 'nullable|string|max:255',
+            'location' => 'nullable|string|max:255',
+            'experience_years' => 'nullable|integer|min:0',
+            'categories' => 'nullable|array',
+            'categories.*' => 'exists:categories,id'
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'validation failure',
+                'errors' => $validator->errors()
+            ], 422);
+        }
+        if ($request->has('name')) {
+            $user->name = $request->input('name');
+        }
+
+        if ($request->has('email')) {
+            $user->email = $request->input('email');
+        }
+
+        if ($request->has('phone')) {
+            $user->phone = $request->input('phone');
+        }
+
+        if ($request->has('bio')) {
+            $user->bio = $request->input('bio');
+        }
+
+        $user->save();
+
+        if ($request->has('specialization')) {
+            $photographer->specialization = $request->input('specialization');
+        }
+
+        if ($request->has('location')) {
+            $photographer->location = $request->input('location');
+        }
+
+        if ($request->has('experience_years')) {
+            $photographer->experience_years = $request->input('experience_years');
+        }
+
+        $photographer->save();
+
+        if ($request->has('categories')) {
+            $photographer->categories()->detach();
+
+            if (count($request->input('categories')) > 0) {
+                $photographer->categories()->attach($request->input('categories'));
+            }
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Personal Information Update Successful',
+            'data' => [
+                'user' => $user,
+                'photographer' => $photographer->load('categories')
+            ]
+        ]);
+    }
+
+    public function updateProfileImage(Request $request)
+    {
+        $user = $request->user();
+
+        if (!$request->hasFile('image')) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No files were uploaded',
+                'errors' => ['image' => ['No files were uploaded']]
+            ], 422);
+        }
+
+        $file = $request->file('image');
+        if (!$file->isValid()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'File upload failed',
+                'errors' => ['image' => ['Corrupted files or interrupted uploads']]
+            ], 422);
+        }
+
+        $validator = Validator::make($request->all(), [
+            'image' => 'required|file|image|max:5120',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'validation failure',
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        try {
+            $filename = 'profile_' . $user->id . '_' . time() . '.' . $file->getClientOriginalExtension();
+
+            $directoryPath = 'images/profiles';
+            $fullDirectoryPath = public_path($directoryPath);
+
+            if (!file_exists($fullDirectoryPath)) {
+                mkdir($fullDirectoryPath, 0777, true);
+            }
+
+            if ($user->profile_image && !str_contains($user->profile_image, 'default-')) {
+                $oldFilename = basename(parse_url($user->profile_image, PHP_URL_PATH));
+                $oldPath = public_path('images/profiles/' . $oldFilename);
+                if (file_exists($oldPath)) {
+                    unlink($oldPath);
+                }
+            }
+
+            $file->move($fullDirectoryPath, $filename);
+            $imageUrl = url('/api/images/' . $filename);
+            $user->profile_image = $imageUrl;
+            $user->save();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Avatar updated successfully',
+                'profile_image' => $imageUrl
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Image upload exception', [
+                'error' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Server error when processing images',
+                'errors' => ['server' => [$e->getMessage()]]
+            ], 500);
+        }
     }
 }
