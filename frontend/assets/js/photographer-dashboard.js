@@ -13,13 +13,36 @@ $(document).ready(function () {
     loadDashboardData();
     setupEventHandlers();
     loadSectionFromUrlHash();
+    initPasswordChangeFeature();
 
-    // $(".view-portfolio-btn").click(function () {
-    //     console.log("clicked view portfolio");
-    // });
+    window.addEventListener('hashchange', function () {
+        loadSectionFromUrlHash();
+    });
+
+    $(document).on('hidden.bs.modal', '.modal', function () {
+        console.log('Modal closed - cleaning up');
+        if ($('.modal.show').length === 0) {
+            $('.modal-backdrop').remove();
+            $('body').removeClass('modal-open').css('overflow', '');
+            $('body').css('padding-right', '');
+        }
+    });
 });
 
 function setupEventHandlers() {
+    $(".nav-link[data-section]").click(function (e) {
+        e.preventDefault();
+        const section = $(this).data("section");
+
+        $(".nav-link").removeClass("active");
+        $(this).addClass("active");
+        $(".dashboard-section").addClass("d-none");
+        $(`#${section}Section`).removeClass("d-none");
+
+        $(document).trigger(`section:${section}`);
+        window.location.hash = section;
+    });
+
     $("#refreshDashboardBtn").click(function () {
         loadDashboardData();
         showNotification("Dashboard data refreshed", "info");
@@ -44,7 +67,7 @@ function setupEventHandlers() {
 
     $("#viewActiveOrdersLink").click(function (e) {
         e.preventDefault();
-        showBookingsSection("active");
+        showBookingsSection("confirmed");
     });
 
     $("#viewEarningsLink").click(function (e) {
@@ -104,6 +127,21 @@ function setupEventHandlers() {
         }
     });
 
+    $(".dropdown-menu a[data-filter]").click(function(e){
+        e.preventDefault();
+        const filterStatus=$(this).data("filter");
+
+        const filterText=$(this).text();
+        $(this).closest('.btn-group').find('.dropdown-toggle').html(`<i class="bi bi-filter"></i> ${filterText}`);
+
+        $(".dropdown-menu a[data-filter]").removeClass("active");
+        $(this).addClass("active");
+
+        console.log(filterStatus);
+
+        loadBookings(filterStatus);
+    })
+
     // loading event listeners
     $(document).on("section:portfolio", function () {
         loadPortfolio(lastSelectedCategory);
@@ -130,10 +168,6 @@ function setupEventHandlers() {
 
     $(document).on("section:profile", function () {
         loadDetailedPhotographerData();
-    });
-
-    $(document).on("section:settings", function () {
-        loadSettings();
     });
 
     // income Time Range drop-down menu
@@ -189,8 +223,114 @@ function setupEventHandlers() {
     $("#submitReplyBtn").click(function () {
         submitReviewReply();
     });
+
+    $(document).on("section:settings", function () {
+        initPasswordChangeFeature();
+    });
+
+    $("#editProfileBtn").click(function(e) {
+        e.preventDefault();
+        openEditProfileModal();
+    });
+
+    $("#uploadProfileImageBtn").click(function() {
+        $("#profileImageUpload").click();
+    });
+
+    $("#profileImageUpload").change(function() {
+        if (this.files && this.files[0]) {
+            previewImage(this.files[0], "previewProfileImage");
+        }
+    });
+
+    $("#saveProfileBtn").click(function() {
+        saveProfileChanges();
+    });
+
+    $("#changeProfileImageBtn").click(function() {
+        $("#profileImageUpload").data("direct-upload", "true").click();
+    });
+
+    $("#profileImageUpload").on("change", function(e) {
+        if ($(this).data("direct-upload") === "true") {
+            if (this.files && this.files[0]) {
+                $("#profileImage").css("opacity", "0.5");
+                $(".profile-image-container .overlay").append(
+                    '<div class="upload-spinner"><div class="spinner-border spinner-border-sm text-light" role="status"></div></div>'
+                );
+
+                uploadProfileImage(this.files[0])
+                    .then(response => {
+                        if (response.profile_image) {
+                            $("#profileImage").attr("src", response.profile_image);
+                            $("#previewProfileImage").attr("src", response.profile_image);
+                        }
+                        showNotification("Profile image updated successfully", "success");
+                    })
+                    .catch(error => {
+                        console.error("Upload failed:", error);
+                        showNotification("Upload failed", "error");
+                    })
+                    .finally(() => {
+                        $("#profileImage").css("opacity", "1");
+                        $(".profile-image-container .overlay .upload-spinner").remove();
+                        $(this).val("");
+                    });
+            }
+        } else {
+            if (this.files && this.files[0]) {
+                previewImage(this.files[0], "previewProfileImage");
+            }
+        }
+
+        $(this).data("direct-upload", "false");
+    });
 }
 
+function loadSectionFromUrlHash() {
+    const hash = window.location.hash;
+    if (!hash) return;
+
+    if (hash.startsWith('#bookings:')) {
+        const status = hash.split(':')[1];
+        showBookingsSection(status);
+        return;
+    }
+
+    if (hash.startsWith('#')) {
+        const section = hash.substring(1);
+
+        $(".nav-link").removeClass("active");
+        $(`[data-section="${section}"]`).addClass("active");
+
+        $(".dashboard-section").addClass("d-none");
+        $(`#${section}Section`).removeClass("d-none");
+
+        $(document).trigger(`section:${section}`);
+    }
+}
+
+function showBookingsSection(status = "all") {
+    $(".nav-link").removeClass("active");
+    $('[data-section="bookings"]').addClass("active");
+    $(".dashboard-section").addClass("d-none");
+    $("#bookingsSection").removeClass("d-none");
+    $(".dropdown-item[data-filter]").removeClass("active");
+    $(".dropdown-item[data-filter='" + status + "']").addClass("active");
+
+    filterBookings(status);
+    window.location.hash = "bookings:" + status;
+}
+
+function showReviewsSection() {
+    $(".nav-link").removeClass("active");
+    $('[data-section="reviews"]').addClass("active");
+    $(".dashboard-section").addClass("d-none");
+    $("#reviewsSection").removeClass("d-none");
+
+    loadReviews();
+    window.location.hash = "reviews";
+}
 /**
  * Loading photographer data
  */
@@ -638,11 +778,6 @@ function loadPortfolio(category = 'all') {
 
             $("#portfolioItems").html(portfolioItemHtml);
 
-            // $("#portfolioItems").on("click", ".view-portfolio-btn", function () {//off("click", ".view-portfolio-btn").
-            //     console.log("View button clicked");
-            //     const itemId = $(this).data("id");
-            //     viewPortfolioItem(itemId);
-            // });
             $(".view-portfolio-btn").click(function () {
                 const itemId = $(this).data("id");
                 viewPortfolioItem(itemId);
@@ -650,6 +785,7 @@ function loadPortfolio(category = 'all') {
             $(".edit-portfolio-btn").click(function () {
                 const itemId = $(this).data("id");
                 console.log(itemId);
+                editPortfolioItem(itemId);
             });
         })
         .catch(error => {
@@ -750,8 +886,13 @@ function openAddPortfolioModal() {
     portfolioModal.show();
 }
 
+function editPortfolioItem(itemId) {
+    
+}
+
 // Get bookings info
 function loadBookings(status = "all", page = 1) {
+    console.log("Status in loadBookings: ",status);
     $("#bookingsTable").html(`
         <tr>
             <td colspan="8" class="text-center">
@@ -769,10 +910,10 @@ function loadBookings(status = "all", page = 1) {
         filter: {
             status: status
         },
-        pagination: {
-            page: page,
-            limit: 10,
-        }
+        // pagination: {
+        //     page: page,
+        //     limit: 10,
+        // }
     };
 
     fetch(`${CONFIG.API.BASE_URL}/photographer/bookings-details`, {
@@ -890,6 +1031,27 @@ function loadBookings(status = "all", page = 1) {
             `)
         });
 }
+
+function showBookingsSection(status = "all") {
+    $(".nav-link").removeClass("active");
+    $('[data-section="bookings"]').addClass("active");
+
+    $(".dashboard-section").addClass("d-none");
+    $("#bookingsSection").removeClass("d-none");
+
+    const filterText = status === "pending" ? "Pending" :
+                      status === "confirmed" ? "Confirmed" :
+                      status === "completed" ? "Completed" :
+                      status === "cancelled" ? "Cancelled" : "All Bookings";
+
+    $('#bookingsSection .btn-group').find('.dropdown-toggle').html(`<i class="bi bi-filter"></i> ${filterText}`);
+
+    $("#bookingsSection .dropdown-menu a[data-filter]").removeClass("active");
+    $("#bookingsSection .dropdown-menu a[data-filter='" + status + "']").addClass("active");
+    
+    loadBookings(status);
+}
+
 
 // Get services and prices info
 function loadServices(onlyFeatured = false) {
@@ -1046,8 +1208,228 @@ function openAddServiceModal() {
     serviceModal.show();
 }
 
+// Get Messages
+function loadMessages() {
+    $("#conversationsList").html(`
+        <div class="text-center p-3">
+            <div class="spinner-border spinner-border-sm" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <span class="ms-2">Loading conversations...</span>
+        </div>
+    `);
+    $("#messagesContainer").html(`
+        <div class="text-center p-5">
+            <i class="bi bi-chat-dots display-4 text-muted"></i>
+            <p class="mt-3">Select a conversation to view messages</p>
+        </div>
+    `);
+
+    $("#messageInputContainer").addClass("d-none");
+
+    fetch(`${CONFIG.API.BASE_URL}/photographer/messages`, {
+        method: "POST",
+        headers: {
+            'Authorization': `Bearer ${localStorage.getItem("token")}`,
+            'Content-Type': 'application/json'
+        }
+    })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Failed to load messages');
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (!data.success || !data.data || Object.keys(data.data).length === 0) {
+                $("#conversationsList").html(`
+                    <div class="text-center p-3">
+                        <p class="text-muted mb-0">No conversations found</p>
+                    </div>
+                `);
+                return;
+            }
+
+            console.log("Messages userId: ", data.data.user_id);
+            const conversationIds = data.data.booking_ids || [];
+            const conversations = [];
+            const userId = data.data.user_id;
+
+            console.log(conversationIds);
+            for (let i = 0; i < conversationIds.length; i++) {
+                console.log("Debug");
+                console.log("Conversation ID: ", data.data.conversations[i]);
+                if (data.data.conversations[i]) {
+                    const conversationData = data.data.conversations[i];
+                    const messages = conversationData.messages || [];
+
+                    if (messages.length > 0) {
+                        const latestMessage = messages[messages.length - 1];
+                        const hasUnread = messages.some(msg => !msg.is_read && msg.sender_id !== userId);
+                        const clientName = messages.find(msg => msg.sender_id !== userId)?.username || "Unknown";
+
+                        conversations.push({
+                            id: conversationData.conversation_id,
+                            clientName: clientName,
+                            latestMessage: latestMessage.message,
+                            timestamp: latestMessage.created_at,
+                            hasUnread: hasUnread,
+                            messages: messages
+                        })
+                    }
+                }
+            }
+
+            conversations.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+            const conversationHtml = conversations.map(conversation => `
+                <a href="#"
+                   class="list-group-item list-group-item-action conversation-item ${conversation.hasUnread ? 'unread-conversation' : ''}"
+                   data-id="${conversation.id}">
+                    <div class="d-flex w-100 justify-content-between align-items-center">
+                        <h6 class="mb-1">${conversation.clientName} ${conversation.hasUnread ? '<span class="badge rounded-pill bg-danger">New</span>' : ''}</h6>
+                        <small class="text-muted">${formatDate(conversation.timestamp)}</small>
+                    </div>
+                    <p class="mb-1 text-truncate">${conversation.latestMessage}</p>
+                </a>
+            `).join('');
+
+            $("#conversationsList").html(conversationHtml);
+
+            $(".conversation-item").click(function (e) {
+                e.preventDefault();
+                const conversationId = $(this).data("id");
+                const clientName = $(this).data('client-name');
+
+                $(".conversation-item").removeClass("active");
+                $(this).addClass("active");
+                $(this).removeClass("unread-conversation");
+                $(this).find(".badge").remove();
+
+                displayConversationMessages(conversations.find(c => c.id === conversationId), data.data.user_id);
+
+                $("#conversationTitle").text($(this).find("h6").text().replace());
+
+                $("#conversationMenu").removeClass("d-none");
+
+                $("#viewClientProfileBtn").data("client-name", clientName);
+
+                $("#messageInputContainer").removeClass("d-none");
+
+                $("#sendMessageForm").data("conversation-id", conversationId);
+
+                $("#sendMessageForm").off("submit").on("submit", function (e) {
+                    e.preventDefault();
+                    const messageText = $("#messageInput").val().trim();
+                    const conversationId = $(this).data("conversation-id");
+
+                    if (messageText && conversationId) {
+                        sendMessage(conversationId, messageText, $(this).data("user-id"));
+                    }
+                })
+
+                $("viewClientProfileBtn").click(function (e) {
+                    e.preventDefault();
+                    // TODO: Open client profile
+                })
+
+                $("markAsReadBtn").click(function (e) {
+                    e.preventDefault();
+                    // TODO: Mark conversation as read
+                })
+            })
+        })
+        .catch((error) => {
+            console.error("Failed to load messages: ", error);
+            $("#conversationsList").html(`
+                <div class="alert alert-danger m-2">
+                    Failed to load conversations. Please try again.
+                </div>
+            `);
+        });
+}
+
+function displayConversationMessages(conversation, user_id) {
+    if (!conversation || !conversation.messages || conversation.messages.length === 0) {
+        $("#messagesContainer").html(`
+            <div class="text-center p-5">
+                <i class="bi bi-chat-dots display-4 text-muted"></i>
+                <p class="mt-3">No messages in this conversation</p>
+            </div>
+        `);
+        return;
+    }
+
+    const photographerId = user_id;
+    console.log(photographerId);
+
+    const messagesHtml = conversation.messages.map(msg => {
+        const isOwn = msg.sender_id === photographerId;
+
+        return `
+            <div class="d-flex ${isOwn ? 'justify-content-end' : 'justify-content-start'} mb-3">
+                <div class="message-bubble ${isOwn ? 'message-own' : 'message-other'}" style="background: ${isOwn ? '#007bff' : '#f1f1f1'}; color: ${isOwn ? '#fff' : '#000'};">
+                    <div class="message-content">
+                        <p class="mb-0">${msg.message}</p>
+                        <small class="text-muted d-block text-${isOwn ? 'end' : 'start'} mt-1" style="color: ${isOwn ? '#fff' : '#000'} !important;">
+                            ${formatDate(msg.created_at)}
+                        </small>
+                    </div>
+                </div>
+            </div>
+        `;
+    }).join('');
+
+    $("#messagesContainer").html(`
+        <div class="messages-wrapper">
+            ${messagesHtml}
+        </div>
+    `);
+
+    const messageWrapper = document.querySelector("#messages-wrapper");
+    if (messageWrapper) {
+        messageWrapper.scrollTop = messageWrapper.scrollHeight;
+    }
+}
+
+function sendMessage(conversationId, messageText, userId) {
+    const sendButton = $("#sendMessageForm button[type='submit']");
+    sendButton.prop("disabled", true);
+
+    $("#messageInput").val("");
+
+    fetch(`${CONFIG.API.BASE_URL}/photographer/messages/send`, {
+        method: 'POST',
+        headers: {
+            'Authorization': `Bearer ${localStorage.getItem("token")}`,
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            conversation_id: conversationId,
+            message_text: messageText
+        })
+    })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Failed to send message');
+            }
+            return response.json();
+        })
+        .then(data => {
+            loadMessages();
+            $("#messageInput").focus();
+        })
+        .catch(error => {
+            console.error("Failed to send message:", error);
+            alert("Failed to send message. Please try again.");
+        })
+        .finally(() => {
+            sendButton.prop("disabled", false);
+        })
+}
+
 //Get reviews info
-function loadReviews(page=1) {
+function loadReviews(page = 1) {
     $("#reviewsContainer").html(`
         <div class="text-center">
             <div class="spinner-border" role="status">
@@ -1154,8 +1536,8 @@ function loadReviews(page=1) {
 
             reviewHtml += reviewCards;
 
-            if(data.total_pages>1){
-                reviewsHtml+=`
+            if (data.total_pages > 1) {
+                reviewsHtml += `
                     <nav aria-label="Reviews pagination" class="mt-4">
                         <ul class="pagination justify-content-center" id="reviewsPagination">
                             <li class="page-item ${page === 1 ? 'disabled' : ''}">
@@ -1499,7 +1881,7 @@ function saveService() {
 }
 
 // Get the detailed photographer information
-function loadDetailedPhotographerData(){
+function loadDetailedPhotographerData() {
     document.getElementById('profileName').textContent = 'Loading...';
     document.getElementById('profileEmail').textContent = 'loading@example.com';
     document.getElementById('infoName').textContent = 'Loading...';
@@ -1530,12 +1912,11 @@ function loadDetailedPhotographerData(){
             }
             return response.json();
         })
-        .then(data=>{
-            document.getElementById('profileName').textContent = data.name;
-            document.getElementById('profileEmail').textContent = data.email;
+        .then(data => {
+            document.getElementById('profileName').textContent = data.name || 'Not set';
+            document.getElementById('profileEmail').textContent = data.email || 'Not set';
             document.getElementById('profileMember').textContent = `Member since: ${new Date(data.created_at).toLocaleDateString()}`;
 
-            // 填充专业信息
             document.getElementById('infoName').textContent = data.name;
             document.getElementById('infoEmail').textContent = data.email;
             document.getElementById('infoPhone').textContent = data.phone || 'Not provided';
@@ -1544,28 +1925,386 @@ function loadDetailedPhotographerData(){
             document.getElementById('infoExperience').textContent = `${data.experience_years || 0} years`;
             document.getElementById('infoBio').textContent = data.bio || 'No bio provided';
 
-            if (data.profileImage) {
-                document.getElementById('profileImage').src = data.profileImage; 
+            if (data.profile_image) {
+                document.getElementById('profileImage').src = data.profile_image;
             }
 
             const categoriesContainer = document.getElementById('photographerCategories');
-            if (data.categories && data.categories.length > 0) { // data.categories
+            if (data.categories && data.categories.length > 0) {
                 const categoriesHtml = data.categories.map(category => {
                     return `<span class="badge bg-primary me-1 mb-1">${category}</span>`;
                 }).join('');
                 categoriesContainer.innerHTML = categoriesHtml;
             } else {
-                categoriesContainer.innerHTML = '<p class="text-muted mb-0">No categories specified</p>';
+                categoriesContainer.innerHTML = '<p class="text-muted mb-0">未指定类别</p>';
             }
+
             document.getElementById('totalSessions').textContent = data.photoshoot_count || 0;
             document.getElementById('totalEarnings').textContent = `€${(data.total_earnings || 0).toFixed(2)}`; // data.totalEarnings
-            document.getElementById('totalReviews').textContent = data.review_count|| 0;
+            document.getElementById('totalReviews').textContent = data.review_count || 0;
             document.getElementById('profileViews').textContent = data.view_count || 0; // data.viewCount
+
+            $("#editName").val(data.name || "");
+            $("#editEmail").val(data.email || "");
+            $("#editPhone").val(data.phone || "");
+            $("#editLocation").val(data.location || "");
+            $("#editSpecialization").val(data.specialization || "");
+            $("#editExperience").val(data.experience_years || 0);
+            $("#editBio").val(data.bio || "");
+
+            if (data.categories) {
+                loadCategories(data.categories);
+            }
+
         })
         .catch(error => {
-            console.error("Failed to load photographer data",error);
+            console.error("Failed to load photographer data", error);
             document.getElementById('profileName').textContent = 'Error loading data';
             document.getElementById('profileEmail').textContent = 'Please try again later';
             document.getElementById('photographerCategories').innerHTML = '<p class="text-danger">Failed to load categories</p>';
         })
+}
+
+function initPasswordChangeFeature() {
+    $("a[data-settings='password']").on("click", function (e) {
+        e.preventDefault();
+        console.log("Change Password link clicked");
+        showPasswordModal();
+    });
+
+    $(document).on("click", ".toggle-password", function () {
+        togglePasswordVisibility($(this));
+    });
+
+    $(document).on("input", "#newPassword", function () {
+        updatePasswordStrength($(this).val());
+    });
+
+    $("#submitPasswordBtn").on("click", function () {
+        submitPasswordChange();
+    });
+
+    $('#changePasswordModal').on('hidden.bs.modal', function () {
+        resetPasswordForm();
+    });
+}
+
+function showPasswordModal() {
+    const changePasswordModal = new bootstrap.Modal(document.getElementById('changePasswordModal'));
+    changePasswordModal.show();
+}
+
+function togglePasswordVisibility(toggleButton) {
+    const targetId = toggleButton.data("target");
+    const input = $(`#${targetId}`);
+    const icon = toggleButton.find("i");
+
+    if (input.attr("type") === "password") {
+        input.attr("type", "text");
+        icon.removeClass("bi-eye").addClass("bi-eye-slash");
+    } else {
+        input.attr("type", "password");
+        icon.removeClass("bi-eye-slash").addClass("bi-eye");
+    }
+}
+
+function updatePasswordStrength(password) {
+    let strength = 0;
+
+    if (password.length >= 8) strength += 20;
+    if (password.match(/[a-z]+/)) strength += 20;
+    if (password.match(/[A-Z]+/)) strength += 20;
+    if (password.match(/[0-9]+/)) strength += 20;
+    if (password.match(/[^a-zA-Z0-9]+/)) strength += 20;
+
+    const progressBar = $("#passwordStrength");
+    progressBar.css("width", `${strength}%`);
+
+    if (strength < 40) {
+        progressBar.removeClass("bg-warning bg-success").addClass("bg-danger");
+    } else if (strength < 80) {
+        progressBar.removeClass("bg-danger bg-success").addClass("bg-warning");
+    } else {
+        progressBar.removeClass("bg-danger bg-warning").addClass("bg-success");
+    }
+}
+
+function submitPasswordChange() {
+    console.log("Password change button clicked");//debug
+    const currentPassword = $("#currentPassword").val();
+    const newPassword = $("#newPassword").val();
+    const confirmPassword = $("#confirmNewPassword").val();
+    if (!validatePasswordForm(currentPassword, newPassword, confirmPassword)) {
+        return;
+    }
+
+    const submitButton = $("#submitPasswordBtn");
+    setButtonLoading(submitButton, true);
+
+    sendPasswordChangeRequest(currentPassword, newPassword, confirmPassword)
+        .then(handlePasswordChangeSuccess)
+        .catch(handlePasswordChangeError)
+        .finally(() => {
+            setButtonLoading(submitButton, false);
+        });
+}
+
+function validatePasswordForm(currentPassword, newPassword, confirmPassword) {
+    if (!currentPassword) {
+        showNotification("Please enter your current password", "warning");
+        return false;
+    }
+
+    if (!newPassword) {
+        showNotification("Please enter a new password", "warning");
+        return false;
+    }
+
+    if (newPassword.length < 8) {
+        showNotification("The new password needs to be at least 8 characters", "warning");
+        return false;
+    }
+
+    if (newPassword !== confirmPassword) {
+        showNotification("New password does not match the confirmation password", "warning");
+        return false;
+    }
+
+    return true;
+}
+
+function sendPasswordChangeRequest(currentPassword, newPassword, confirmPassword) {
+    return fetch(`${CONFIG.API.BASE_URL}/auth/password`, {
+        method: 'PUT',
+        headers: {
+            'Authorization': `Bearer ${localStorage.getItem("token")}`,
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            current_password: currentPassword,
+            new_password: newPassword,
+            new_password_confirmation: confirmPassword
+        })
+    })
+        .then(response => {
+            console.log("Password change API response status:", response.status);
+
+            if (!response.ok) {
+                return response.json().then(data => {
+                    throw { status: response.status, data: data };
+                });
+            }
+            return response.json();
+        });
+}
+
+function handlePasswordChangeSuccess(data) {
+    console.log("Password changed successfully");
+    resetPasswordForm();
+    bootstrap.Modal.getInstance(document.getElementById('changePasswordModal')).hide();
+    showNotification("Password changed successfully", "success");
+}
+
+function handlePasswordChangeError(error) {
+    console.error("Password change error:", error);
+
+    let errorMessage = "Failed to change password";
+
+    if (error.status === 422) {
+        if (error.data && error.data.errors) {
+            if (error.data.errors.current_password) {
+                errorMessage = "Current password is incorrect";
+            } else if (error.data.errors.new_password) {
+                errorMessage = error.data.errors.new_password[0] || "Invalid new password format";
+            }
+        } else if (error.data && error.data.message) {
+            errorMessage = error.data.message;
+        }
+    } else if (error.status === 401) {
+        errorMessage = "Authentication failed, please log in again";
+        setTimeout(() => {
+            window.location.href = "../../pages/auth/login.html";
+        }, 2000);
+    }
+
+    showNotification(errorMessage, "error");
+}
+
+function resetPasswordForm() {
+    $("#passwordChangeForm")[0].reset();
+    $("#passwordStrength").css("width", "0%");
+}
+
+function setButtonLoading(button, isLoading) {
+    if (isLoading) {
+        button.prop("disabled", true).html(`
+            <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+            Updating...
+        `);
+    } else {
+        button.prop("disabled", false).text("修改密码");
+    }
+}
+
+
+function openEditProfileModal() {
+    fetch(`${CONFIG.API.BASE_URL}/photographer/profile`, {
+        method: 'POST',
+        headers: {
+            'Authorization': `Bearer ${localStorage.getItem("token")}`,
+            'Content-Type': 'application/json'
+        }
+    })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Failed to load photographer profile data');
+            }
+            return response.json();
+        })
+        .then(data => {
+            $("#editName").val(data.name || "");
+            $("#editEmail").val(data.email || "");
+            $("#editPhone").val(data.phone || "");
+            $("#editLocation").val(data.location || "");
+            $("#editSpecialization").val(data.specialization || "");
+            $("#editExperience").val(data.experience_years || 0);
+            $("#editBio").val(data.bio || "");
+
+            if (data.profile_image) {
+                $("#previewProfileImage").attr("src", data.profile_image);
+            } else {
+                $("#previewProfileImage").attr("src", "../../assets/images/default-photographer.jpg");
+            }
+
+            loadCategories(data.categories || []);
+
+            const editProfileModal = new bootstrap.Modal(document.getElementById('editProfileModal'));
+            editProfileModal.show();
+        })
+        .catch(error => {
+            console.error("Failed to load profile data:", error);
+            showNotification("Failed to load profile data", "error");
+        });
+}
+
+function loadCategories(selectedCategories) {
+    fetch(`${CONFIG.API.BASE_URL}/categories`, {
+        headers: {
+            'Authorization': `Bearer ${localStorage.getItem("token")}`,
+            'Content-Type': 'application/json'
+        }
+    })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Failed to load categories');
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (!data || data.length === 0) {
+                $("#editCategories").html('<p class="text-muted">No categories available</p>');
+                return;
+            }
+
+            const categoriesHtml = data.map(category => {
+                const isSelected = selectedCategories.includes(category.name);
+                return `
+                <div class="form-check form-check-inline mb-2">
+                    <input class="form-check-input" type="checkbox" id="category_${category.id}" 
+                           name="categories[]" value="${category.id}" ${isSelected ? 'checked' : ''}>
+                    <label class="form-check-label" for="category_${category.id}">${category.name}</label>
+                </div>
+            `;
+            }).join('');
+
+            $("#editCategories").html(categoriesHtml);
+        })
+        .catch(error => {
+            console.error("Failed to load categories:", error);
+            $("#editCategories").html('<p class="text-danger">Failed to load categories</p>');
+        });
+}
+
+function saveProfileChanges() {
+    const profileData = {
+        name: $("#editName").val(),
+        email: $("#editEmail").val(),
+        phone: $("#editPhone").val(),
+        location: $("#editLocation").val(),
+        specialization: $("#editSpecialization").val(),
+        experience_years: parseInt($("#editExperience").val(), 10) || 0,
+        bio: $("#editBio").val()
+    };
+
+    const selectedCategories = [];
+    $("input[name='categories[]']:checked").each(function() {
+        selectedCategories.push($(this).val());
+    });
+    profileData.categories = selectedCategories;
+
+    $("#saveProfileBtn").prop("disabled", true).html(`
+        <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+        Saving...
+    `);
+
+    fetch(`${CONFIG.API.BASE_URL}/photographer/profile/update`, {
+        method: 'POST',
+        headers: {
+            'Authorization': `Bearer ${localStorage.getItem("token")}`,
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(profileData)
+    })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Failed to update personal data');
+            }
+            return response.json();
+        })
+        .then(data => {
+            const profileImageInput = document.getElementById("profileImageUpload");
+            if (profileImageInput.files && profileImageInput.files[0]) {
+                return uploadProfileImage(profileImageInput.files[0]);
+            }
+            return data;
+        })
+        .then(data => {
+            bootstrap.Modal.getInstance(document.getElementById('editProfileModal')).hide();
+            loadDetailedPhotographerData();
+            showNotification("Personal Information Update Successful", "success");
+        })
+        .catch(error => {
+            console.error("Failed to update personal data:", error);
+            showNotification("Failed to update personal data", "error");
+        })
+        .finally(() => {
+            $("#saveProfileBtn").prop("disabled", false).text("Save Changes");
+        });
+}
+
+function uploadProfileImage(imageFile) {
+    const formData = new FormData();
+    formData.append("image", imageFile);
+
+    return fetch(`${CONFIG.API.BASE_URL}/photographer/profile/image`, {
+        method: 'POST',
+        headers: {
+            'Authorization': `Bearer ${localStorage.getItem("token")}`
+        },
+        body: formData
+    })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Failed to upload avatar');
+            }
+            return response.json();
+        });
+}
+
+function previewImage(file, previewElementId) {
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        $(`#${previewElementId}`).attr("src", e.target.result);
+    };
+    reader.readAsDataURL(file);
 }

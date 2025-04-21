@@ -14,25 +14,32 @@ class Bookings extends Controller
     //
     public function index(Request $request)
     {
-        $photographer_id=$request->user()->photographerProfile->id;
-        $bookings=$this->getPhotographerBookings($photographer_id);
+        $photographer_id = $request->user()->photographerProfile->id;
+        $filter = $request->input('filter');
+        $status = $filter['status'] ?? 'all';
+        $bookings = $this->getPhotographerBookings($photographer_id, $status);
         return response()->json([
-            'message'=>'success',
-            'bookings'=> $bookings
+            'message' => 'success',
+            'bookings' => $bookings
         ]);
     }
 
-    private function getPhotographerBookings(int $photographer_id)
+    private function getPhotographerBookings(int $photographer_id, string $status)
     {
-        $bookings=Booking::where("photographer_id",$photographer_id)->get();
-        $results=[];
-        foreach ($bookings as $booking) {
-            $return_data=$booking->toArray();
-            $return_data['customer_name']=User::where('id',$booking->customer_id)->value('name');
-            $return_data['service_name']=Service::where('id',$booking->service_id)->value('name');
-            $return_data['booking_time']=Carbon::parse($booking->booking_date)->format('Y-m-d H:i:s');
+        $query = Booking::where("photographer_id", $photographer_id);
+        if ($status !== 'all') {
+            $query->where('status', $status);
+        }
+        $bookings = $query->get();
 
-            $results[]=$return_data;
+        $results = [];
+        foreach ($bookings as $booking) {
+            $return_data = $booking->toArray();
+            $return_data['customer_name'] = User::where('id', $booking->customer_id)->value('name');
+            $return_data['service_name'] = Service::where('id', $booking->service_id)->value('name');
+            $return_data['booking_time'] = Carbon::parse($booking->booking_date)->format('Y-m-d H:i:s');
+
+            $results[] = $return_data;
         }
         return $results;
     }

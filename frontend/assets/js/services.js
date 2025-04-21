@@ -2,9 +2,10 @@
 * Description: A brief description of the function.
 * Input parameter: @param {type} name - description
 * Output parameter: @returns {type} - description
-*/ 
+*/
 let allServices = [];
 let categories = [];
+const itemsPerPage = 9;
 let searchParams = {
     search: '',
     category: 'all',
@@ -87,6 +88,7 @@ function applyAdvancedFilters() {
     searchParams.max_price = $("#maxPrice").val();
     loadServices();
     $("#advancedSearchOptions").addClass("d-none");
+    currentPage = 1;
 }
 
 function resetFilters() {
@@ -107,6 +109,7 @@ function resetFilters() {
 
     loadServices();
     $("#advancedSearchOptions").addClass("d-none");
+    currentPage = 1;
 }
 
 // Load service details from API
@@ -239,7 +242,7 @@ function renderServices(services) {
         `);
 
         $emptyState.find('.reset-filters-btn').on('click', function () {
-            $("#categoryFilters").find('[data-filter="all"]').click();
+            resetFilters();
         });
 
         $container.append($emptyState);
@@ -268,7 +271,7 @@ function renderServices(services) {
                     <img src="${service.image_url ||
             "../assets/images/services/placeholder.jpg"
             }" 
-                            alt="${service.title}" class="img-fluid">
+                         alt="${service.title}" class="img-fluid">
                     <div class="service-badge">${capitalizeFirstLetter(
                 Array.isArray(service.category)
                     ? service.category[0]
@@ -315,6 +318,11 @@ function renderServices(services) {
     });
 
     $container.append(fragment);
+    totalPages = Math.ceil($(".service-item.visible").length / itemsPerPage);
+    currentPage = 1;
+
+    displayCurrentPageServices();
+    setupPagination();
 }
 
 /**
@@ -508,4 +516,69 @@ function updateEmptyStateVisibility() {
 
         $("#servicesContainer").append($emptyState);
     }
+}
+
+function setupPagination() {
+    $(".pagination-container").remove();
+    
+    if (totalPages <= 1) {
+        return;
+    }
+    
+    const $paginationContainer = $("<div>", {
+        class: "pagination-container text-center mt-5"
+    });
+    
+    const $pagination = $("<nav aria-label='Services pagination'><ul class='pagination justify-content-center'></ul></nav>");
+    const $paginationList = $pagination.find(".pagination");
+    
+    $paginationList.append(`
+        <li class="page-item ${currentPage === 1 ? 'disabled' : ''}">
+            <a class="page-link" href="#" data-page="${currentPage - 1}" aria-label="Previous">
+                <span aria-hidden="true">&laquo;</span>
+            </a>
+        </li>
+    `);
+    
+    for (let i = 1; i <= totalPages; i++) {
+        $paginationList.append(`
+            <li class="page-item ${currentPage === i ? 'active' : ''}">
+                <a class="page-link" href="#" data-page="${i}">${i}</a>
+            </li>
+        `);
+    }
+    
+    $paginationList.append(`
+        <li class="page-item ${currentPage === totalPages ? 'disabled' : ''}">
+            <a class="page-link" href="#" data-page="${currentPage + 1}" aria-label="Next">
+                <span aria-hidden="true">&raquo;</span>
+            </a>
+        </li>
+    `);
+    
+    $paginationContainer.append($pagination);
+    
+    $("#servicesContainer").after($paginationContainer);
+
+    $paginationContainer.find(".page-link").on("click", function(e) {
+        e.preventDefault();
+        const newPage = $(this).data("page");
+        if (newPage >= 1 && newPage <= totalPages && newPage !== currentPage) {
+            currentPage = newPage;
+            displayCurrentPageServices();
+            setupPagination();
+            
+            $('html, body').animate({ 
+                scrollTop: $('.services-grid').offset().top - 100 
+            }, 300);
+        }
+    });
+}
+
+function displayCurrentPageServices() {
+    const visibleServices = $(".service-item.visible");
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    visibleServices.hide();
+    visibleServices.slice(startIndex, endIndex).show();
 }

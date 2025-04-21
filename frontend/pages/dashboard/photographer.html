@@ -15,7 +15,7 @@
 <body class="dashboard">
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
         <div class="container-fluid">
-            <a class="navbar-brand" href="#" id="homeLink">LensLink</a>
+            <a class="navbar-brand" href="../../index.html" id="homeLink">LensLink</a>
             <div class="d-flex align-items-center">
                 <div class="me-3 d-none d-md-block">
                     <span class="text-light">Welcome, <span id="photographerName">Photographer</span></span>
@@ -665,7 +665,7 @@
                     <div class="row">
                         <div class="col-md-4 mb-4">
                             <div class="list-group settings-menu">
-                                <a href="#" class="list-group-item list-group-item-action active" data-settings="account">
+                                <!-- <a href="#" class="list-group-item list-group-item-action active" data-settings="account">
                                     <i class="bi bi-person me-2"></i> Account Settings
                                 </a>
                                 <a href="#" class="list-group-item list-group-item-action" data-settings="profile">
@@ -679,13 +679,13 @@
                                 </a>
                                 <a href="#" class="list-group-item list-group-item-action" data-settings="payment">
                                     <i class="bi bi-credit-card me-2"></i> Payment Information
-                                </a>
+                                </a> -->
                                 <a href="#" class="list-group-item list-group-item-action" data-settings="password">
                                     <i class="bi bi-key me-2"></i> Change Password
                                 </a>
-                                <a href="#" class="list-group-item list-group-item-action text-danger" data-settings="delete">
+                                <!-- <a href="#" class="list-group-item list-group-item-action text-danger" data-settings="delete">
                                     <i class="bi bi-trash me-2"></i> Delete Account
-                                </a>
+                                </a> -->
                             </div>
                         </div>
                         <div class="col-md-8">
@@ -920,7 +920,134 @@
             </div>
         </div>
     </div>
-
+    <!-- Change Password Modal -->
+    <div class="modal fade" id="changePasswordModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Change Password</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="passwordChangeForm">
+                        <div class="mb-3">
+                            <label for="currentPassword" class="form-label">Current Password</label>
+                            <div class="input-group">
+                                <input type="password" class="form-control" id="currentPassword" required>
+                                <button class="btn btn-outline-secondary toggle-password" type="button" data-target="currentPassword">
+                                    <i class="bi bi-eye"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="newPassword" class="form-label">New Password</label>
+                            <div class="input-group">
+                                <input type="password" class="form-control" id="newPassword" required>
+                                <button class="btn btn-outline-secondary toggle-password" type="button" data-target="newPassword">
+                                    <i class="bi bi-eye"></i>
+                                </button>
+                            </div>
+                            <div class="progress mt-2" style="height: 5px;">
+                                <div id="passwordStrength" class="progress-bar" role="progressbar" style="width: 0%"></div>
+                            </div>
+                            <small class="text-muted">Password should be at least 8 characters long</small>
+                        </div>
+                        <div class="mb-3">
+                            <label for="confirmNewPassword" class="form-label">Confirm New Password</label>
+                            <div class="input-group">
+                                <input type="password" class="form-control" id="confirmNewPassword" required>
+                                <button class="btn btn-outline-secondary toggle-password" type="button" data-target="confirmNewPassword">
+                                    <i class="bi bi-eye"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="submitPasswordBtn">Change Password</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Edit Profile Modal -->
+    <div class="modal fade" id="editProfileModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Edit Profile</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="editProfileForm">
+                        <div class="row">
+                            <div class="col-md-4 text-center mb-4">
+                                <div class="profile-image-container mx-auto mb-3">
+                                    <img src="../../assets/images/default-photographer.jpg" alt="Profile" class="rounded-circle profile-image" id="previewProfileImage">
+                                    <div class="overlay">
+                                        <button type="button" class="btn btn-sm btn-outline-light" id="uploadProfileImageBtn">
+                                            <i class="bi bi-camera"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                <input type="file" class="form-control d-none" id="profileImageUpload" accept="image/*">
+                                <small class="text-muted">Click on the image to change your profile picture</small>
+                            </div>
+                            <div class="col-md-8">
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <label for="editName" class="form-label">Full Name</label>
+                                        <input type="text" class="form-control" id="editName" required>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="editEmail" class="form-label">Email</label>
+                                        <input type="email" class="form-control" id="editEmail" required>
+                                    </div>
+                                </div>
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <label for="editPhone" class="form-label">Phone</label>
+                                        <input type="tel" class="form-control" id="editPhone">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="editLocation" class="form-label">Location</label>
+                                        <input type="text" class="form-control" id="editLocation">
+                                    </div>
+                                </div>
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <label for="editSpecialization" class="form-label">Specialization</label>
+                                        <input type="text" class="form-control" id="editSpecialization">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="editExperience" class="form-label">Years of Experience</label>
+                                        <input type="number" class="form-control" id="editExperience" min="0">
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="editBio" class="form-label">Professional Bio</label>
+                                    <textarea class="form-control" id="editBio" rows="4"></textarea>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Categories</label>
+                                    <div id="editCategories" class="d-flex flex-wrap">
+                                        <!-- Will be filled dynamically -->
+                                        <div class="spinner-border spinner-border-sm text-primary" role="status">
+                                            <span class="visually-hidden">Loading...</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="saveProfileBtn">Save Changes</button>
+                </div>
+            </div>
+        </div>
+    </div>
     <!-- Notification Toast -->
     <div class="position-fixed bottom-0 end-0 p-3" style="z-index: 11">
         <div id="notificationToast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">

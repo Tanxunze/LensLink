@@ -30,6 +30,10 @@ class ServiceController extends Controller
                         })
                         ->orWhereHas('photographer.user', function($query) use ($keyword) {
                             $query->where('name', 'LIKE', "%{$keyword}%");
+                        })
+                        ->orWhereHas('categories', function($query) use ($keyword) {
+                            $query->where('name', 'LIKE', "%{$keyword}%")
+                                ->orWhere('slug', 'LIKE', "%{$keyword}%");
                         });
                 }
             });
