@@ -44,7 +44,7 @@ function setupEventHandlers() {
 
     $("#viewActiveOrdersLink").click(function (e) {
         e.preventDefault();
-        showBookingsSection("active");
+        showBookingsSection("confirmed");
     });
 
     $("#viewEarningsLink").click(function (e) {
@@ -906,6 +906,27 @@ function loadBookings(status = "all", page = 1) {
             `)
         });
 }
+
+function showBookingsSection(status = "all") {
+    $(".nav-link").removeClass("active");
+    $('[data-section="bookings"]').addClass("active");
+
+    $(".dashboard-section").addClass("d-none");
+    $("#bookingsSection").removeClass("d-none");
+
+    const filterText = status === "pending" ? "Pending" :
+                      status === "confirmed" ? "Confirmed" :
+                      status === "completed" ? "Completed" :
+                      status === "cancelled" ? "Cancelled" : "All Bookings";
+
+    $('#bookingsSection .btn-group').find('.dropdown-toggle').html(`<i class="bi bi-filter"></i> ${filterText}`);
+
+    $("#bookingsSection .dropdown-menu a[data-filter]").removeClass("active");
+    $("#bookingsSection .dropdown-menu a[data-filter='" + status + "']").addClass("active");
+    
+    loadBookings(status);
+}
+
 
 // Get services and prices info
 function loadServices(onlyFeatured = false) {
