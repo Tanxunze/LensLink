@@ -104,6 +104,21 @@ function setupEventHandlers() {
         }
     });
 
+    $(".dropdown-menu a[data-filter]").click(function(e){
+        e.preventDefault();
+        const filterStatus=$(this).data("filter");
+
+        const filterText=$(this).text();
+        $(this).closest('.btn-group').find('.dropdown-toggle').html(`<i class="bi bi-filter"></i> ${filterText}`);
+
+        $(".dropdown-menu a[data-filter]").removeClass("active");
+        $(this).addClass("active");
+
+        console.log(filterStatus);
+
+        loadBookings(filterStatus);
+    })
+
     // loading event listeners
     $(document).on("section:portfolio", function () {
         loadPortfolio(lastSelectedCategory);
@@ -638,11 +653,6 @@ function loadPortfolio(category = 'all') {
 
             $("#portfolioItems").html(portfolioItemHtml);
 
-            // $("#portfolioItems").on("click", ".view-portfolio-btn", function () {//off("click", ".view-portfolio-btn").
-            //     console.log("View button clicked");
-            //     const itemId = $(this).data("id");
-            //     viewPortfolioItem(itemId);
-            // });
             $(".view-portfolio-btn").click(function () {
                 const itemId = $(this).data("id");
                 viewPortfolioItem(itemId);
@@ -650,6 +660,7 @@ function loadPortfolio(category = 'all') {
             $(".edit-portfolio-btn").click(function () {
                 const itemId = $(this).data("id");
                 console.log(itemId);
+                editPortfolioItem(itemId);
             });
         })
         .catch(error => {
@@ -750,8 +761,13 @@ function openAddPortfolioModal() {
     portfolioModal.show();
 }
 
+function editPortfolioItem(itemId) {
+    
+}
+
 // Get bookings info
 function loadBookings(status = "all", page = 1) {
+    console.log("Status in loadBookings: ",status);
     $("#bookingsTable").html(`
         <tr>
             <td colspan="8" class="text-center">
@@ -769,10 +785,10 @@ function loadBookings(status = "all", page = 1) {
         filter: {
             status: status
         },
-        pagination: {
-            page: page,
-            limit: 10,
-        }
+        // pagination: {
+        //     page: page,
+        //     limit: 10,
+        // }
     };
 
     fetch(`${CONFIG.API.BASE_URL}/photographer/bookings-details`, {

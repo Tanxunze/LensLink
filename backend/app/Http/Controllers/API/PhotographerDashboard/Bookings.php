@@ -15,16 +15,24 @@ class Bookings extends Controller
     public function index(Request $request)
     {
         $photographer_id=$request->user()->photographerProfile->id;
-        $bookings=$this->getPhotographerBookings($photographer_id);
+        $filter=$request->input('filter');
+        $status=$filter['status']?? 'all';
+        $bookings=$this->getPhotographerBookings($photographer_id,$status);
         return response()->json([
             'message'=>'success',
             'bookings'=> $bookings
         ]);
     }
 
-    private function getPhotographerBookings(int $photographer_id)
+    private function getPhotographerBookings(int $photographer_id,string $status)
     {
-        $bookings=Booking::where("photographer_id",$photographer_id)->get();
+        $query=Booking::where("photographer_id",$photographer_id);
+        if($status!=='all')
+        {
+            $query->where('status',$status);
+        }
+        $bookings=$query->get();
+
         $results=[];
         foreach ($bookings as $booking) {
             $return_data=$booking->toArray();
