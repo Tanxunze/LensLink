@@ -282,6 +282,7 @@ function loadDashboardCounts() {
     const activeBookingsPromise = API.request("/bookings/count?status=active");
     const completedBookingsPromise = API.request("/bookings/count?status=completed");
     const messagesPromise = API.request("/messages/count?unread=true");
+    const contactRequestsPromise = API.getPendingContactRequestsCount();
 
     return Promise.all([
         activeBookingsPromise.then(data => {
@@ -302,6 +303,16 @@ function loadDashboardCounts() {
         }).catch(() => {
             $("#messagesCount").text("0");
             $(".message-badge").addClass("d-none");
+        }),
+
+        contactRequestsPromise.then(data => {
+            if (data.count > 0) {
+                $(".contact-requests-badge").removeClass("d-none").text(data.count);
+            } else {
+                $(".contact-requests-badge").addClass("d-none");
+            }
+        }).catch(() => {
+            $(".contact-requests-badge").addClass("d-none");
         })
     ]);
 }
@@ -950,79 +961,241 @@ function loadMessages() {
         </div>
     `);
     $("#messageInputContainer").addClass("d-none");
+    loadPendingContactRequests();
 
-    API.getConversations()
-        .then(data => {
-            window.conversationsData = data;
+    Promise.all([
+        API.getConversations().catch(error => {
+            console.error("Failed to load photographer conversations:", error);
+            return { length: 0 }; 
+        }),
+        API.getCustomerConversations().catch(error => {
+            console.error("Failed to load customer conversations:", error);
+            return { conversations: [] }; 
+        })
+    ])
+        .then(([photographerConversations, customerData]) => {
+            const photogConvs = Array.isArray(photographerConversations) ? photographerConversations : [];
+            const customerConvs = customerData && Array.isArray(customerData.conversations)
+                ? customerData.conversations.map(conv => {
+                    if (!conv.id && conv.conversation_id) {
+                        conv.id = conv.conversation_id;
+                    }
+                    return {...conv, type: 'customer'};
+                }) : [];
 
-            if (!data || data.length === 0) {
+            console.log("Photographer conversations:", photogConvs);
+            console.log("Customer conversations:", customerConvs);
+
+            const allConversations = [
+                ...photogConvs.map(conv => ({...conv, type: 'photographer'})),
+                ...customerConvs.map(conv => ({...conv, type: 'customer'}))
+            ];
+
+            allConversations.sort((a, b) => {
+                const timeA = a.last_message_time || a.updated_at || a.created_at;
+                const timeB = b.last_message_time || b.updated_at || b.created_at;
+                return new Date(timeB) - new Date(timeA);
+            });
+
+            window.conversationsData = allConversations;
+
+            if (allConversations.length === 0) {
                 $("#conversationsList").html(`
-                    <div class="p-3 text-center">
-                        <p class="text-muted">No conversations yet</p>
-                        <button class="btn btn-sm btn-outline-primary" id="startNewConversationBtn">
-                            Start a new conversation
-                        </button>
-                    </div>
-                `);
+                <div class="p-3 text-center">
+                    <p class="text-muted">No conversations yet</p>
+                    <button class="btn btn-sm btn-outline-primary" id="startNewConversationBtn">
+                        Start a new conversation
+                    </button>
+                </div>
+            `);
 
-                $("#startNewConversationBtn").click(function () {
+                $("#startNewConversationBtn").click(function() {
                     openNewMessageModal();
                 });
                 return;
             }
 
-            const conversationsHtml = data.map(conversation => {
-                const otherParty = conversation.photographer && conversation.photographer.user
-                    ? conversation.photographer.user
-                    : (conversation.customer || {});
+            const conversationsHtml = allConversations.map(conversation => {
+                let otherPartyName, otherPartyImage, unreadCount;
 
-                const unreadClass = conversation.unread_count > 0 ? 'fw-bold' : '';
-                const unreadBadge = conversation.unread_count > 0
-                    ? `<span class="badge bg-primary rounded-pill ms-2">${conversation.unread_count}</span>`
+                if (conversation.type === 'photographer') {
+                    const photographer = conversation.photographer || {};
+                    const user = photographer.user || {};
+                    otherPartyName = user.name || 'Photographer';
+                    otherPartyImage = user.profile_image || '../../assets/images/default-photographer.jpg';
+                    unreadCount = conversation.unread_count || 0;
+                } else {
+                    const participant = conversation.participant || {};
+                    otherPartyName = participant.name || 'User';
+                    otherPartyImage = participant.profile_image || '../../assets/images/default-avatar.jpg';
+                    unreadCount = conversation.unread_count || 0;
+                }
+                let lastMessageTime, lastMessageText;
+                if (conversation.type === 'photographer') {
+                    lastMessageTime = formatDate(conversation.last_message_time || conversation.created_at);
+                    lastMessageText = conversation.last_message || 'No messages yet';
+                } else {
+                    lastMessageTime = formatDate(conversation.latest_message?.time || conversation.created_at);
+                    lastMessageText = conversation.latest_message?.content || 'No messages yet';
+                }
+
+                const unreadClass = unreadCount > 0 ? 'fw-bold' : '';
+                const unreadBadge = unreadCount > 0
+                    ? `<span class="badge bg-primary rounded-pill ms-2">${unreadCount}</span>`
                     : '';
 
-                const lastMsgTime = conversation.last_message_time
-                    ? formatDate(conversation.last_message_time)
-                    : formatDate(conversation.created_at);
-
                 return `
-                    <a href="#" class="list-group-item list-group-item-action conversation-item ${unreadClass}" 
-                       data-id="${conversation.id}"
-                       data-photographer-id="${conversation.photographer ? conversation.photographer.id : ''}"
-                       data-other-name="${otherParty.name || 'User'}">
-                        <div class="d-flex w-100 justify-content-between">
-                            <h6 class="mb-1 conversation-name">${otherParty.name || 'User'}</h6>
-                            <small class="conversation-time">${lastMsgTime}</small>
+                <a href="#" class="list-group-item list-group-item-action conversation-item ${unreadClass}" 
+                   data-id="${conversation.id}"
+                   data-type="${conversation.type}"
+                   data-other-name="${otherPartyName}">
+                    <div class="d-flex align-items-center mb-1">
+                        <img src="${otherPartyImage}" class="rounded-circle me-2" width="32" height="32" alt="${otherPartyName}">
+                        <div class="d-flex justify-content-between align-items-center w-100">
+                            <h6 class="mb-0 conversation-name">${otherPartyName}</h6>
+                            <small class="text-muted conversation-time">${lastMessageTime}</small>
                         </div>
-                        <div class="d-flex w-100 justify-content-between align-items-center">
-                            <p class="mb-1 text-truncate conversation-preview">${conversation.last_message || conversation.subject || 'No messages yet'}</p>
-                            ${unreadBadge}
-                        </div>
-                    </a>
-                `;
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center ps-4">
+                        <p class="mb-0 text-truncate conversation-preview small">${lastMessageText}</p>
+                        ${unreadBadge}
+                    </div>
+                    ${conversation.type === 'customer' ?
+                    '<div class="mt-1 ps-4"><span class="badge bg-info">Customer</span></div>' : ''}
+                </a>
+            `;
             }).join('');
 
             $("#conversationsList").html(conversationsHtml);
-            $(".conversation-item").click(function (e) {
+
+            $(".conversation-item").click(function(e) {
                 e.preventDefault();
                 const conversationId = $(this).data("id");
-                const photographerId = $(this).data("photographer-id");
+                const conversationType = $(this).data("type");
                 const otherName = $(this).data("other-name");
 
+                if (!conversationId) {
+                    console.error("Missing conversation ID");
+                    return;
+                }
                 $("#sendMessageForm").data("conversation-id", conversationId);
-                $("#sendMessageForm").data("photographer-id", photographerId);
+                $("#sendMessageForm").data("conversation-type", conversationType);
                 $("#conversationTitle").text(otherName);
+                $(this).removeClass("fw-bold")
+                    .find(".badge").remove();
 
-                loadConversation(conversationId);
                 $(".conversation-item").removeClass("active");
                 $(this).addClass("active");
+
+                if (conversationType === 'customer') {
+                    loadCustomerConversation(conversationId);
+                } else {
+                    loadConversation(conversationId);
+                    markMessagesAsRead(conversationId);
+                }
             });
         })
         .catch(error => {
             console.error("Failed to load conversations:", error);
             $("#conversationsList").html(`
+            <div class="alert alert-danger m-3">
+                <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                Failed to load conversations. Please try again.
+            </div>
+        `);
+        });
+}
+
+// Load customer conversation messages
+function loadCustomerConversation(conversationId) {
+    if (!conversationId) {
+        console.error("Invalid conversation ID");
+        $("#messagesContainer").html(`
+            <div class="text-center p-5">
+                <i class="bi bi-exclamation-triangle text-warning display-4"></i>
+                <p class="mt-3">Could not load this conversation</p>
+            </div>
+        `);
+        return;
+    }
+
+    $("#messagesContainer").html(`
+        <div class="text-center p-3">
+            <div class="spinner-border" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <p>Loading messages...</p>
+        </div>
+    `);
+
+    console.log("Loading customer conversation:", conversationId);
+
+    API.getCustomerConversationMessages(conversationId)
+        .then(data => {
+            console.log("Customer conversation data:", data);
+
+            // 显示消息输入框
+            $("#messageInputContainer").removeClass("d-none");
+
+            const messages = data.messages || [];
+            const otherParticipant = data.participant || {};
+
+            // 更新对话标题
+            $("#conversationTitle").text(otherParticipant.name || "Conversation");
+            $("#conversationMenu").removeClass("d-none");
+
+            if (!messages.length) {
+                $("#messagesContainer").html(`
+                    <div class="text-center p-5">
+                        <p class="text-muted">No messages yet</p>
+                        <p class="text-muted small">Start the conversation by sending a message below</p>
+                    </div>
+                `);
+                return;
+            }
+
+            // 构建消息HTML
+            const messagesHtml = messages.map(message => {
+                const isCurrentUser = message.is_mine;
+                const messageClass = isCurrentUser ? 'message-sent' : 'message-received';
+                const alignClass = isCurrentUser ? 'text-end' : 'text-start';
+                const bgClass = isCurrentUser ? 'bg-primary text-white' : 'bg-light';
+
+                const time = formatTime(message.created_at);
+                const date = formatDate(message.created_at);
+
+                return `
+                    <div class="${alignClass} mb-3">
+                        <div class="d-inline-block ${bgClass} p-2 px-3 rounded-3" style="max-width: 80%;">
+                            <div class="message-content">${message.message}</div>
+                        </div>
+                        <div class="message-time small text-muted mt-1">
+                            ${date} ${time}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            $("#messagesContainer").html(`
+                <div class="messages-wrapper">
+                    ${messagesHtml}
+                </div>
+            `);
+
+            // 滚动到底部
+            const messagesContainer = document.getElementById("messagesContainer");
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+
+            // 显示输入框
+            $("#messageInputContainer").removeClass("d-none");
+            markCustomerMessagesAsRead(conversationId);
+        })
+        .catch(error => {
+            console.error("Failed to load customer conversation:", error);
+            $("#messagesContainer").html(`
                 <div class="alert alert-danger m-3">
-                    Failed to load conversations. Please try again.
+                    <i class="bi bi-exclamation-triangle me-2"></i>
+                    Failed to load messages. Please try again.
                 </div>
             `);
         });
@@ -1108,38 +1281,6 @@ function loadConversation(conversationId) {
         });
 }
 
-function sendMessage() {
-    const conversationId = $("#sendMessageForm").data("conversation-id");
-    const message = $("#messageInput").val().trim();
-
-    if (!conversationId) {
-        showNotification("No conversation selected", "error");
-        return;
-    }
-
-    if (!message) {
-        return;
-    }
-
-    const replyData = {
-        conversation_id: conversationId,
-        message: message
-    };
-
-    $("#messageInput").prop("disabled", true);
-
-    API.replyToConversation(replyData)
-        .then(data => {
-            $("#messageInput").val("").prop("disabled", false).focus();
-            loadConversation(conversationId);
-        })
-        .catch(error => {
-            console.error("Failed to send message:", error);
-            $("#messageInput").prop("disabled", false);
-            showNotification("Failed to send message. Please try again.", "error");
-        });
-}
-
 function openNewMessageModal() {
     $("#newMessageForm")[0].reset();
     $("#messageRecipient").html(`<option value="">Loading photographers...</option>`);
@@ -1171,10 +1312,11 @@ function openNewMessageModal() {
 
 function sendMessage() {
     const conversationId = $("#sendMessageForm").data("conversation-id");
+    const conversationType = $("#sendMessageForm").data("conversation-type") || 'photographer';
     const message = $("#messageInput").val().trim();
 
     if (!conversationId) {
-        showNotification("No conversation selected", "error");
+        showNotification("Conversation not selected", "warning");
         return;
     }
 
@@ -1182,53 +1324,51 @@ function sendMessage() {
         return;
     }
 
-    let conversation = null;
-    const activeConversationElement = $(".conversation-item.active");
-    if (activeConversationElement.length) {
-        const activeConversationId = activeConversationElement.data("id");
-        if (activeConversationId == conversationId) {
-            if (window.conversationsData) {
-                conversation = window.conversationsData.find(c => c.id == conversationId);
-            }
-        }
-    }
-
-    if (!conversation || !conversation.photographer || !conversation.photographer.id) {
-        showNotification("Could not determine photographer information", "error");
-        return;
-    }
-
-    const messageData = {
-        photographer_id: conversation.photographer.id,
-        message: message,
-        subject: conversation.subject || "Reply to conversation"
-    };
-
     $("#messageInput").prop("disabled", true);
 
-    fetch(`${CONFIG.API.BASE_URL}/messages`, {
-        method: 'POST',
-        headers: {
-            'Authorization': `Bearer ${localStorage.getItem("token")}`,
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(messageData)
-    })
-        .then(response => {
-            if (!response.ok) {
-                throw new Error('Failed to send message');
-            }
-            return response.json();
+    console.log(`Sending ${conversationType} message to conversation ${conversationId}`);
+
+    if (conversationType === 'customer') {
+        API.sendCustomerMessage({
+            conversation_id: conversationId,
+            message: message
         })
-        .then(data => {
-            $("#messageInput").val("").prop("disabled", false).focus();
-            loadConversation(conversationId);
-        })
-        .catch(error => {
-            console.error("Failed to send message:", error);
+            .then(response => {
+                console.log("Message sent successfully:", response);
+                $("#messageInput").val("").prop("disabled", false).focus();
+                loadCustomerConversation(conversationId);
+            })
+            .catch(error => {
+                console.error("Failed to send message:", error);
+                $("#messageInput").prop("disabled", false);
+                showNotification("Failed to send message. Please try again.", "error");
+            });
+    } else {
+        const conversation = window.conversationsData.find(c => c.id == conversationId && c.type === 'photographer');
+
+        if (!conversation || !conversation.photographer || !conversation.photographer.id) {
+            showNotification("Invalid conversation data", "error");
             $("#messageInput").prop("disabled", false);
-            showNotification("Failed to send message. Please try again.", "error");
-        });
+            return;
+        }
+
+        const messageData = {
+            photographer_id: conversation.photographer.id,
+            message: message
+        };
+
+        API.sendMessage(messageData)
+            .then(response => {
+                console.log("Message sent successfully:", response);
+                $("#messageInput").val("").prop("disabled", false).focus();
+                loadConversation(conversationId);
+            })
+            .catch(error => {
+                console.error("Failed to send message:", error);
+                $("#messageInput").prop("disabled", false);
+                showNotification("Failed to send message. Please try again.", "error");
+            });
+    }
 }
 
 function createOrOpenConversation(photographerId) {
@@ -1776,3 +1916,235 @@ function handleDirectPasswordAccess() {
     }
 }
 
+// Load pending contact requests
+function loadPendingContactRequests() {
+    $("#contactRequestsList").html(`
+        <div class="text-center p-3">
+            <div class="spinner-border spinner-border-sm" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <span class="ms-2">Loading contact requests...</span>
+        </div>
+    `);
+
+    API.getPendingContactRequests()
+        .then(data => {
+            const pendingRequests = data.pending_requests || [];
+
+            if (pendingRequests.length === 0) {
+                $("#contactRequestsList").html(`
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle me-2"></i>
+                        You don't have any pending contact requests.
+                    </div>
+                `);
+                $(".contact-requests-badge").addClass("d-none").text("0");
+                return;
+            }
+
+            // Update the badge
+            $(".contact-requests-badge").removeClass("d-none").text(pendingRequests.length);
+
+            // Create the requests list HTML
+            const requestsHtml = pendingRequests.map(request => `
+                <div class="card mb-3 request-card">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center mb-3">
+                            <div class="flex-shrink-0">
+                                <img src="../assets/images/default-avatar.jpg" class="rounded-circle" width="50" height="50" alt="User">
+                            </div>
+                            <div class="flex-grow-1 ms-3">
+                                <h6 class="mb-0">${request.sender_name}</h6>
+                                <p class="text-muted small mb-0">Request sent ${formatTimeAgo(request.created_at)}</p>
+                            </div>
+                        </div>
+                        
+                        ${request.message ? `
+                            <div class="mb-3">
+                                <p class="mb-0">${request.message}</p>
+                            </div>
+                        ` : ''}
+                        
+                        <div class="d-flex justify-content-end">
+                            <button class="btn btn-sm btn-outline-danger me-2 reject-request-btn" data-id="${request.id}">
+                                <i class="bi bi-x-circle me-1"></i> Decline
+                            </button>
+                            <button class="btn btn-sm btn-primary accept-request-btn" data-id="${request.id}" data-sender-name="${request.sender_name}">
+                                <i class="bi bi-check-circle me-1"></i> Accept
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+
+            $("#contactRequestsList").html(requestsHtml);
+
+            // Set up event handlers
+            $(".accept-request-btn").on("click", function() {
+                const requestId = $(this).data('id');
+                const senderName = $(this).data('sender-name');
+                acceptContactRequest(requestId, senderName);
+            });
+
+            $(".reject-request-btn").on("click", function() {
+                const requestId = $(this).data('id');
+                rejectContactRequest(requestId);
+            });
+        })
+        .catch(error => {
+            console.error("Failed to load contact requests:", error);
+            $("#contactRequestsList").html(`
+                <div class="alert alert-danger">
+                    <i class="bi bi-exclamation-circle me-2"></i>
+                    Failed to load contact requests. Please try again.
+                </div>
+            `);
+        });
+}
+
+// Format relative time
+function formatTimeAgo(timestamp) {
+    const now = new Date();
+    const date = new Date(timestamp);
+    const diffMs = now - date;
+    const diffSec = Math.floor(diffMs / 1000);
+    const diffMin = Math.floor(diffSec / 60);
+    const diffHour = Math.floor(diffMin / 60);
+    const diffDay = Math.floor(diffHour / 24);
+
+    if (diffDay > 0) {
+        return diffDay === 1 ? 'yesterday' : `${diffDay} days ago`;
+    } else if (diffHour > 0) {
+        return `${diffHour} hour${diffHour > 1 ? 's' : ''} ago`;
+    } else if (diffMin > 0) {
+        return `${diffMin} minute${diffMin > 1 ? 's' : ''} ago`;
+    } else {
+        return 'just now';
+    }
+}
+
+// Accept contact request
+function acceptContactRequest(requestId, senderName) {
+    const $requestCard = $(`.accept-request-btn[data-id="${requestId}"]`).closest('.request-card');
+
+    // Disable buttons and show loading state
+    $requestCard.find('button').prop('disabled', true);
+    $requestCard.find('.accept-request-btn').html(`
+        <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+        Accepting...
+    `);
+
+    API.acceptContactRequest(requestId)
+        .then(response => {
+            showNotification(`Request from ${senderName} accepted. You can now message each other.`, "success");
+
+            // Remove the card with animation
+            $requestCard.fadeOut(300, function() {
+                $(this).remove();
+
+                // Check if there are no more requests
+                if ($("#contactRequestsList .request-card").length === 0) {
+                    $("#contactRequestsList").html(`
+                        <div class="alert alert-info">
+                            <i class="bi bi-info-circle me-2"></i>
+                            You don't have any pending contact requests.
+                        </div>
+                    `);
+                    $(".contact-requests-badge").addClass("d-none").text("0");
+                }
+            });
+
+            // Refresh the conversations list
+            loadMessages();
+        })
+        .catch(error => {
+            console.error("Failed to accept contact request:", error);
+
+            // Reset button state
+            $requestCard.find('button').prop('disabled', false);
+            $requestCard.find('.accept-request-btn').html(`
+                <i class="bi bi-check-circle me-1"></i> Accept
+            `);
+
+            showNotification("Failed to accept request. Please try again.", "error");
+        });
+}
+
+// Reject contact request
+function rejectContactRequest(requestId) {
+    const $requestCard = $(`.reject-request-btn[data-id="${requestId}"]`).closest('.request-card');
+
+    // Disable buttons and show loading state
+    $requestCard.find('button').prop('disabled', true);
+    $requestCard.find('.reject-request-btn').html(`
+        <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+        Declining...
+    `);
+
+    API.rejectContactRequest(requestId)
+        .then(response => {
+            showNotification("Contact request declined.", "info");
+
+            // Remove the card with animation
+            $requestCard.fadeOut(300, function() {
+                $(this).remove();
+
+                // Check if there are no more requests
+                if ($("#contactRequestsList .request-card").length === 0) {
+                    $("#contactRequestsList").html(`
+                        <div class="alert alert-info">
+                            <i class="bi bi-info-circle me-2"></i>
+                            You don't have any pending contact requests.
+                        </div>
+                    `);
+                    $(".contact-requests-badge").addClass("d-none").text("0");
+                }
+            });
+        })
+        .catch(error => {
+            console.error("Failed to reject contact request:", error);
+
+            // Reset button state
+            $requestCard.find('button').prop('disabled', false);
+            $requestCard.find('.reject-request-btn').html(`
+                <i class="bi bi-x-circle me-1"></i> Decline
+            `);
+
+            showNotification("Failed to decline request. Please try again.", "error");
+        });
+}
+
+// Load contact requests count
+function loadContactRequestsCount() {
+    API.getPendingContactRequestsCount()
+        .then(data => {
+            const count = data.count || 0;
+            if (count > 0) {
+                $(".contact-requests-badge").removeClass("d-none").text(count);
+            } else {
+                $(".contact-requests-badge").addClass("d-none").text("0");
+            }
+        })
+        .catch(error => {
+            console.error("Failed to load contact requests count:", error);
+            $(".contact-requests-badge").addClass("d-none");
+        });
+}
+
+function formatTime(timestamp) {
+    if (!timestamp) return '';
+    const date = new Date(timestamp);
+    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+}
+
+function markCustomerMessagesAsRead(conversationId) {
+    API.markCustomerMessagesAsRead(conversationId)
+        .then(() => {
+            $(`.conversation-item[data-id="${conversationId}"]`).removeClass("fw-bold")
+                .find(".badge").remove();
+            loadDashboardCounts();
+        })
+        .catch(error => {
+            console.error("Failed to mark customer messages as read:", error);
+        });
+}
