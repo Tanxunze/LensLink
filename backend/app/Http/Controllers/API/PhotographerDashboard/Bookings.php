@@ -11,6 +11,78 @@ use App\Models\Booking;
 
 class Bookings extends Controller
 {
+    public function show($id, Request $request)
+    {
+        $booking=Booking::findOrFail($id);
+
+        if($booking->photographer_id != $request->user()->photographerProfile->id) {
+            return response()->json([
+                'message' => 'Unauthorized',
+            ], 403);
+        }
+
+        $bookingData=$booking->toArray();
+        $user_info=User::where('id', $booking->customer_id)->first();
+        $bookingData['customer_name'] = $user_info->name;
+        $bookingData['customer_email']= $user_info->email;
+        $bookingData['customer_phone']= $user_info->phone;
+        $bookingData['service_name'] = Service::where('id', $booking->service_id)->value('name');
+
+        return response()->json($bookingData);
+    }
+
+    public function update($id, Request $request)
+    {
+        $booking = Booking::findOrFail($id);
+
+        if ($booking->photographer_id != $request->user()->photographerProfile->id) {
+            return response()->json([
+                'message' => 'Unauthorized',
+            ], 403);
+        }
+
+        $request->validate([
+            'booking_date' => 'date|required',
+            'booking_time' => 'required',
+            'status' => 'required|in:pending,confirmed,completed,cancelled',
+            'location' => 'nullable|string|max:255',
+            'notes' => 'nullable|string'
+        ]);
+
+        $booking->booking_date = $request->booking_date;
+        $booking->location = $request->location;
+        $booking->status = $request->status;
+        $booking->notes = $request->notes;
+        $booking->save();
+
+        return response()->json([
+            'message' => 'Booking updated successfully',
+            'booking' => $booking
+        ]);
+    }
+
+    public function updateStatus($id, Request $request)
+    {
+        $booking = Booking::findOrFail($id);
+
+        if ($booking->photographer_id != $request->user()->photographerProfile->id) {
+            return response()->json([
+                'message' => 'Unauthorized',
+            ], 403);
+        }
+
+        $request->validate([
+            'status' => 'required|in:pending,confirmed,completed,cancelled'
+        ]);
+
+        $booking->status = $request->status;
+        $booking->save();
+
+        return response()->json([
+            'message' => 'Booking status updated successfully',
+            'booking' => $booking->status
+        ]);
+    }
     //
     public function index(Request $request)
     {

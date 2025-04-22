@@ -329,7 +329,7 @@ function showReviewsSection() {
     $("#reviewsSection").removeClass("d-none");
 
     loadReviews();
-    window.location.hash = "reviews";
+    // window.location.hash = "reviews";
 }
 /**
  * Loading photographer data
@@ -1011,13 +1011,25 @@ function loadBookings(status = "all", page = 1) {
 
 
                 // TODO: finish button functions
-                $(".page-link").click(function () {
-
+                $(".viewBookingBtn").click(function() {
+                    const bookingId = $(this).data("id");
+                    openBookingDetailsModal(bookingId);
                 });
 
-                $(".messageClientBtn").click(function () {
+                $(".acceptBookingBtn").click(function() {
+                    const bookingId = $(this).data("id");
+                    updateBookingStatus(bookingId, "confirmed");
+                });
 
-                })
+                $(".rejectBookingBtn").click(function() {
+                    const bookingId = $(this).data("id");
+                    updateBookingStatus(bookingId, "cancelled");
+                });
+
+                $(".messageClientBtn").click(function() {
+                    const clientId = $(this).data("id");
+                    messageClient(clientId);
+                });
             }
         })
         .catch(error => {
@@ -1050,6 +1062,339 @@ function showBookingsSection(status = "all") {
     $("#bookingsSection .dropdown-menu a[data-filter='" + status + "']").addClass("active");
     
     loadBookings(status);
+}
+
+function openBookingDetailsModal(bookingId) {
+    if(!document.getElementById('bookingDetailModal')) {
+        const modalHtml=`
+            <div class="modal fade" id="bookingDetailModal" tabindex="-1" aria-hidden="true">
+                <div class="modal-dialog modal-lg">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">Booking Details</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="text-center">
+                                <div class="spinner-border" role="status">
+                                    <span class="visually-hidden">Loading...</span>
+                                </div>
+                                <p>Loading Booking Details...</p>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                            <button type="button" class="btn btn-primary edit-booking-btn">Edit</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        document.body.insertAdjacentHTML('beforeend',modalHtml);
+
+        setTimeout(()=>{
+            loadBookingDetails(bookingId);
+        },100);
+    }else{
+        loadBookingDetails(bookingId);
+    }
+
+    const bookingModal=new bootstrap.Modal(document.getElementById('bookingDetailModal'));
+    bookingModal.show();
+}
+
+function loadBookingDetails(bookingId) {
+    const modalBody=document.querySelector('#bookingDetailModal .modal-body');
+
+    if(!modalBody) {
+        console.error('Booking detail modal body not found');
+        return;
+    }
+
+    modalBody.innerHTML=`
+        <div class="text-center">
+            <div class="spinner-border" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <p>Loading Booking Details...</p>
+        </div>
+    `;
+
+    console.log("BookingId: ",bookingId);
+
+    fetch(`${CONFIG.API.BASE_URL}/photographer/bookings/${bookingId}`, {
+        method: 'GET',
+        headers: {
+            'Authorization': `Bearer ${localStorage.getItem("token")}`,
+            'Content-Type': 'application/json'
+        }
+    })
+        .then(response=>{
+            if (!response.ok) {
+                throw new Error('Failed to load booking details');
+            }
+            return response.json();
+        })
+        .then(booking=>{
+            modalBody.innerHTML=`
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>Customer Information</h6>
+                        <p><strong>Name:</strong> ${booking.customer_name}</p>
+                        <p><strong>E-mail:</strong> ${booking.customer_email || 'Not Provided'}</p>
+                        <p><strong>Telephone:</strong> ${booking.customer_phone || 'Not Provided'}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>Booking Details</h6>
+                        <p><strong>Service:</strong> ${booking.service_name}</p>
+                        <p><strong>Date:</strong> ${formatDate(booking.booking_date)}</p>
+                        <p><strong>Time:</strong> ${booking.booking_time}</p>
+                        <p><strong>Location:</strong> ${booking.location || 'Not Specified'}</p>
+                        <p><strong>Status:</strong> <span class="badge ${getStatusBadgeClass(booking.status)}">${capitalizeFirstLetter(booking.status)}</span></p>
+                        <p><strong>Price:</strong> €${booking.total_amount}</p>
+                    </div>
+                </div>
+                ${booking.notes ? `
+                <div class="row mt-3">
+                    <div class="col-12">
+                        <h6>Notes</h6>
+                        <p>${booking.notes}</p>
+                    </div>
+                </div>` : ''}
+            `;
+
+            const editBtn=document.querySelector('#bookingDetailModal .edit-booking-btn');
+            if(editBtn){
+                editBtn.onclick=function(){
+                    document.body.focus();
+                    bootstrap.Modal.getInstance(document.getElementById('bookingDetailModal')).hide();
+                    editBooking(bookingId);
+                }
+            }else{
+                    console.error("Edit button not found");
+            }
+        })
+        .catch(error=>{
+            console.error("Failed to load booking details: ", error);
+            document.querySelector('#bookingDetailModal .modal-body').innerHTML=`
+                <div class="alert alert-danger">
+                    Failed to load booking details. Please try again.
+                </div>
+            `;
+        });
+}
+
+function editBooking(bookingId) {
+    if(!document.getElementById('editBookingModal')) {
+        const modalHtml=`
+            <div class="modal fade" id="editBookingModal" tabindex="-1" aria-hidden="true">
+                <div class="modal-dialog modal-lg">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">Edit Booking</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="text-center">
+                                <div class="spinner-border" role="status">
+                                    <span class="visually-hidden">Loading...</span>
+                                </div>
+                                <p>Loading Booking Details</p>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                            <button type="button" class="btn btn-primary" id="saveBookingChangesBtn">Save Changes</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        document.body.insertAdjacentHTML('beforeend',modalHtml);
+
+        setTimeout(()=>{
+            editBookingDetails(bookingId);
+        },100)
+    }else{
+        editBookingDetails(bookingId);
+    }
+
+    const editModal=new bootstrap.Modal(document.getElementById('editBookingModal'));
+    editModal.show();
+}
+
+function editBookingDetails(bookingId) {
+    const modalBody=document.querySelector('#editBookingModal .modal-body');
+
+    if(!modalBody) {
+        console.error('Edit detail modal body not found');
+        return;
+    }
+
+    fetch(`${CONFIG.API.BASE_URL}/photographer/bookings/${bookingId}`, {
+        method: 'GET',
+        headers: {
+            'Authorization': `Bearer ${localStorage.getItem("token")}`,
+            'Content-Type': 'application/json'
+        }
+    })
+        .then(response=>{
+            if (!response.ok) {
+                throw new Error('Failed to load booking data');
+            }
+            return response.json();
+        })
+        .then(booking=>{
+            const bookingDate = booking.booking_date ? new Date(booking.booking_date) : new Date();
+            const formattedDate = bookingDate.toISOString().split('T')[0]; // 获取 YYYY-MM-DD 部分
+
+            let bookingTime = '';
+            if (booking.booking_time) {
+                if (booking.booking_time.includes('T')) {
+                    bookingTime = booking.booking_time.split('T')[1].substring(0, 5); // 获取 HH:MM 部分
+                } else if (booking.booking_time.includes(':')) {
+                    bookingTime = booking.booking_time.substring(0, 5);
+                }
+            }
+            modalBody.innerHTML=`
+                <form id="editBookingForm">
+                    <input type="hidden" id="editBookingId" value="${booking.id}">
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="editBookingDate" class="form-label">Date</label>
+                            <input type="date" class="form-control" id="editBookingDate" value="${formattedDate}" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="editBookingTime" class="form-label">Time</label>
+                            <input type="time" class="form-control" id="editBookingTime" value="${bookingTime}" required>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="editBookingLocation" class="form-label">Location</label>
+                        <input type="text" class="form-control" id="editBookingLocation" value="${booking.location || ''}">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="editBookingStatus" class="form-label">Status</label>
+                        <select class="form-select" id="editBookingStatus" required>
+                            <option value="pending" ${booking.status === 'pending' ? 'selected' : ''}>Pending</option>
+                            <option value="confirmed" ${booking.status === 'confirmed' ? 'selected' : ''}>Confirmed</option>
+                            <option value="completed" ${booking.status === 'completed' ? 'selected' : ''}>Completed</option>
+                            <option value="cancelled" ${booking.status === 'cancelled' ? 'selected' : ''}>Cancelled</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="editBookingNotes" class="form-label">Notes</label>
+                        <textarea class="form-control" id="editBookingNotes" rows="3">${booking.notes || ''}</textarea>
+                    </div>
+                </form>
+            `;
+
+            document.getElementById('saveBookingChangesBtn').onclick=saveBookingChanges;
+        })
+        .catch(error=>{
+            console.error("Failed to load booking data: ", error);
+            document.querySelector('#editBookingModal .modal-body').innerHTML=`
+                <div class="alert alert-danger">
+                    Failed to load booking data. Please try again.
+                </div>
+            `;
+        })
+}
+
+function saveBookingChanges(){
+    const bookingId=document.getElementById('editBookingId').value;
+    const bookingDate=document.getElementById('editBookingDate').value;
+    const bookingTime=document.getElementById('editBookingTime').value;
+    const bookingLocation=document.getElementById('editBookingLocation').value;
+    const bookingStatus=document.getElementById('editBookingStatus').value;
+    const bookingNotes=document.getElementById('editBookingNotes').value;
+
+    if (!bookingDate || !bookingTime || !bookingStatus) {
+        showNotification("请填写所有必填字段", "warning");
+        return;
+    }
+
+    const saveBtn=document.getElementById('saveBookingChangesBtn');
+    saveBtn.disabled = true;
+    saveBtn.innerHTML=`<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Saving...`;
+
+    fetch(`${CONFIG.API.BASE_URL}/photographer/bookings/${bookingId}`, {
+        method: 'PUT',
+        headers: {
+            'Authorization': `Bearer ${localStorage.getItem("token")}`,
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            booking_date: bookingDate,
+            booking_time: bookingTime,
+            location: bookingLocation,
+            status: bookingStatus,
+            notes: bookingNotes
+        })
+    })
+        .then(response=>{
+            if (!response.ok) {
+                throw new Error('Failed to save booking changes');
+            }
+            return response.json();
+        })
+        .then(data=>{
+            bootstrap.Modal.getInstance(document.getElementById('editBookingModal')).hide();
+            showNotification("Booking changes saved successfully", "success");
+            loadBookings();
+        })
+        .catch(error=>{
+            console.error("Failed to load booking changes: ",error);
+            showNotification("Error while saving booking changes");
+        })
+        .finally(()=>{
+            saveBtn.disabled = false;
+            saveBtn.textContent="Save Changes";
+        })
+}
+
+function messageClient(clientId){
+    $(".nav-link").removeClass("active");
+    $('[data-section="messages"]').addClass("active");
+    $(".dashboard-section").addClass("d-none");
+    $("#messagesSection").removeClass("d-none");
+
+    loadMessages(clientId);
+}
+
+function updateBookingStatus(bookingId, status) {
+    if(!confirm(`Are you sure you want to update this booking status to ${status==='confirmed'?"Confirmed":"Cancelled"}?`)) {
+        return;
+    }
+
+    fetch(`${CONFIG.API.BASE_URL}/photographer/bookings/${bookingId}`, {
+        method: 'PUT',
+        headers: {
+            'Authorization': `Bearer ${localStorage.getItem("token")}`,
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            status: status
+        })
+    })
+        .then(response=>{
+            if (!response.ok) {
+                throw new Error('Failed to update booking status');
+            }
+            return response.json();
+        })
+        .then(data=>{
+            showNotification("Booking updated successfully", "success");
+            loadBookings();
+        })
+        .catch(error=>{
+            console.error("Failed to update booking status: ", error);
+            showNotification("Error while saving booking changes. Please try again.", "danger");
+        })
 }
 
 
