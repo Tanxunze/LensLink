@@ -1222,6 +1222,12 @@ function loadCustomerConversation(conversationId) {
 }
 
 function loadConversation(conversationId) {
+    const activeContact = $(".conversation-item.active");
+    if (activeContact.length > 0) {
+        const contactName = activeContact.find("h6").text().trim().replace(/New$/, '');
+        $("#conversationTitle").text(contactName);
+    }
+
     $("#messagesContainer").html(`
         <div class="text-center p-3">
             <div class="spinner-border" role="status">
@@ -1237,7 +1243,6 @@ function loadConversation(conversationId) {
             const messages = data.data || [];
 
             if (messages.length === 0) {
-                $("#conversationTitle").text("New conversation");
                 $("#messagesContainer").html(`
                     <div class="text-center p-5">
                         <p class="text-muted">No messages yet</p>
@@ -1245,17 +1250,7 @@ function loadConversation(conversationId) {
                     </div>
                 `);
             } else {
-                const firstMessage = messages[0];
-                const senderId = firstMessage.sender_id;
                 const currentUserId = parseInt(localStorage.getItem("userId") || "0");
-
-                if (firstMessage.sender && senderId !== currentUserId) {
-                    $("#conversationTitle").text(firstMessage.sender.name || "Conversation");
-                } else if (messages.length > 1 && messages[1].sender) {
-                    $("#conversationTitle").text(messages[1].sender.name || "Conversation");
-                } else {
-                    $("#conversationTitle").text("Conversation");
-                }
 
                 const messagesHtml = messages.map(message => {
                     const isCurrentUser = message.sender_id === currentUserId;
@@ -1286,13 +1281,11 @@ function loadConversation(conversationId) {
                     </div>
                 `);
 
-                const messagesContainer = document.getElementById("messagesContainer");
-                messagesContainer.scrollTop = messagesContainer.scrollHeight;
+                setTimeout(scrollToBottom, 100);
             }
 
             $("#messageInputContainer").removeClass("d-none");
             markMessagesAsRead(conversationId);
-            setTimeout(scrollToBottom, 100);
         })
         .catch(error => {
             console.error("Failed to load conversation:", error);
