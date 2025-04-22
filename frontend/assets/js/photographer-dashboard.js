@@ -132,6 +132,12 @@ function setupEventHandlers() {
         }
     });
 
+    $(document).on("click", ".replyBtn", function() {
+        const reviewId = $(this).data("id");
+        console.log("Opening reply modal for review ID:", reviewId);
+        openReviewReplyModal(reviewId);
+    });
+
     $(".dropdown-menu a[data-filter]").click(function (e) {
         e.preventDefault();
         const filterStatus = $(this).data("filter");
@@ -340,6 +346,10 @@ function showReviewsSection() {
     $("#reviewsSection").removeClass("d-none");
 
     loadReviews();
+    $(".replyBtn").click(function (e) {
+        const reviewId = $(this).data("id");
+        openReviewReplyModal(reviewId);
+    });
     // window.location.hash = "reviews";
 }
 
@@ -2224,7 +2234,6 @@ function generateRatingBars(distribution) {
  * @param {number} reviewId - id of the comment
  */
 function openReviewReplyModal(reviewId) {
-    // 显示加载状态
     $("#reviewReplyModal .modal-body").html(`
         <div class="text-center py-5">
             <div class="spinner-border" role="status">
