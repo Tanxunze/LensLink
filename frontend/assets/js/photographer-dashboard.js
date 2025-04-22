@@ -127,11 +127,11 @@ function setupEventHandlers() {
         }
     });
 
-    $(".dropdown-menu a[data-filter]").click(function(e){
+    $(".dropdown-menu a[data-filter]").click(function (e) {
         e.preventDefault();
-        const filterStatus=$(this).data("filter");
+        const filterStatus = $(this).data("filter");
 
-        const filterText=$(this).text();
+        const filterText = $(this).text();
         $(this).closest('.btn-group').find('.dropdown-toggle').html(`<i class="bi bi-filter"></i> ${filterText}`);
 
         $(".dropdown-menu a[data-filter]").removeClass("active");
@@ -228,30 +228,30 @@ function setupEventHandlers() {
         initPasswordChangeFeature();
     });
 
-    $("#editProfileBtn").click(function(e) {
+    $("#editProfileBtn").click(function (e) {
         e.preventDefault();
         openEditProfileModal();
     });
 
-    $("#uploadProfileImageBtn").click(function() {
+    $("#uploadProfileImageBtn").click(function () {
         $("#profileImageUpload").click();
     });
 
-    $("#profileImageUpload").change(function() {
+    $("#profileImageUpload").change(function () {
         if (this.files && this.files[0]) {
             previewImage(this.files[0], "previewProfileImage");
         }
     });
 
-    $("#saveProfileBtn").click(function() {
+    $("#saveProfileBtn").click(function () {
         saveProfileChanges();
     });
 
-    $("#changeProfileImageBtn").click(function() {
+    $("#changeProfileImageBtn").click(function () {
         $("#profileImageUpload").data("direct-upload", "true").click();
     });
 
-    $("#profileImageUpload").on("change", function(e) {
+    $("#profileImageUpload").on("change", function (e) {
         if ($(this).data("direct-upload") === "true") {
             if (this.files && this.files[0]) {
                 $("#profileImage").css("opacity", "0.5");
@@ -331,6 +331,7 @@ function showReviewsSection() {
     loadReviews();
     // window.location.hash = "reviews";
 }
+
 /**
  * Loading photographer data
  */
@@ -685,7 +686,7 @@ function loadRecentReviews() {
 
             $("#recentReviewsContainer").html(reviewsHtml);
 
-            $(".replyBtn").click(function () {
+            $(".replyBtn").click(function (e) {
                 const reviewId = $(this).data("id");
                 openReviewReplyModal(reviewId);
             });
@@ -887,12 +888,12 @@ function openAddPortfolioModal() {
 }
 
 function editPortfolioItem(itemId) {
-    
+
 }
 
 // Get bookings info
 function loadBookings(status = "all", page = 1) {
-    console.log("Status in loadBookings: ",status);
+    console.log("Status in loadBookings: ", status);
     $("#bookingsTable").html(`
         <tr>
             <td colspan="8" class="text-center">
@@ -1011,22 +1012,22 @@ function loadBookings(status = "all", page = 1) {
 
 
                 // TODO: finish button functions
-                $(".viewBookingBtn").click(function() {
+                $(".viewBookingBtn").click(function () {
                     const bookingId = $(this).data("id");
                     openBookingDetailsModal(bookingId);
                 });
 
-                $(".acceptBookingBtn").click(function() {
+                $(".acceptBookingBtn").click(function () {
                     const bookingId = $(this).data("id");
                     updateBookingStatus(bookingId, "confirmed");
                 });
 
-                $(".rejectBookingBtn").click(function() {
+                $(".rejectBookingBtn").click(function () {
                     const bookingId = $(this).data("id");
                     updateBookingStatus(bookingId, "cancelled");
                 });
 
-                $(".messageClientBtn").click(function() {
+                $(".messageClientBtn").click(function () {
                     const clientId = $(this).data("id");
                     messageClient(clientId);
                 });
@@ -1052,21 +1053,21 @@ function showBookingsSection(status = "all") {
     $("#bookingsSection").removeClass("d-none");
 
     const filterText = status === "pending" ? "Pending" :
-                      status === "confirmed" ? "Confirmed" :
-                      status === "completed" ? "Completed" :
-                      status === "cancelled" ? "Cancelled" : "All Bookings";
+        status === "confirmed" ? "Confirmed" :
+            status === "completed" ? "Completed" :
+                status === "cancelled" ? "Cancelled" : "All Bookings";
 
     $('#bookingsSection .btn-group').find('.dropdown-toggle').html(`<i class="bi bi-filter"></i> ${filterText}`);
 
     $("#bookingsSection .dropdown-menu a[data-filter]").removeClass("active");
     $("#bookingsSection .dropdown-menu a[data-filter='" + status + "']").addClass("active");
-    
+
     loadBookings(status);
 }
 
 function openBookingDetailsModal(bookingId) {
-    if(!document.getElementById('bookingDetailModal')) {
-        const modalHtml=`
+    if (!document.getElementById('bookingDetailModal')) {
+        const modalHtml = `
             <div class="modal fade" id="bookingDetailModal" tabindex="-1" aria-hidden="true">
                 <div class="modal-dialog modal-lg">
                     <div class="modal-content">
@@ -1090,28 +1091,28 @@ function openBookingDetailsModal(bookingId) {
                 </div>
             </div>
         `;
-        document.body.insertAdjacentHTML('beforeend',modalHtml);
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
 
-        setTimeout(()=>{
+        setTimeout(() => {
             loadBookingDetails(bookingId);
-        },100);
-    }else{
+        }, 100);
+    } else {
         loadBookingDetails(bookingId);
     }
 
-    const bookingModal=new bootstrap.Modal(document.getElementById('bookingDetailModal'));
+    const bookingModal = new bootstrap.Modal(document.getElementById('bookingDetailModal'));
     bookingModal.show();
 }
 
 function loadBookingDetails(bookingId) {
-    const modalBody=document.querySelector('#bookingDetailModal .modal-body');
+    const modalBody = document.querySelector('#bookingDetailModal .modal-body');
 
-    if(!modalBody) {
+    if (!modalBody) {
         console.error('Booking detail modal body not found');
         return;
     }
 
-    modalBody.innerHTML=`
+    modalBody.innerHTML = `
         <div class="text-center">
             <div class="spinner-border" role="status">
                 <span class="visually-hidden">Loading...</span>
@@ -1120,7 +1121,7 @@ function loadBookingDetails(bookingId) {
         </div>
     `;
 
-    console.log("BookingId: ",bookingId);
+    console.log("BookingId: ", bookingId);
 
     fetch(`${CONFIG.API.BASE_URL}/photographer/bookings/${bookingId}`, {
         method: 'GET',
@@ -1129,14 +1130,14 @@ function loadBookingDetails(bookingId) {
             'Content-Type': 'application/json'
         }
     })
-        .then(response=>{
+        .then(response => {
             if (!response.ok) {
                 throw new Error('Failed to load booking details');
             }
             return response.json();
         })
-        .then(booking=>{
-            modalBody.innerHTML=`
+        .then(booking => {
+            modalBody.innerHTML = `
                 <div class="row">
                     <div class="col-md-6">
                         <h6>Customer Information</h6>
@@ -1163,20 +1164,20 @@ function loadBookingDetails(bookingId) {
                 </div>` : ''}
             `;
 
-            const editBtn=document.querySelector('#bookingDetailModal .edit-booking-btn');
-            if(editBtn){
-                editBtn.onclick=function(){
+            const editBtn = document.querySelector('#bookingDetailModal .edit-booking-btn');
+            if (editBtn) {
+                editBtn.onclick = function () {
                     document.body.focus();
                     bootstrap.Modal.getInstance(document.getElementById('bookingDetailModal')).hide();
                     editBooking(bookingId);
                 }
-            }else{
-                    console.error("Edit button not found");
+            } else {
+                console.error("Edit button not found");
             }
         })
-        .catch(error=>{
+        .catch(error => {
             console.error("Failed to load booking details: ", error);
-            document.querySelector('#bookingDetailModal .modal-body').innerHTML=`
+            document.querySelector('#bookingDetailModal .modal-body').innerHTML = `
                 <div class="alert alert-danger">
                     Failed to load booking details. Please try again.
                 </div>
@@ -1185,8 +1186,8 @@ function loadBookingDetails(bookingId) {
 }
 
 function editBooking(bookingId) {
-    if(!document.getElementById('editBookingModal')) {
-        const modalHtml=`
+    if (!document.getElementById('editBookingModal')) {
+        const modalHtml = `
             <div class="modal fade" id="editBookingModal" tabindex="-1" aria-hidden="true">
                 <div class="modal-dialog modal-lg">
                     <div class="modal-content">
@@ -1210,23 +1211,23 @@ function editBooking(bookingId) {
                 </div>
             </div>
         `;
-        document.body.insertAdjacentHTML('beforeend',modalHtml);
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
 
-        setTimeout(()=>{
+        setTimeout(() => {
             editBookingDetails(bookingId);
-        },100)
-    }else{
+        }, 100)
+    } else {
         editBookingDetails(bookingId);
     }
 
-    const editModal=new bootstrap.Modal(document.getElementById('editBookingModal'));
+    const editModal = new bootstrap.Modal(document.getElementById('editBookingModal'));
     editModal.show();
 }
 
 function editBookingDetails(bookingId) {
-    const modalBody=document.querySelector('#editBookingModal .modal-body');
+    const modalBody = document.querySelector('#editBookingModal .modal-body');
 
-    if(!modalBody) {
+    if (!modalBody) {
         console.error('Edit detail modal body not found');
         return;
     }
@@ -1238,13 +1239,13 @@ function editBookingDetails(bookingId) {
             'Content-Type': 'application/json'
         }
     })
-        .then(response=>{
+        .then(response => {
             if (!response.ok) {
                 throw new Error('Failed to load booking data');
             }
             return response.json();
         })
-        .then(booking=>{
+        .then(booking => {
             const bookingDate = booking.booking_date ? new Date(booking.booking_date) : new Date();
             const formattedDate = bookingDate.toISOString().split('T')[0]; // 获取 YYYY-MM-DD 部分
 
@@ -1256,7 +1257,7 @@ function editBookingDetails(bookingId) {
                     bookingTime = booking.booking_time.substring(0, 5);
                 }
             }
-            modalBody.innerHTML=`
+            modalBody.innerHTML = `
                 <form id="editBookingForm">
                     <input type="hidden" id="editBookingId" value="${booking.id}">
                     
@@ -1293,11 +1294,11 @@ function editBookingDetails(bookingId) {
                 </form>
             `;
 
-            document.getElementById('saveBookingChangesBtn').onclick=saveBookingChanges;
+            document.getElementById('saveBookingChangesBtn').onclick = saveBookingChanges;
         })
-        .catch(error=>{
+        .catch(error => {
             console.error("Failed to load booking data: ", error);
-            document.querySelector('#editBookingModal .modal-body').innerHTML=`
+            document.querySelector('#editBookingModal .modal-body').innerHTML = `
                 <div class="alert alert-danger">
                     Failed to load booking data. Please try again.
                 </div>
@@ -1305,22 +1306,22 @@ function editBookingDetails(bookingId) {
         })
 }
 
-function saveBookingChanges(){
-    const bookingId=document.getElementById('editBookingId').value;
-    const bookingDate=document.getElementById('editBookingDate').value;
-    const bookingTime=document.getElementById('editBookingTime').value;
-    const bookingLocation=document.getElementById('editBookingLocation').value;
-    const bookingStatus=document.getElementById('editBookingStatus').value;
-    const bookingNotes=document.getElementById('editBookingNotes').value;
+function saveBookingChanges() {
+    const bookingId = document.getElementById('editBookingId').value;
+    const bookingDate = document.getElementById('editBookingDate').value;
+    const bookingTime = document.getElementById('editBookingTime').value;
+    const bookingLocation = document.getElementById('editBookingLocation').value;
+    const bookingStatus = document.getElementById('editBookingStatus').value;
+    const bookingNotes = document.getElementById('editBookingNotes').value;
 
     if (!bookingDate || !bookingTime || !bookingStatus) {
         showNotification("请填写所有必填字段", "warning");
         return;
     }
 
-    const saveBtn=document.getElementById('saveBookingChangesBtn');
+    const saveBtn = document.getElementById('saveBookingChangesBtn');
     saveBtn.disabled = true;
-    saveBtn.innerHTML=`<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Saving...`;
+    saveBtn.innerHTML = `<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Saving...`;
 
     fetch(`${CONFIG.API.BASE_URL}/photographer/bookings/${bookingId}`, {
         method: 'PUT',
@@ -1336,28 +1337,28 @@ function saveBookingChanges(){
             notes: bookingNotes
         })
     })
-        .then(response=>{
+        .then(response => {
             if (!response.ok) {
                 throw new Error('Failed to save booking changes');
             }
             return response.json();
         })
-        .then(data=>{
+        .then(data => {
             bootstrap.Modal.getInstance(document.getElementById('editBookingModal')).hide();
             showNotification("Booking changes saved successfully", "success");
             loadBookings();
         })
-        .catch(error=>{
-            console.error("Failed to load booking changes: ",error);
+        .catch(error => {
+            console.error("Failed to load booking changes: ", error);
             showNotification("Error while saving booking changes");
         })
-        .finally(()=>{
+        .finally(() => {
             saveBtn.disabled = false;
-            saveBtn.textContent="Save Changes";
+            saveBtn.textContent = "Save Changes";
         })
 }
 
-function messageClient(clientId){
+function messageClient(clientId) {
     $(".nav-link").removeClass("active");
     $('[data-section="messages"]').addClass("active");
     $(".dashboard-section").addClass("d-none");
@@ -1367,7 +1368,7 @@ function messageClient(clientId){
 }
 
 function updateBookingStatus(bookingId, status) {
-    if(!confirm(`Are you sure you want to update this booking status to ${status==='confirmed'?"Confirmed":"Cancelled"}?`)) {
+    if (!confirm(`Are you sure you want to update this booking status to ${status === 'confirmed' ? "Confirmed" : "Cancelled"}?`)) {
         return;
     }
 
@@ -1381,17 +1382,17 @@ function updateBookingStatus(bookingId, status) {
             status: status
         })
     })
-        .then(response=>{
+        .then(response => {
             if (!response.ok) {
                 throw new Error('Failed to update booking status');
             }
             return response.json();
         })
-        .then(data=>{
+        .then(data => {
             showNotification("Booking updated successfully", "success");
             loadBookings();
         })
-        .catch(error=>{
+        .catch(error => {
             console.error("Failed to update booking status: ", error);
             showNotification("Error while saving booking changes. Please try again.", "danger");
         })
@@ -1956,11 +1957,13 @@ function openReviewReplyModal(reviewId) {
     const replyModal = new bootstrap.Modal(document.getElementById('reviewReplyModal'));
     replyModal.show();
 
-    fetch(`${CONFIG.API.BASE_URL}/reviews/${reviewId}`, {
+    fetch(`${CONFIG.API.BASE_URL}/photographer/reviews/item`, {
+        method: 'POST',
         headers: {
             'Authorization': `Bearer ${localStorage.getItem("token")}`,
             'Content-Type': 'application/json'
-        }
+        },
+        body: JSON.stringify({id: reviewId})
     })
         .then(response => {
             if (!response.ok) {
@@ -1993,7 +1996,7 @@ function updateReviewReplyModal(review) {
     $("#reviewReplyModal .modal-body").html(`
         <div class="review-container mb-3">
             <div class="d-flex align-items-start">
-                <img src="${review.customer.image || '../../assets/images/default-avatar.jpg'}" alt="Client" class="rounded-circle me-2" width="40" height="40" id="reviewClientImage">
+                <img src="${review.customer.profile_image || '../../assets/images/default-avatar.jpg'}" alt="Client" class="rounded-circle me-2" width="40" height="40" id="reviewClientImage">
                 <div>
                     <h6 id="reviewClientName">${review.customer.name}</h6>
                     <div id="reviewRating" class="mb-1">
@@ -2019,26 +2022,27 @@ function updateReviewReplyModal(review) {
  * submit comment reply
  */
 function submitReviewReply() {
-    // fetch id & reply content
+    // 获取评论ID和回复内容
     const reviewId = $("#submitReplyBtn").data("reviewId");
     const replyText = $("#replyText").val();
 
     if (!replyText.trim()) {
-        alert("Please enter a reply");
+        showNotification("Please enter reply content", "warning");
         return;
     }
 
     const submitBtn = $("#submitReplyBtn");
     const originalText = submitBtn.text();
-    submitBtn.prop("disabled", true).html('<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Submitting...');
+    submitBtn.prop("disabled", true).html('<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Submitting');
 
-    fetch(`${CONFIG.API.BASE_URL}/reviews/${reviewId}/reply`, {
+    // 使用统一的API端点处理创建和更新回复
+    fetch(`${CONFIG.API.BASE_URL}/photographer/reviews/reply`, {
         method: 'POST',
         headers: {
             'Authorization': `Bearer ${localStorage.getItem("token")}`,
             'Content-Type': 'application/json'
         },
-        body: JSON.stringify({reply: replyText})
+        body: JSON.stringify({reply: replyText, id: reviewId})
     })
         .then(response => {
             if (!response.ok) {
@@ -2049,8 +2053,11 @@ function submitReviewReply() {
         .then(data => {
             bootstrap.Modal.getInstance(document.getElementById('reviewReplyModal')).hide();
 
-            showNotification("Reply submitted successfully", "success");
+            // 显示成功通知
+            const isUpdate = data.is_update ? "update" : "submit";
+            showNotification(`Reply ${isUpdate} succeed`, "success");
 
+            // 刷新评论列表
             if ($("#reviewsSection").is(":visible")) {
                 loadReviews();
             } else {
@@ -2059,7 +2066,7 @@ function submitReviewReply() {
         })
         .catch(error => {
             console.error("Failed to submit reply:", error);
-            showNotification("Failed to submit reply. Please try again.", "error");
+            showNotification("Failed to submit reply. Please try again later", "error");
         })
         .finally(() => {
             submitBtn.prop("disabled", false).text(originalText);
@@ -2436,7 +2443,7 @@ function sendPasswordChangeRequest(currentPassword, newPassword, confirmPassword
 
             if (!response.ok) {
                 return response.json().then(data => {
-                    throw { status: response.status, data: data };
+                    throw {status: response.status, data: data};
                 });
             }
             return response.json();
@@ -2582,7 +2589,7 @@ function saveProfileChanges() {
     };
 
     const selectedCategories = [];
-    $("input[name='categories[]']:checked").each(function() {
+    $("input[name='categories[]']:checked").each(function () {
         selectedCategories.push($(this).val());
     });
     profileData.categories = selectedCategories;
@@ -2648,7 +2655,7 @@ function uploadProfileImage(imageFile) {
 
 function previewImage(file, previewElementId) {
     const reader = new FileReader();
-    reader.onload = function(e) {
+    reader.onload = function (e) {
         $(`#${previewElementId}`).attr("src", e.target.result);
     };
     reader.readAsDataURL(file);

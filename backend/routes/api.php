@@ -89,6 +89,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/photographer/profile/image',[\App\Http\Controllers\API\PhotographerDashboard\Dashboard::class,'updateProfileImage']);
     Route::get('/photographer/bookings/{id}', [App\Http\Controllers\API\PhotographerDashboard\Bookings::class, 'show']);
     Route::put('/photographer/bookings/{id}', [App\Http\Controllers\API\PhotographerDashboard\Bookings::class, 'update']);
+    Route::post('/photographer/reviews/reply', [App\Http\Controllers\API\PhotographerDashboard\Reviews::class, 'reply']);
+    Route::post('photographer/reviews/item',[\App\Http\Controllers\API\PhotographerDashboard\Reviews::class,'getReview']);
 
     //Favorites
     Route::get('/favorites', [FavoriteController::class, 'index']);
