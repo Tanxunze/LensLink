@@ -14,6 +14,11 @@ $(document).ready(function () {
     setupEventHandlers();
     loadSectionFromUrlHash();
     initPasswordChangeFeature();
+    loadCategories();
+
+    $('#addPortfolioModal').on('hidden.bs.modal', function () {
+        resetPortfolioModal();
+    });
 
     window.addEventListener('hashchange', function () {
         loadSectionFromUrlHash();
@@ -127,6 +132,12 @@ function setupEventHandlers() {
         }
     });
 
+    $(document).on("click", ".replyBtn", function() {
+        const reviewId = $(this).data("id");
+        console.log("Opening reply modal for review ID:", reviewId);
+        openReviewReplyModal(reviewId);
+    });
+
     $(".dropdown-menu a[data-filter]").click(function (e) {
         e.preventDefault();
         const filterStatus = $(this).data("filter");
@@ -168,6 +179,12 @@ function setupEventHandlers() {
 
     $(document).on("section:profile", function () {
         loadDetailedPhotographerData();
+    });
+
+    $(document).on("section:portfolio", function () {
+        console.log("Portfolio section activated");
+        loadCategories();
+        loadPortfolio(lastSelectedCategory);
     });
 
     // income Time Range drop-down menu
@@ -329,6 +346,10 @@ function showReviewsSection() {
     $("#reviewsSection").removeClass("d-none");
 
     loadReviews();
+    $(".replyBtn").click(function (e) {
+        const reviewId = $(this).data("id");
+        openReviewReplyModal(reviewId);
+    });
     // window.location.hash = "reviews";
 }
 
@@ -887,8 +908,279 @@ function openAddPortfolioModal() {
     portfolioModal.show();
 }
 
-function editPortfolioItem(itemId) {
+function loadCategories() {
+    console.log("Loading categories...");
 
+    fetch(`${CONFIG.API.BASE_URL}/categories`, {
+        headers: {
+            'Authorization': `Bearer ${localStorage.getItem("token")}`,
+            'Content-Type': 'application/json'
+        }
+    })
+        .then(response => {
+            console.log("Categories API response status:", response.status);
+            if (!response.ok) {
+                throw new Error(`Failed to load categories: ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(categories => {
+            console.log("Categories loaded:", categories.length);
+
+            let categoryButtons = $(".btn-group[role='group'][aria-label='Portfolio categories']");
+
+            console.log("Category buttons container found:", categoryButtons.length > 0);
+
+            if (categoryButtons.length === 0) {
+                console.warn("Trying alternative selector for category buttons");
+                categoryButtons = $(".btn-group").filter(function() {
+                    return $(this).find("button[data-category]").length > 0;
+                });
+
+                if (categoryButtons.length === 0) {
+                    console.error("Could not find category buttons container!");
+                    return;
+                }
+            }
+
+            categoryButtons.empty();
+            console.log("Cleared existing category buttons");
+
+            categoryButtons.append(`
+            <button type="button" class="btn btn-outline-primary active" data-category="all">All</button>
+        `);
+
+            categories.forEach(category => {
+                categoryButtons.append(`
+                <button type="button" class="btn btn-outline-primary" 
+                        data-category="${category.slug}">${category.name}</button>
+            `);
+            });
+
+            console.log("Added category buttons:", categories.length + 1);
+
+            $("button[data-category]").off('click').on('click', function() {
+                const category = $(this).data("category");
+                console.log("Category selected:", category);
+
+                $("button[data-category]").removeClass("active");
+                $(this).addClass("active");
+                lastSelectedCategory = category;
+                filterPortfolioItems(category);
+            });
+
+            const categorySelect = $("#portfolioCategory");
+            categorySelect.empty();
+            categorySelect.append('<option value="">Select category</option>');
+
+            categories.forEach(category => {
+                categorySelect.append(`<option value="${category.id}">${category.name}</option>`);
+            });
+
+            console.log("Category dropdown updated with", categories.length, "options");
+        })
+        .catch(error => {
+            console.error("Failed to load categories:", error);
+        });
+}
+
+function editPortfolioItem(itemId) {
+    $("#addPortfolioForm")[0].reset();
+
+    $("#addPortfolioModal .modal-title").text("Edit portfolio");
+    $("#savePortfolioBtn").text("Save changes").data("edit-mode", true).data("item-id", itemId);
+
+    $("#portfolioPreview").attr("src", "../../assets/images/placeholder.jpg").css("opacity", "0.5");
+
+    loadCategories();
+
+    fetch(`${CONFIG.API.BASE_URL}/photographer/portfolio`, {
+        method: 'POST',
+        headers: {
+            'Authorization': `Bearer ${localStorage.getItem("token")}`,
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({portfolio_id: itemId})
+    })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Failed to load portfolio item');
+            }
+            return response.json();
+        })
+        .then(data => {
+            const item = Array.isArray(data) ? data[0] : data;
+
+            $("#portfolioTitle").val(item.title);
+            $("#portfolioDescription").val(item.description || '');
+            $("#portfolioFeatured").prop("checked", item.featured);
+
+            if (item.image_path) {
+                $("#portfolioPreview").attr("src", item.image_path).css("opacity", "1");
+            }
+
+            $("#savePortfolioBtn").data("original-image", item.image_path);
+
+            let categoryFound = false;
+            $("#portfolioCategory option").each(function() {
+                if ($(this).text() === item.category) {
+                    $("#portfolioCategory").val($(this).val());
+                    categoryFound = true;
+                    return false;
+                }
+            });
+
+            if (!categoryFound && item.category) {
+                $("#portfolioCategory").append(`<option value="${item.category}" selected>${item.category}</option>`);
+            }
+
+            const portfolioModal = new bootstrap.Modal(document.getElementById('addPortfolioModal'));
+            portfolioModal.show();
+        })
+        .catch(error => {
+            console.error("Failed to load portfolio item details:", error);
+            showNotification("Failed to load portfolio items", "error");
+        });
+}
+
+function savePortfolioItem() {
+    const editMode = $("#savePortfolioBtn").data("edit-mode") || false;
+    const itemId = $("#savePortfolioBtn").data("item-id");
+    const originalImage = $("#savePortfolioBtn").data("original-image");
+
+    const title = $("#portfolioTitle").val();
+    const category = $("#portfolioCategory").val();
+    const description = $("#portfolioDescription").val();
+    const featured = $("#portfolioFeatured").is(":checked");
+    const imageFile = $("#portfolioImageUpload")[0].files[0];
+
+    if (!title || !category) {
+        showNotification("Please fill in all required fields", "warning");
+        return;
+    }
+
+    const saveBtn = $("#savePortfolioBtn");
+    const originalText = saveBtn.text();
+    saveBtn.prop("disabled", true).html('<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> 保存中...');
+
+    if (editMode && !imageFile) {
+        updatePortfolioWithoutNewImage();
+    } else {
+        uploadPortfolioImage(imageFile)
+            .then(response => {
+                if (!response.success) {
+                    throw new Error(response.message || 'Failed to upload image');
+                }
+
+                if (editMode) {
+                    return updatePortfolioWithNewImage(response.image_url);
+                } else {
+                    return createNewPortfolio(response.image_url);
+                }
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`Failed to ${editMode ? 'Update' : 'Save'} portfolio item`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                bootstrap.Modal.getInstance(document.getElementById('addPortfolioModal')).hide();
+                showNotification(`Portfolio item ${editMode ? 'update' : 'add'} successfully功`, "success");
+                loadPortfolio(lastSelectedCategory);
+                resetPortfolioModal();
+            })
+            .catch(error => {
+                console.error(`Failed to ${editMode ? 'update' : 'save'} portfolio item:`, error);
+                showNotification(`Failed to ${editMode ? 'update' : 'save'} portfolio item`, "error");
+            })
+            .finally(() => {
+                saveBtn.prop("disabled", false).text(originalText);
+            });
+    }
+
+    // 不上传新图片的更新
+    function updatePortfolioWithoutNewImage() {
+        fetch(`${CONFIG.API.BASE_URL}/photographer/portfolio/update`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem("token")}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                id: itemId,
+                title: title,
+                category_id: category,
+                description: description,
+                featured: featured,
+                image_path: originalImage
+            })
+        })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Failed to update portfolio item');
+                }
+                return response.json();
+            })
+            .then(data => {
+                bootstrap.Modal.getInstance(document.getElementById('addPortfolioModal')).hide();
+                showNotification("Portfolio item Updated Successfully", "success");
+                loadPortfolio(lastSelectedCategory);
+                resetPortfolioModal();
+            })
+            .catch(error => {
+                console.error("Failed to update portfolio item:", error);
+                showNotification("Failed to update portfolio item, please try again", "error");
+            })
+            .finally(() => {
+                saveBtn.prop("disabled", false).text(originalText);
+            });
+    }
+
+    function updatePortfolioWithNewImage(imageUrl) {
+        return fetch(`${CONFIG.API.BASE_URL}/photographer/portfolio/update`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem("token")}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                id: itemId,
+                title: title,
+                category_id: category,
+                description: description,
+                image_path: imageUrl,
+                featured: featured
+            })
+        });
+    }
+
+    function createNewPortfolio(imageUrl) {
+        return fetch(`${CONFIG.API.BASE_URL}/photographer/portfolio/create`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem("token")}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                title: title,
+                category_id: category,
+                description: description,
+                image_path: imageUrl,
+                featured: featured
+            })
+        });
+    }
+}
+
+function resetPortfolioModal() {
+    $("#addPortfolioModal .modal-title").text("Add Portfolio Item");
+    $("#savePortfolioBtn").text("Save Item")
+        .removeData("edit-mode")
+        .removeData("item-id")
+        .removeData("original-image");
+    $("#portfolioPreview").attr("src", "../../assets/images/placeholder.jpg");
+    $("#addPortfolioForm")[0].reset();
 }
 
 // Get bookings info
@@ -1942,7 +2234,6 @@ function generateRatingBars(distribution) {
  * @param {number} reviewId - id of the comment
  */
 function openReviewReplyModal(reviewId) {
-    // 显示加载状态
     $("#reviewReplyModal .modal-body").html(`
         <div class="text-center py-5">
             <div class="spinner-border" role="status">
@@ -2103,67 +2394,6 @@ function addServiceFeatureInput() {
 
     $("#serviceFeatures").append(newFeatureInput);
     setupRemoveFeatureButtons();
-}
-
-/**
- * save Portfolio Item
- */
-function savePortfolioItem() {
-    // fetch form data
-    const title = $("#portfolioTitle").val();
-    const category = $("#portfolioCategory").val();
-    const description = $("#portfolioDescription").val();
-    const featured = $("#portfolioFeatured").is(":checked");
-    const imageFile = $("#portfolioImageUpload")[0].files[0];
-
-    if (!title || !category || !imageFile) {
-        alert("Please fill in all required fields");
-        return;
-    }
-
-    const saveBtn = $("#savePortfolioBtn");
-    const originalText = saveBtn.text();
-    saveBtn.prop("disabled", true).html('<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Saving...');
-
-    // upload image
-    uploadImage(imageFile)
-        .then(imageData => {
-            // 然后保存作品集项目
-            return fetch(`${CONFIG.API.BASE_URL}/portfolio`, {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${localStorage.getItem("token")}`,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    title: title,
-                    category_id: category,
-                    description: description,
-                    image_path: imageData.url,
-                    featured: featured
-                })
-            });
-        })
-        .then(response => {
-            if (!response.ok) {
-                throw new Error('Failed to save portfolio item');
-            }
-            return response.json();
-        })
-        .then(data => {
-            bootstrap.Modal.getInstance(document.getElementById('addPortfolioModal')).hide();
-
-            showNotification("Portfolio item added successfully", "success");
-
-            loadPortfolio();
-        })
-        .catch(error => {
-            console.error("Failed to save portfolio item:", error);
-            showNotification("Failed to save portfolio item. Please try again.", "error");
-        })
-        .finally(() => {
-            saveBtn.prop("disabled", false).text(originalText);
-        });
 }
 
 /**
@@ -2539,7 +2769,9 @@ function openEditProfileModal() {
         });
 }
 
-function loadCategories(selectedCategories) {
+function loadCategories() {
+    console.log("Loading categories...");
+
     fetch(`${CONFIG.API.BASE_URL}/categories`, {
         headers: {
             'Authorization': `Bearer ${localStorage.getItem("token")}`,
@@ -2548,32 +2780,49 @@ function loadCategories(selectedCategories) {
     })
         .then(response => {
             if (!response.ok) {
-                throw new Error('Failed to load categories');
+                throw new Error(`Failed to load categories: ${response.status}`);
             }
             return response.json();
         })
-        .then(data => {
-            if (!data || data.length === 0) {
-                $("#editCategories").html('<p class="text-muted">No categories available</p>');
+        .then(categories => {
+            console.log("Categories loaded:", categories.length);
+            const categoryButtons = $("#portfolioCategoryButtons");
+
+            if (categoryButtons.length === 0) {
+                console.error("Portfolio category buttons container not found with ID");
                 return;
             }
 
-            const categoriesHtml = data.map(category => {
-                const isSelected = selectedCategories.includes(category.name);
-                return `
-                <div class="form-check form-check-inline mb-2">
-                    <input class="form-check-input" type="checkbox" id="category_${category.id}" 
-                           name="categories[]" value="${category.id}" ${isSelected ? 'checked' : ''}>
-                    <label class="form-check-label" for="category_${category.id}">${category.name}</label>
-                </div>
-            `;
-            }).join('');
+            categoryButtons.empty();
+            categoryButtons.append(`
+            <button type="button" class="btn btn-outline-primary active" data-category="all">All</button>
+        `);
 
-            $("#editCategories").html(categoriesHtml);
+            categories.forEach(category => {
+                categoryButtons.append(`
+                <button type="button" class="btn btn-outline-primary" 
+                        data-category="${category.slug}">${category.name}</button>
+            `);
+            });
+
+            $("#portfolioCategoryButtons button[data-category]").off('click').on('click', function() {
+                const category = $(this).data("category");
+                $("#portfolioCategoryButtons button[data-category]").removeClass("active");
+                $(this).addClass("active");
+                lastSelectedCategory = category;
+                filterPortfolioItems(category);
+            });
+
+            const categorySelect = $("#portfolioCategory");
+            categorySelect.empty();
+            categorySelect.append('<option value="">Select category</option>');
+
+            categories.forEach(category => {
+                categorySelect.append(`<option value="${category.id}">${category.name}</option>`);
+            });
         })
         .catch(error => {
             console.error("Failed to load categories:", error);
-            $("#editCategories").html('<p class="text-danger">Failed to load categories</p>');
         });
 }
 
@@ -2659,4 +2908,23 @@ function previewImage(file, previewElementId) {
         $(`#${previewElementId}`).attr("src", e.target.result);
     };
     reader.readAsDataURL(file);
+}
+
+function uploadPortfolioImage(imageFile) {
+    const formData = new FormData();
+    formData.append("image", imageFile);
+
+    return fetch(`${CONFIG.API.BASE_URL}/photographer/portfolio/image`, {
+        method: 'POST',
+        headers: {
+            'Authorization': `Bearer ${localStorage.getItem("token")}`
+        },
+        body: formData
+    })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Failed to upload portfolio image');
+            }
+            return response.json();
+        });
 }

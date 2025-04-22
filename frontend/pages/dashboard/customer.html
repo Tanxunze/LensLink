@@ -278,73 +278,72 @@
                     </nav>
                 </div>
 
-                <!-- Messages section (initially hidden) -->
+                <!-- Messages section -->
                 <div class="dashboard-section d-none" id="messagesSection">
                     <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
                         <h1 class="h2">Messages</h1>
-                        <div class="btn-toolbar">
-                            <div class="btn-group me-2">
-                                <button type="button" class="btn btn-sm btn-outline-primary" id="newMessageBtn">
-                                    <i class="bi bi-pencil"></i> New Message
-                                </button>
-                            </div>
-                        </div>
                     </div>
 
-                    <!-- Messages content with proper tab structure -->
-                    <div class="card border-0">
-                        <div class="card-header bg-white">
-                            <h5 class="mb-0">Messages</h5>
-                        </div>
-                        <div class="card-body p-0">
-                            <div class="row g-0">
-                                <div class="col-md-4 border-end">
-                                    <div class="card border-0">
-                                        <div class="card-header bg-light">Conversations</div>
-                                        <div class="list-group list-group-flush" id="conversationsList">
-                                            <div class="text-center p-3">
-                                                <div class="spinner-border spinner-border-sm" role="status">
-                                                    <span class="visually-hidden">Loading...</span>
-                                                </div>
-                                                <span class="ms-2">Loading conversations...</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="col-md-8">
-                                    <div class="card border-0">
-                                        <div class="card-header bg-light d-flex justify-content-between align-items-center">
-                                            <h5 class="mb-0" id="conversationTitle">Select a conversation</h5>
-                                        </div>
-                                        <div class="card-body" id="messagesContainer" style="height: 400px; overflow-y: auto;">
-                                            <div class="text-center p-5">
-                                                <i class="bi bi-chat-dots display-4 text-muted"></i>
-                                                <p class="mt-3">Select a conversation to view messages</p>
-                                            </div>
-                                        </div>
-                                        <div class="card-footer d-none" id="messageInputContainer">
-                                            <form id="sendMessageForm" class="d-flex align-items-center">
-                                                <input type="text" class="form-control me-2" placeholder="Type your message..." id="messageInput">
-                                                <button type="submit" class="btn btn-primary send-message-btn">
-                                                    <i class="bi bi-send"></i>
-                                                </button>
-                                            </form>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="mt-4 border-top pt-4">
-                                <div class="px-3 mb-3 d-flex justify-content-between align-items-center">
-                                    <h5 class="mb-0">Contact Requests</h5>
-                                    <span class="badge bg-danger rounded-pill contact-requests-badge d-none">0</span>
-                                </div>
-                                <div id="contactRequestsList" class="px-3">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="card mb-4">
+                                <div class="card-header">Conversations</div>
+                                <div class="list-group list-group-flush" id="conversationsList">
                                     <div class="text-center p-3">
                                         <div class="spinner-border spinner-border-sm" role="status">
                                             <span class="visually-hidden">Loading...</span>
                                         </div>
-                                        <span class="ms-2">Loading contact requests...</span>
+                                        <span class="ms-2">Loading conversations...</span>
                                     </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-8">
+                            <div class="card">
+                                <div class="card-header d-flex justify-content-between align-items-center">
+                                    <h5 class="mb-0" id="conversationTitle">Select a conversation</h5>
+                                    <div class="dropdown" id="conversationMenuContainer">
+                                        <button class="btn btn-sm btn-outline-secondary dropdown-toggle d-none"
+                                                type="button" id="conversationMenu" data-bs-toggle="dropdown">
+                                            <i class="bi bi-three-dots-vertical"></i>
+                                        </button>
+                                        <ul class="dropdown-menu dropdown-menu-end">
+                                            <li><a class="dropdown-item" href="#" id="markAsReadBtn">Mark as Read</a></li>
+                                            <li><a class="dropdown-item" href="#" id="viewPhotographerProfileBtn">View Profile</a></li>
+                                        </ul>
+                                    </div>
+                                </div>
+                                <div class="card-body" id="messagesContainer" style="height: 400px; overflow-y: auto;">
+                                    <div class="text-center p-5">
+                                        <i class="bi bi-chat-dots display-4 text-muted"></i>
+                                        <p class="mt-3">Select a conversation to view messages</p>
+                                    </div>
+                                </div>
+                                <div class="card-footer d-none" id="messageInputContainer">
+                                    <form id="sendMessageForm" class="d-flex">
+                                        <input type="text" class="form-control me-2" placeholder="Type your message..." id="messageInput">
+                                        <button type="submit" class="btn btn-primary">
+                                            <i class="bi bi-send"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Contact Requests Section -->
+                    <div class="card mt-4">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0">Contact Requests</h5>
+                            <span class="badge bg-danger rounded-pill contact-requests-badge d-none">0</span>
+                        </div>
+                        <div class="card-body">
+                            <div id="contactRequestsList">
+                                <div class="text-center p-3">
+                                    <div class="spinner-border spinner-border-sm" role="status">
+                                        <span class="visually-hidden">Loading...</span>
+                                    </div>
+                                    <span class="ms-2">Loading contact requests...</span>
                                 </div>
                             </div>
                         </div>
