@@ -5,6 +5,7 @@ namespace App\Http\Controllers\API\PhotographerDashboard;
 use App\Http\Controllers\Controller;
 use App\Models\Booking;
 use App\Models\Conversation;
+use App\Models\ConversationParticipant;
 use App\Models\Message;
 use App\Models\PhotographerProfile;
 use App\Models\User;
@@ -13,37 +14,73 @@ use Illuminate\Http\Request;
 
 class Messages extends Controller
 {
-    public function index()
+//    public function index()
+//    {
+//        $p_id = request()->user()->photographerProfile->id;
+//        $booking_ids = Booking::where('photographer_id', $p_id)->pluck('id');
+//        $result = [];
+//        $result['user_id'] = PhotographerProfile::where('id', $p_id)->value('user_id');
+//        $result['booking_ids'] = $booking_ids;//Debug
+//        $result['conversations'] = [];
+//        $cached_username = [];
+//        foreach ($booking_ids as $booking_id) {
+//            $data = [];
+//            $conversation_id = Conversation::where('booking_id', $booking_id)->value('id');
+//            $message = Message::where('conversation_id', $conversation_id)
+//                ->orderBy('created_at', 'asc')
+//                ->get();
+//            $data['conversation_id'] = $conversation_id;
+//            $messages_final = [];
+//            foreach ($message as $msg) {
+//                $user_id = $msg->sender_id;
+//                if (!isset($cached_username[$user_id])) {
+//                    $username = User::where('id', $user_id)->value('name');
+//                    $cached_username[$user_id] = $username;
+//                } else {
+//                    $username = $cached_username[$user_id];
+//                }
+//                $msg_final = $msg->toArray();
+//                $msg_final['username'] = $username;
+//                $messages_final[] = $msg_final;
+//            }
+//            $data['messages'] = $messages_final;
+//            $result['conversations'][] = $data;
+//        }
+//        return response()->json([
+//            'success' => true,
+//            'data' => $result
+//        ], 200);
+//    }
+
+    public function show() // TODO: index
     {
-        $p_id = request()->user()->photographerProfile->id;
-        $booking_ids = Booking::where('photographer_id', $p_id)->pluck('id');
+        $user_id = request()->user()->id;
+        $conversation_ids = ConversationParticipant::where('user_id', $user_id)->pluck('conversation_id');
         $result = [];
-        $result['user_id'] = PhotographerProfile::where('id', $p_id)->value('user_id');
-        $result['booking_ids'] = $booking_ids;//Debug
-        $result['conversations'] = [];
-        $cached_username = [];
-        foreach ($booking_ids as $booking_id) {
-            $data = [];
-            $conversation_id = Conversation::where('booking_id', $booking_id)->value('id');
-            $message = Message::where('conversation_id', $conversation_id)
+        $result['user_id'] = $user_id;
+        $result['conversation_ids']=$conversation_ids;
+        foreach ($conversation_ids as $conversation_id) {
+            $message_records = Message::where('conversation_id', $conversation_id)
                 ->orderBy('created_at', 'asc')
                 ->get();
+            $data = [];
             $data['conversation_id'] = $conversation_id;
-            $messages_final = [];
-            foreach ($message as $msg) {
-                $user_id = $msg->sender_id;
-                if (!isset($cached_username[$user_id])) {
-                    $username = User::where('id', $user_id)->value('name');
-                    $cached_username[$user_id] = $username;
+            $data['conversation_title']= Conversation::where('id', $conversation_id)->value('subject');
+            $processed_messages = [];
+            $cached_username = [];
+            foreach ($message_records as $msg) {
+                if (!$cached_username || !isset($cached_username[$msg->sender_id])) {
+                    $username = User::where('id', $msg->sender_id)->value('name');
+                    $cached_username[$msg->sender_id] = $username;
                 } else {
-                    $username = $cached_username[$user_id];
+                    $username = $cached_username[$msg->sender_id];
                 }
                 $msg_final = $msg->toArray();
                 $msg_final['username'] = $username;
-                $messages_final[] = $msg_final;
+                $processed_messages[] = $msg_final;
             }
-            $data['messages'] = $messages_final;
-            $result['conversations'][] = $data;
+            $data['message']=$processed_messages;
+            $result['conversations'][]=$data;
         }
         return response()->json([
             'success' => true,
@@ -53,18 +90,6 @@ class Messages extends Controller
 
     public function send(Request $request)
     {
-//        $validator = Validator::make($request->all(), [
-//            'conversation_id' => 'required|exists:conversations,id',
-//            'message_text' => 'required|string|max:255'
-//        ]);
-
-//        if ($validator->fails()) {
-//            return response()->json([
-//                'success' => false,
-//                'message' => $validator->errors()->first()
-//            ], 422);
-//        }
-
         $conversation = Conversation::findOrFail($request->conversation_id);
 
         $user = $request->user();

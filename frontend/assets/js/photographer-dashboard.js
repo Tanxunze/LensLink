@@ -1597,17 +1597,15 @@ function loadMessages() {
             }
 
             console.log("Messages userId: ", data.data.user_id);
-            const conversationIds = data.data.booking_ids || [];
+            const conversationIds = data.data.conversation_ids || [];
             const conversations = [];
             const userId = data.data.user_id;
 
-            console.log(conversationIds);
             for (let i = 0; i < conversationIds.length; i++) {
-                console.log("Debug");
-                console.log("Conversation ID: ", data.data.conversations[i]);
                 if (data.data.conversations[i]) {
                     const conversationData = data.data.conversations[i];
-                    const messages = conversationData.messages || [];
+                    const messages = conversationData.message || [];
+                    console.log("Messages: ", messages);
 
                     if (messages.length > 0) {
                         const latestMessage = messages[messages.length - 1];
@@ -1617,6 +1615,7 @@ function loadMessages() {
                         conversations.push({
                             id: conversationData.conversation_id,
                             clientName: clientName,
+                            conversationTitle: conversationData.conversation_title,
                             latestMessage: latestMessage.message,
                             timestamp: latestMessage.created_at,
                             hasUnread: hasUnread,
@@ -1646,6 +1645,7 @@ function loadMessages() {
                 e.preventDefault();
                 const conversationId = $(this).data("id");
                 const clientName = $(this).data('client-name');
+                const conversationTitle = $(this).data('conversation-title');
 
                 $(".conversation-item").removeClass("active");
                 $(this).addClass("active");

@@ -83,7 +83,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('photographer/bookings-details',[\App\Http\Controllers\API\PhotographerDashboard\Bookings::class,'index']);
     Route::post('photographer/services',[\App\Http\Controllers\API\PhotographerDashboard\Services::class,'index']);
     Route::post('photographer/reviews/details',[\App\Http\Controllers\API\PhotographerDashboard\Reviews::class,'index']);
-    Route::post('photographer/messages',[\App\Http\Controllers\API\PhotographerDashboard\Messages::class,'index']);
+//    Route::post('photographer/messages',[\App\Http\Controllers\API\PhotographerDashboard\Messages::class,'index']);
     Route::post('photographer/messages/send',[\App\Http\Controllers\API\PhotographerDashboard\Messages::class,'send']);
     Route::post('/photographer/profile/update',[\App\Http\Controllers\API\PhotographerDashboard\Dashboard::class,'update']);
     Route::post('/photographer/profile/image',[\App\Http\Controllers\API\PhotographerDashboard\Dashboard::class,'updateProfileImage']);
@@ -91,6 +91,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('/photographer/bookings/{id}', [App\Http\Controllers\API\PhotographerDashboard\Bookings::class, 'update']);
     Route::post('/photographer/reviews/reply', [App\Http\Controllers\API\PhotographerDashboard\Reviews::class, 'reply']);
     Route::post('photographer/reviews/item',[\App\Http\Controllers\API\PhotographerDashboard\Reviews::class,'getReview']);
+    Route::post('/photographer/messages',[\App\Http\Controllers\API\PhotographerDashboard\Messages::class,'show']);
 
     //Favorites
     Route::get('/favorites', [FavoriteController::class, 'index']);
