@@ -1106,7 +1106,7 @@ function loadMessages() {
                 $("#sendMessageForm").data("conversation-type", conversationType);
                 $("#conversationTitle").text(otherName);
                 $(this).removeClass("fw-bold")
-                    .find(".badge").remove();
+                    .find(".badge").not(".bg-info").remove();
 
                 $(".conversation-item").removeClass("active");
                 $(this).addClass("active");
