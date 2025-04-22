@@ -405,60 +405,64 @@
                 </div>
 
                 <!-- Messages section (initially hidden) -->
-                <div class="dashboard-section d-none" id="messagesSection">
-                    <div
-                        class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-                        <h1 class="h2">Messages</h1>
-                    </div>
-
-                    <div class="row">
-                        <div class="col-md-4">
-                            <div class="card mb-4">
-                                <div class="card-header">Conversations</div>
-                                <div class="list-group list-group-flush" id="conversationsList">
-                                    <!-- Will be filled dynamically -->
-                                    <div class="text-center p-3">
-                                        <div class="spinner-border spinner-border-sm" role="status">
-                                            <span class="visually-hidden">Loading...</span>
-                                        </div>
-                                        <span class="ms-2">Loading conversations...</span>
-                                    </div>
-                                </div>
+                <div id="messagesSection" class="dashboard-section d-none">
+                    <div class="conversations-sidebar">
+                        <div class="conversation-list-header">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <h5 class="mb-0">Conversations</h5>
+                                <button class="btn btn-sm btn-outline-primary" id="refreshMessagesBtn">
+                                    <i class="bi bi-arrow-clockwise"></i>
+                                </button>
                             </div>
                         </div>
-                        <div class="col-md-8">
-                            <div class="card">
-                                <div class="card-header d-flex justify-content-between align-items-center">
-                                    <h5 class="mb-0" id="conversationTitle">Select a conversation</h5>
-                                    <div class="dropdown" id="conversationMenuContainer">
-                                        <button class="btn btn-sm btn-outline-secondary dropdown-toggle d-none"
-                                            type="button" id="conversationMenu" data-bs-toggle="dropdown">
-                                            <i class="bi bi-three-dots-vertical"></i>
-                                        </button>
-                                        <ul class="dropdown-menu dropdown-menu-end">
-                                            <li><a class="dropdown-item" href="#" id="markAsReadBtn">Mark as Read</a>
-                                            </li>
-                                            <li><a class="dropdown-item" href="#" id="viewClientProfileBtn">View Client
-                                                    Profile</a></li>
-                                        </ul>
-                                    </div>
+                        <div id="conversationsList" class="list-group list-group-flush">
+                            <!-- 会话列表将通过JavaScript加载 -->
+                            <div class="text-center p-3">
+                                <div class="spinner-border spinner-border-sm" role="status">
+                                    <span class="visually-hidden">Loading...</span>
                                 </div>
-                                <div class="card-body" id="messagesContainer">
-                                    <div class="text-center p-5">
-                                        <i class="bi bi-chat-dots display-4 text-muted"></i>
-                                        <p class="mt-3">Select a conversation to view messages</p>
-                                    </div>
-                                </div>
-                                <div class="card-footer d-none" id="messageInputContainer">
-                                    <form id="sendMessageForm" class="d-flex">
-                                        <input type="text" class="form-control me-2" placeholder="Type your message..."
-                                            id="messageInput">
-                                        <button type="submit" class="btn btn-primary">
-                                            <i class="bi bi-send"></i>
-                                        </button>
-                                    </form>
-                                </div>
+                                <span class="ms-2">Loading conversations...</span>
                             </div>
+                        </div>
+                    </div>
+
+                    <div class="messages-content">
+                        <div class="messages-header">
+                            <h5 id="conversationTitle">Select a conversation</h5>
+                            <div id="conversationMenu" class="dropdown d-none">
+                                <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                    <i class="bi bi-three-dots-vertical"></i>
+                                </button>
+                                <ul class="dropdown-menu dropdown-menu-end">
+                                    <li>
+                                        <a class="dropdown-item" href="#" id="markAsReadBtn">
+                                            <i class="bi bi-check-all me-2"></i> Mark as read
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item" href="#" id="viewClientProfileBtn">
+                                            <i class="bi bi-person me-2"></i> View client profile
+                                        </a>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <div id="messagesContainer" class="messages-container">
+                            <!-- 消息内容将通过JavaScript加载 -->
+                            <div class="text-center p-5">
+                                <i class="bi bi-chat-dots display-4 text-muted"></i>
+                                <p class="mt-3">Select a conversation to view messages</p>
+                            </div>
+                        </div>
+
+                        <div id="messageInputContainer" class="d-none">
+                            <form id="sendMessageForm" class="message-form">
+                                <input type="text" class="form-control" id="messageInput" placeholder="Type your message..." required>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="bi bi-send"></i>
+                                </button>
+                            </form>
                         </div>
                     </div>
                 </div>

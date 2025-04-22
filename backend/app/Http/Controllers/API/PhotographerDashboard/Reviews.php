@@ -76,7 +76,7 @@ class Reviews extends Controller
     public function reply(Request $request)
     {
         $id=$request->input('id');
-        // 验证请求数据
+
         $validator = Validator::make($request->all(), [
             'reply' => 'required|string|max:1000',
         ]);
@@ -89,10 +89,10 @@ class Reviews extends Controller
             ], 422);
         }
 
-        // 获取当前认证用户的摄影师ID
+
         $photographer_id = $request->user()->photographerProfile->id;
 
-        // 查找评论
+
         $review = Review::where('id', $id)
                         ->where('photographer_id', $photographer_id)
                         ->first();
@@ -104,10 +104,10 @@ class Reviews extends Controller
             ], 404);
         }
 
-        // 判断是更新还是新建回复
+
         $isUpdate = !empty($review->reply);
 
-        // 更新回复内容和回复时间
+
         $review->reply = $request->input('reply');
         $review->reply_date = now();
         $review->save();

@@ -15,19 +15,19 @@ class BookingController extends Controller
         $user = Auth::user();
         $query = Booking::with(['photographer.user', 'customer', 'service']);
 
-        // 根据用户角色获取相应的预订
+
         if ($user->role === 'photographer') {
             $query->where('photographer_id', $user->photographerProfile->id);
         } else {
             $query->where('customer_id', $user->id);
         }
 
-        // 按状态筛选
+
         if ($request->has('status') && $request->status) {
             $query->where('status', $request->status);
         }
 
-        // 搜索功能
+
         if ($request->has('search') && $request->search) {
             $search = $request->search;
             $query->where(function($q) use ($search) {
@@ -42,12 +42,12 @@ class BookingController extends Controller
             });
         }
 
-        // 排序 (默认按预订日期降序)
+
         $sortField = $request->input('sort_field', 'booking_date');
         $sortOrder = $request->input('sort_order', 'desc');
         $query->orderBy($sortField, $sortOrder);
 
-        // 分页
+
         $perPage = $request->input('limit', 10);
         $page = $request->input('page', 1);
         $bookings = $query->paginate($perPage, ['*'], 'page', $page);
@@ -71,7 +71,7 @@ class BookingController extends Controller
         $booking = Booking::with(['photographer.user', 'customer', 'service'])->findOrFail($id);
         $user = Auth::user();
 
-        // 检查用户是否有权限访问此预订
+
         if (($user->role === 'photographer' && $user->photographerProfile->id != $booking->photographer_id) ||
             ($user->role === 'customer' && $user->id != $booking->customer_id)) {
             return response()->json(['message' => 'Unauthorized'], 403);

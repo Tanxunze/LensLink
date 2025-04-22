@@ -302,6 +302,49 @@ function setupEventHandlers() {
 
         $(this).data("direct-upload", "false");
     });
+
+    $("#markAsReadBtn").click(function(e) {
+        e.preventDefault();
+        const conversationId = $("#sendMessageForm").data("conversation-id");
+        if (!conversationId) return;
+
+        API.markMessagesAsRead(conversationId)
+            .then(() => {
+                showNotification("Messages marked as read", "success");
+            })
+            .catch(error => {
+                console.error("Failed to mark messages as read:", error);
+                showNotification("Failed to mark messages as read", "error");
+            });
+    });
+
+    $("#viewClientProfileBtn").click(function(e) {
+        e.preventDefault();
+        const conversationId = $("#sendMessageForm").data("conversation-id");
+        const conversation = window.conversationsData.find(c => c.id == conversationId);
+
+        if (conversation && conversation.customer && conversation.customer.id) {
+            
+            showNotification("Client profile view is not available", "info");
+        } else {
+            showNotification("Could not find client information", "warning");
+        }
+    });
+
+    $("#refreshMessagesBtn").click(function() {
+        loadMessages();
+        showNotification("Messages refreshed", "info");
+    });
+
+    $(document).on("submit", "#sendMessageForm", function(e) {
+        e.preventDefault();
+        const messageText = $("#messageInput").val().trim();
+        const conversationId = $(this).data("conversation-id");
+
+        if (messageText && conversationId) {
+            sendMessage(conversationId, messageText);
+        }
+    });
 }
 
 function loadSectionFromUrlHash() {
@@ -380,6 +423,7 @@ function loadPhotographerData() {
             console.error("Failed to load photographer data:", error);
             $("#photographerName").text("Photographer");
         });
+
 }
 
 /**
@@ -471,7 +515,7 @@ function loadDashboardCounts() {
  * @param {number} days - Number of days to display
  */
 function loadEarningsChart(days) {
-    // 显示加载状态
+    
     $("#earningsChart").html(`
         <div class="d-flex justify-content-center align-items-center h-100">
             <div class="spinner-border text-primary" role="status">
@@ -845,7 +889,7 @@ function viewPortfolioItem(itemId) {
         `;
         document.body.insertAdjacentHTML('beforeend', modalHtml);
     }
-    // 显示加载状态
+    
     const portfolioModal = new bootstrap.Modal(document.getElementById('portfolioDetailModal'));
     portfolioModal.show();
 
@@ -1099,7 +1143,7 @@ function savePortfolioItem() {
             });
     }
 
-    // 不上传新图片的更新
+    
     function updatePortfolioWithoutNewImage() {
         fetch(`${CONFIG.API.BASE_URL}/photographer/portfolio/update`, {
             method: 'POST',
@@ -1539,12 +1583,12 @@ function editBookingDetails(bookingId) {
         })
         .then(booking => {
             const bookingDate = booking.booking_date ? new Date(booking.booking_date) : new Date();
-            const formattedDate = bookingDate.toISOString().split('T')[0]; // 获取 YYYY-MM-DD 部分
+            const formattedDate = bookingDate.toISOString().split('T')[0]; 
 
             let bookingTime = '';
             if (booking.booking_time) {
                 if (booking.booking_time.includes('T')) {
-                    bookingTime = booking.booking_time.split('T')[1].substring(0, 5); // 获取 HH:MM 部分
+                    bookingTime = booking.booking_time.split('T')[1].substring(0, 5); 
                 } else if (booking.booking_time.includes(':')) {
                     bookingTime = booking.booking_time.substring(0, 5);
                 }
@@ -1856,6 +1900,8 @@ function loadMessages() {
             <span class="ms-2">Loading conversations...</span>
         </div>
     `);
+
+    $("#conversationTitle").text("Select a conversation");
     $("#messagesContainer").html(`
         <div class="text-center p-5">
             <i class="bi bi-chat-dots display-4 text-muted"></i>
@@ -1864,127 +1910,201 @@ function loadMessages() {
     `);
 
     $("#messageInputContainer").addClass("d-none");
+    $("#conversationMenu").addClass("d-none");
 
-    fetch(`${CONFIG.API.BASE_URL}/photographer/messages`, {
-        method: "POST",
-        headers: {
-            'Authorization': `Bearer ${localStorage.getItem("token")}`,
-            'Content-Type': 'application/json'
-        }
-    })
-        .then(response => {
-            if (!response.ok) {
-                throw new Error('Failed to load messages');
-            }
-            return response.json();
-        })
-        .then(data => {
-            if (!data.success || !data.data || Object.keys(data.data).length === 0) {
+    
+    API.getConversations()
+        .then(conversations => {
+            window.conversationsData = conversations || [];
+
+            if (!conversations || conversations.length === 0) {
                 $("#conversationsList").html(`
-                    <div class="text-center p-3">
-                        <p class="text-muted mb-0">No conversations found</p>
+                    <div class="p-3 text-center">
+                        <p class="text-muted">No conversations yet</p>
+                        <button class="btn btn-sm btn-outline-primary" id="startNewConversationBtn">
+                            Start a new conversation
+                        </button>
                     </div>
                 `);
+
+                $("#startNewConversationBtn").click(function() {
+                    
+                    showNotification("This feature is not available yet", "info");
+                });
                 return;
             }
 
-            console.log("Messages userId: ", data.data.user_id);
-            const conversationIds = data.data.conversation_ids || [];
-            const conversations = [];
-            const userId = data.data.user_id;
+            const conversationsHtml = conversations.map(conversation => {
+                
+                let otherPartyName, otherPartyImage, unreadCount;
 
-            for (let i = 0; i < conversationIds.length; i++) {
-                if (data.data.conversations[i]) {
-                    const conversationData = data.data.conversations[i];
-                    const messages = conversationData.message || [];
-                    console.log("Messages: ", messages);
-
-                    if (messages.length > 0) {
-                        const latestMessage = messages[messages.length - 1];
-                        const hasUnread = messages.some(msg => !msg.is_read && msg.sender_id !== userId);
-                        const clientName = messages.find(msg => msg.sender_id !== userId)?.username || "Unknown";
-
-                        conversations.push({
-                            id: conversationData.conversation_id,
-                            clientName: clientName,
-                            conversationTitle: conversationData.conversation_title,
-                            latestMessage: latestMessage.message,
-                            timestamp: latestMessage.created_at,
-                            hasUnread: hasUnread,
-                            messages: messages
-                        })
-                    }
+                if (conversation.customer) {
+                    otherPartyName = conversation.customer.name || 'Client';
+                    otherPartyImage = conversation.customer.profile_image || '../../assets/images/default-avatar.jpg';
+                } else if (conversation.sender) {
+                    otherPartyName = conversation.sender.name || 'Client';
+                    otherPartyImage = conversation.sender.profile_image || '../../assets/images/default-avatar.jpg';
+                } else {
+                    otherPartyName = 'Client';
+                    otherPartyImage = '../../assets/images/default-avatar.jpg';
                 }
-            }
 
-            conversations.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+                unreadCount = conversation.unread_count || 0;
 
-            const conversationHtml = conversations.map(conversation => `
-                <a href="#"
-                   class="list-group-item list-group-item-action conversation-item ${conversation.hasUnread ? 'unread-conversation' : ''}"
-                   data-id="${conversation.id}">
+                let lastMessageTime = formatDate(conversation.last_message_time || conversation.created_at);
+                let lastMessageText = conversation.last_message || 'No messages yet';
+
+                const unreadClass = unreadCount > 0 ? 'fw-bold' : '';
+                const unreadBadge = unreadCount > 0
+                    ? `<span class="badge bg-danger rounded-pill ms-2">${unreadCount}</span>`
+                    : '';
+
+                return `
+                <a href="#" class="list-group-item list-group-item-action conversation-item ${unreadClass}" 
+                   data-id="${conversation.id}"
+                   data-other-name="${otherPartyName}">
                     <div class="d-flex w-100 justify-content-between align-items-center">
-                        <h6 class="mb-1">${conversation.clientName} ${conversation.hasUnread ? '<span class="badge rounded-pill bg-danger">New</span>' : ''}</h6>
-                        <small class="text-muted">${formatDate(conversation.timestamp)}</small>
+                        <div class="d-flex align-items-center">
+                            <img src="${otherPartyImage}" class="rounded-circle me-2" width="32" height="32" alt="${otherPartyName}">
+                            <h6 class="mb-1">${otherPartyName} ${unreadBadge}</h6>
+                        </div>
+                        <small class="text-muted">${lastMessageTime}</small>
                     </div>
-                    <p class="mb-1 text-truncate">${conversation.latestMessage}</p>
+                    <p class="mb-1 text-truncate ps-4">${lastMessageText}</p>
                 </a>
-            `).join('');
+                `;
+            }).join('');
 
-            $("#conversationsList").html(conversationHtml);
+            $("#conversationsList").html(conversationsHtml);
 
-            $(".conversation-item").click(function (e) {
+            $(".conversation-item").click(function(e) {
                 e.preventDefault();
                 const conversationId = $(this).data("id");
-                const clientName = $(this).data('client-name');
-                const conversationTitle = $(this).data('conversation-title');
+                const otherName = $(this).data("other-name");
+
+                if (!conversationId) {
+                    console.error("Missing conversation ID");
+                    return;
+                }
+
+                $("#sendMessageForm").data("conversation-id", conversationId);
+                $("#conversationTitle").text(otherName);
+
+                $(this).removeClass("fw-bold")
+                    .find(".badge").remove();
 
                 $(".conversation-item").removeClass("active");
                 $(this).addClass("active");
-                $(this).removeClass("unread-conversation");
-                $(this).find(".badge").remove();
-
-                displayConversationMessages(conversations.find(c => c.id === conversationId), data.data.user_id);
-
-                $("#conversationTitle").text($(this).find("h6").text().replace());
 
                 $("#conversationMenu").removeClass("d-none");
 
-                $("#viewClientProfileBtn").data("client-name", clientName);
-
-                $("#messageInputContainer").removeClass("d-none");
-
-                $("#sendMessageForm").data("conversation-id", conversationId);
-
-                $("#sendMessageForm").off("submit").on("submit", function (e) {
-                    e.preventDefault();
-                    const messageText = $("#messageInput").val().trim();
-                    const conversationId = $(this).data("conversation-id");
-
-                    if (messageText && conversationId) {
-                        sendMessage(conversationId, messageText, $(this).data("user-id"));
-                    }
-                })
-
-                $("viewClientProfileBtn").click(function (e) {
-                    e.preventDefault();
-                    // TODO: Open client profile
-                })
-
-                $("markAsReadBtn").click(function (e) {
-                    e.preventDefault();
-                    // TODO: Mark conversation as read
-                })
-            })
+                loadConversationMessages(conversationId);
+                API.markMessagesAsRead(conversationId);
+            });
         })
-        .catch((error) => {
-            console.error("Failed to load messages: ", error);
+        .catch(error => {
+            console.error("Failed to load conversations:", error);
             $("#conversationsList").html(`
-                <div class="alert alert-danger m-2">
-                    Failed to load conversations. Please try again.
+            <div class="alert alert-danger m-3">
+                <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                Failed to load conversations. Please try again.
+            </div>
+        `);
+        });
+}
+
+function loadConversationMessages(conversationId) {
+    $("#messagesContainer").html(`
+        <div class="text-center p-3">
+            <div class="spinner-border" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <p>Loading messages...</p>
+        </div>
+    `);
+
+    
+    API.getUserProfile()
+        .then(userData => {
+            const currentUserId = userData.id;
+
+            
+            return API.getConversationMessages(conversationId)
+                .then(response => {
+                    const messages = response.data || [];
+
+                    if (messages.length === 0) {
+                        $("#messagesContainer").html(`
+                            <div class="text-center p-5">
+                                <i class="bi bi-chat-dots display-4 text-muted"></i>
+                                <p class="mt-3">No messages in this conversation</p>
+                            </div>
+                        `);
+                        return;
+                    }
+
+                    const messagesHtml = messages.map(msg => {
+                        
+                        const isCurrentUser = parseInt(msg.sender_id) === parseInt(currentUserId);
+                        const alignClass = isCurrentUser ? 'justify-content-end' : 'justify-content-start';
+                        const bgColor = isCurrentUser ? '#007bff' : '#f1f1f1';
+                        const textColor = isCurrentUser ? '#fff' : '#000';
+
+                        const time = formatTime(msg.created_at);
+                        const date = formatDate(msg.created_at);
+
+                        return `
+                            <div class="d-flex ${alignClass} mb-3">
+                                <div class="message-bubble" style="background: ${bgColor}; color: ${textColor}; border-radius: 1rem; padding: 0.75rem; max-width: 75%;">
+                                    <div class="message-content">
+                                        <p class="mb-0">${msg.message}</p>
+                                        <small class="d-block text-${isCurrentUser ? 'end' : 'start'} mt-1" style="opacity: 0.8; color: ${textColor} !important;">
+                                            ${date} ${time}
+                                        </small>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    }).join('');
+
+                    $("#messagesContainer").html(`
+                        <div class="messages-wrapper d-flex flex-column">
+                            ${messagesHtml}
+                        </div>
+                    `);
+
+                    $("#messageInputContainer").removeClass("d-none");
+
+                    
+                    setTimeout(scrollToBottom, 100);
+                });
+        })
+        .catch(error => {
+            console.error("Failed to load conversation messages:", error);
+            $("#messagesContainer").html(`
+                <div class="alert alert-danger">
+                    Failed to load messages. Please try again.
                 </div>
             `);
         });
+}
+
+function formatTime(timestamp) {
+    if (!timestamp) return '';
+    const date = new Date(timestamp);
+    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+}
+
+
+function scrollToBottom() {
+    const messagesContainer = document.getElementById("messagesContainer");
+    if (messagesContainer) {
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    }
+    const messagesWrapper = document.querySelector(".messages-wrapper");
+    if (messagesWrapper) {
+        messagesWrapper.scrollTop = messagesWrapper.scrollHeight;
+    }
 }
 
 function displayConversationMessages(conversation, user_id) {
@@ -2030,40 +2150,90 @@ function displayConversationMessages(conversation, user_id) {
     }
 }
 
-function sendMessage(conversationId, messageText, userId) {
+function sendMessage(conversationId, messageText) {
     const sendButton = $("#sendMessageForm button[type='submit']");
     sendButton.prop("disabled", true);
 
+    
     $("#messageInput").val("");
 
-    fetch(`${CONFIG.API.BASE_URL}/photographer/messages/send`, {
-        method: 'POST',
-        headers: {
-            'Authorization': `Bearer ${localStorage.getItem("token")}`,
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-            conversation_id: conversationId,
-            message_text: messageText
-        })
+    
+    const currentTime = new Date();
+    const formattedTime = formatTime(currentTime);
+    const formattedDate = formatDate(currentTime);
+
+    
+    const tempId = 'msg_' + Date.now();
+
+    
+    const newMessageHtml = `
+        <div class="d-flex justify-content-end mb-3" id="${tempId}">
+            <div class="message-bubble" style="background: #007bff; color: #fff; border-radius: 1rem; padding: 0.75rem; max-width: 75%;">
+                <div class="message-content">
+                    <p class="mb-0">${messageText}</p>
+                    <small class="d-block text-end mt-1" style="opacity: 0.8; color: #fff !important;">
+                        ${formattedDate} ${formattedTime}
+                        <span class="message-status"><i class="bi bi-clock"></i></span>
+                    </small>
+                </div>
+            </div>
+        </div>
+    `;
+
+    
+    if ($(".messages-wrapper").length === 0) {
+        $("#messagesContainer").html('<div class="messages-wrapper d-flex flex-column"></div>');
+    }
+
+    
+    $(".messages-wrapper").append(newMessageHtml);
+
+    
+    scrollToBottom();
+
+    
+    API.replyToConversation({
+        conversation_id: conversationId,
+        message: messageText
     })
         .then(response => {
-            if (!response.ok) {
-                throw new Error('Failed to send message');
-            }
-            return response.json();
-        })
-        .then(data => {
-            loadMessages();
-            $("#messageInput").focus();
+            console.log("Message sent successfully:", response);
+
+            
+            $(`#${tempId} .message-status`).html('<i class="bi bi-check-all"></i>');
+
+            
+            
+            updateConversationPreview(conversationId, messageText);
         })
         .catch(error => {
             console.error("Failed to send message:", error);
-            alert("Failed to send message. Please try again.");
+
+            
+            $(`#${tempId} .message-status`).html('<i class="bi bi-exclamation-triangle text-danger"></i>');
+
+            showNotification("Failed to send message. Please try again.", "error");
         })
         .finally(() => {
             sendButton.prop("disabled", false);
-        })
+            $("#messageInput").focus();
+        });
+}
+
+function updateConversationPreview(conversationId, lastMessage) {
+    const conversationItem = $(`.conversation-item[data-id="${conversationId}"]`);
+    if (conversationItem.length) {
+        
+        conversationItem.find("p.mb-1").text(lastMessage);
+
+        
+        const now = new Date();
+        conversationItem.find("small.text-muted").text(formatDate(now));
+
+        
+        const conversationsList = $("#conversationsList");
+        conversationsList.prepend(conversationItem);
+    }
 }
 
 //Get reviews info
@@ -2209,7 +2379,7 @@ function generateRatingBars(distribution) {
     let html = '';
     const totalReviews = Object.values(distribution).reduce((a, b) => a + b, 0);
 
-    // 从5星到1星显示
+    
     for (let i = 5; i >= 1; i--) {
         const count = distribution[i] || 0;
         const percentage = totalReviews ? (count / totalReviews * 100).toFixed(1) : 0;
@@ -2313,7 +2483,7 @@ function updateReviewReplyModal(review) {
  * submit comment reply
  */
 function submitReviewReply() {
-    // 获取评论ID和回复内容
+    
     const reviewId = $("#submitReplyBtn").data("reviewId");
     const replyText = $("#replyText").val();
 
@@ -2326,7 +2496,7 @@ function submitReviewReply() {
     const originalText = submitBtn.text();
     submitBtn.prop("disabled", true).html('<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Submitting');
 
-    // 使用统一的API端点处理创建和更新回复
+    
     fetch(`${CONFIG.API.BASE_URL}/photographer/reviews/reply`, {
         method: 'POST',
         headers: {
@@ -2344,11 +2514,11 @@ function submitReviewReply() {
         .then(data => {
             bootstrap.Modal.getInstance(document.getElementById('reviewReplyModal')).hide();
 
-            // 显示成功通知
+            
             const isUpdate = data.is_update ? "update" : "submit";
             showNotification(`Reply ${isUpdate} succeed`, "success");
 
-            // 刷新评论列表
+            
             if ($("#reviewsSection").is(":visible")) {
                 loadReviews();
             } else {

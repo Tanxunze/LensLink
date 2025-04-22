@@ -183,7 +183,6 @@ function initNotificationToast() {
  * @param {string} type - Type of notification (success, error, info, warning)
  */
 function showNotification(message, type = "info") {
-    // 设置标题和时间
     $("#toastTitle").text(type.charAt(0).toUpperCase() + type.slice(1));
     $("#toastTime").text(new Date().toLocaleTimeString());
     $("#toastMessage").text(message);
