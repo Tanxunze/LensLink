@@ -14,6 +14,11 @@ $(document).ready(function () {
     setupEventHandlers();
     loadSectionFromUrlHash();
     initPasswordChangeFeature();
+    loadCategories();
+
+    $('#addPortfolioModal').on('hidden.bs.modal', function () {
+        resetPortfolioModal();
+    });
 
     window.addEventListener('hashchange', function () {
         loadSectionFromUrlHash();
@@ -127,11 +132,17 @@ function setupEventHandlers() {
         }
     });
 
-    $(".dropdown-menu a[data-filter]").click(function(e){
-        e.preventDefault();
-        const filterStatus=$(this).data("filter");
+    $(document).on("click", ".replyBtn", function() {
+        const reviewId = $(this).data("id");
+        console.log("Opening reply modal for review ID:", reviewId);
+        openReviewReplyModal(reviewId);
+    });
 
-        const filterText=$(this).text();
+    $(".dropdown-menu a[data-filter]").click(function (e) {
+        e.preventDefault();
+        const filterStatus = $(this).data("filter");
+
+        const filterText = $(this).text();
         $(this).closest('.btn-group').find('.dropdown-toggle').html(`<i class="bi bi-filter"></i> ${filterText}`);
 
         $(".dropdown-menu a[data-filter]").removeClass("active");
@@ -168,6 +179,12 @@ function setupEventHandlers() {
 
     $(document).on("section:profile", function () {
         loadDetailedPhotographerData();
+    });
+
+    $(document).on("section:portfolio", function () {
+        console.log("Portfolio section activated");
+        loadCategories();
+        loadPortfolio(lastSelectedCategory);
     });
 
     // income Time Range drop-down menu
@@ -228,30 +245,30 @@ function setupEventHandlers() {
         initPasswordChangeFeature();
     });
 
-    $("#editProfileBtn").click(function(e) {
+    $("#editProfileBtn").click(function (e) {
         e.preventDefault();
         openEditProfileModal();
     });
 
-    $("#uploadProfileImageBtn").click(function() {
+    $("#uploadProfileImageBtn").click(function () {
         $("#profileImageUpload").click();
     });
 
-    $("#profileImageUpload").change(function() {
+    $("#profileImageUpload").change(function () {
         if (this.files && this.files[0]) {
             previewImage(this.files[0], "previewProfileImage");
         }
     });
 
-    $("#saveProfileBtn").click(function() {
+    $("#saveProfileBtn").click(function () {
         saveProfileChanges();
     });
 
-    $("#changeProfileImageBtn").click(function() {
+    $("#changeProfileImageBtn").click(function () {
         $("#profileImageUpload").data("direct-upload", "true").click();
     });
 
-    $("#profileImageUpload").on("change", function(e) {
+    $("#profileImageUpload").on("change", function (e) {
         if ($(this).data("direct-upload") === "true") {
             if (this.files && this.files[0]) {
                 $("#profileImage").css("opacity", "0.5");
@@ -284,6 +301,49 @@ function setupEventHandlers() {
         }
 
         $(this).data("direct-upload", "false");
+    });
+
+    $("#markAsReadBtn").click(function(e) {
+        e.preventDefault();
+        const conversationId = $("#sendMessageForm").data("conversation-id");
+        if (!conversationId) return;
+
+        API.markMessagesAsRead(conversationId)
+            .then(() => {
+                showNotification("Messages marked as read", "success");
+            })
+            .catch(error => {
+                console.error("Failed to mark messages as read:", error);
+                showNotification("Failed to mark messages as read", "error");
+            });
+    });
+
+    $("#viewClientProfileBtn").click(function(e) {
+        e.preventDefault();
+        const conversationId = $("#sendMessageForm").data("conversation-id");
+        const conversation = window.conversationsData.find(c => c.id == conversationId);
+
+        if (conversation && conversation.customer && conversation.customer.id) {
+            
+            showNotification("Client profile view is not available", "info");
+        } else {
+            showNotification("Could not find client information", "warning");
+        }
+    });
+
+    $("#refreshMessagesBtn").click(function() {
+        loadMessages();
+        showNotification("Messages refreshed", "info");
+    });
+
+    $(document).on("submit", "#sendMessageForm", function(e) {
+        e.preventDefault();
+        const messageText = $("#messageInput").val().trim();
+        const conversationId = $(this).data("conversation-id");
+
+        if (messageText && conversationId) {
+            sendMessage(conversationId, messageText);
+        }
     });
 }
 
@@ -329,8 +389,13 @@ function showReviewsSection() {
     $("#reviewsSection").removeClass("d-none");
 
     loadReviews();
-    window.location.hash = "reviews";
+    $(".replyBtn").click(function (e) {
+        const reviewId = $(this).data("id");
+        openReviewReplyModal(reviewId);
+    });
+    // window.location.hash = "reviews";
 }
+
 /**
  * Loading photographer data
  */
@@ -358,6 +423,7 @@ function loadPhotographerData() {
             console.error("Failed to load photographer data:", error);
             $("#photographerName").text("Photographer");
         });
+
 }
 
 /**
@@ -449,7 +515,7 @@ function loadDashboardCounts() {
  * @param {number} days - Number of days to display
  */
 function loadEarningsChart(days) {
-    // 显示加载状态
+    
     $("#earningsChart").html(`
         <div class="d-flex justify-content-center align-items-center h-100">
             <div class="spinner-border text-primary" role="status">
@@ -685,7 +751,7 @@ function loadRecentReviews() {
 
             $("#recentReviewsContainer").html(reviewsHtml);
 
-            $(".replyBtn").click(function () {
+            $(".replyBtn").click(function (e) {
                 const reviewId = $(this).data("id");
                 openReviewReplyModal(reviewId);
             });
@@ -823,7 +889,7 @@ function viewPortfolioItem(itemId) {
         `;
         document.body.insertAdjacentHTML('beforeend', modalHtml);
     }
-    // 显示加载状态
+    
     const portfolioModal = new bootstrap.Modal(document.getElementById('portfolioDetailModal'));
     portfolioModal.show();
 
@@ -886,13 +952,284 @@ function openAddPortfolioModal() {
     portfolioModal.show();
 }
 
+function loadCategories() {
+    console.log("Loading categories...");
+
+    fetch(`${CONFIG.API.BASE_URL}/categories`, {
+        headers: {
+            'Authorization': `Bearer ${localStorage.getItem("token")}`,
+            'Content-Type': 'application/json'
+        }
+    })
+        .then(response => {
+            console.log("Categories API response status:", response.status);
+            if (!response.ok) {
+                throw new Error(`Failed to load categories: ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(categories => {
+            console.log("Categories loaded:", categories.length);
+
+            let categoryButtons = $(".btn-group[role='group'][aria-label='Portfolio categories']");
+
+            console.log("Category buttons container found:", categoryButtons.length > 0);
+
+            if (categoryButtons.length === 0) {
+                console.warn("Trying alternative selector for category buttons");
+                categoryButtons = $(".btn-group").filter(function() {
+                    return $(this).find("button[data-category]").length > 0;
+                });
+
+                if (categoryButtons.length === 0) {
+                    console.error("Could not find category buttons container!");
+                    return;
+                }
+            }
+
+            categoryButtons.empty();
+            console.log("Cleared existing category buttons");
+
+            categoryButtons.append(`
+            <button type="button" class="btn btn-outline-primary active" data-category="all">All</button>
+        `);
+
+            categories.forEach(category => {
+                categoryButtons.append(`
+                <button type="button" class="btn btn-outline-primary" 
+                        data-category="${category.slug}">${category.name}</button>
+            `);
+            });
+
+            console.log("Added category buttons:", categories.length + 1);
+
+            $("button[data-category]").off('click').on('click', function() {
+                const category = $(this).data("category");
+                console.log("Category selected:", category);
+
+                $("button[data-category]").removeClass("active");
+                $(this).addClass("active");
+                lastSelectedCategory = category;
+                filterPortfolioItems(category);
+            });
+
+            const categorySelect = $("#portfolioCategory");
+            categorySelect.empty();
+            categorySelect.append('<option value="">Select category</option>');
+
+            categories.forEach(category => {
+                categorySelect.append(`<option value="${category.id}">${category.name}</option>`);
+            });
+
+            console.log("Category dropdown updated with", categories.length, "options");
+        })
+        .catch(error => {
+            console.error("Failed to load categories:", error);
+        });
+}
+
 function editPortfolioItem(itemId) {
+    $("#addPortfolioForm")[0].reset();
+
+    $("#addPortfolioModal .modal-title").text("Edit portfolio");
+    $("#savePortfolioBtn").text("Save changes").data("edit-mode", true).data("item-id", itemId);
+
+    $("#portfolioPreview").attr("src", "../../assets/images/placeholder.jpg").css("opacity", "0.5");
+
+    loadCategories();
+
+    fetch(`${CONFIG.API.BASE_URL}/photographer/portfolio`, {
+        method: 'POST',
+        headers: {
+            'Authorization': `Bearer ${localStorage.getItem("token")}`,
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({portfolio_id: itemId})
+    })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Failed to load portfolio item');
+            }
+            return response.json();
+        })
+        .then(data => {
+            const item = Array.isArray(data) ? data[0] : data;
+
+            $("#portfolioTitle").val(item.title);
+            $("#portfolioDescription").val(item.description || '');
+            $("#portfolioFeatured").prop("checked", item.featured);
+
+            if (item.image_path) {
+                $("#portfolioPreview").attr("src", item.image_path).css("opacity", "1");
+            }
+
+            $("#savePortfolioBtn").data("original-image", item.image_path);
+
+            let categoryFound = false;
+            $("#portfolioCategory option").each(function() {
+                if ($(this).text() === item.category) {
+                    $("#portfolioCategory").val($(this).val());
+                    categoryFound = true;
+                    return false;
+                }
+            });
+
+            if (!categoryFound && item.category) {
+                $("#portfolioCategory").append(`<option value="${item.category}" selected>${item.category}</option>`);
+            }
+
+            const portfolioModal = new bootstrap.Modal(document.getElementById('addPortfolioModal'));
+            portfolioModal.show();
+        })
+        .catch(error => {
+            console.error("Failed to load portfolio item details:", error);
+            showNotification("Failed to load portfolio items", "error");
+        });
+}
+
+function savePortfolioItem() {
+    const editMode = $("#savePortfolioBtn").data("edit-mode") || false;
+    const itemId = $("#savePortfolioBtn").data("item-id");
+    const originalImage = $("#savePortfolioBtn").data("original-image");
+
+    const title = $("#portfolioTitle").val();
+    const category = $("#portfolioCategory").val();
+    const description = $("#portfolioDescription").val();
+    const featured = $("#portfolioFeatured").is(":checked");
+    const imageFile = $("#portfolioImageUpload")[0].files[0];
+
+    if (!title || !category) {
+        showNotification("Please fill in all required fields", "warning");
+        return;
+    }
+
+    const saveBtn = $("#savePortfolioBtn");
+    const originalText = saveBtn.text();
+    saveBtn.prop("disabled", true).html('<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> 保存中...');
+
+    if (editMode && !imageFile) {
+        updatePortfolioWithoutNewImage();
+    } else {
+        uploadPortfolioImage(imageFile)
+            .then(response => {
+                if (!response.success) {
+                    throw new Error(response.message || 'Failed to upload image');
+                }
+
+                if (editMode) {
+                    return updatePortfolioWithNewImage(response.image_url);
+                } else {
+                    return createNewPortfolio(response.image_url);
+                }
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`Failed to ${editMode ? 'Update' : 'Save'} portfolio item`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                bootstrap.Modal.getInstance(document.getElementById('addPortfolioModal')).hide();
+                showNotification(`Portfolio item ${editMode ? 'update' : 'add'} successfully功`, "success");
+                loadPortfolio(lastSelectedCategory);
+                resetPortfolioModal();
+            })
+            .catch(error => {
+                console.error(`Failed to ${editMode ? 'update' : 'save'} portfolio item:`, error);
+                showNotification(`Failed to ${editMode ? 'update' : 'save'} portfolio item`, "error");
+            })
+            .finally(() => {
+                saveBtn.prop("disabled", false).text(originalText);
+            });
+    }
+
     
+    function updatePortfolioWithoutNewImage() {
+        fetch(`${CONFIG.API.BASE_URL}/photographer/portfolio/update`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem("token")}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                id: itemId,
+                title: title,
+                category_id: category,
+                description: description,
+                featured: featured,
+                image_path: originalImage
+            })
+        })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Failed to update portfolio item');
+                }
+                return response.json();
+            })
+            .then(data => {
+                bootstrap.Modal.getInstance(document.getElementById('addPortfolioModal')).hide();
+                showNotification("Portfolio item Updated Successfully", "success");
+                loadPortfolio(lastSelectedCategory);
+                resetPortfolioModal();
+            })
+            .catch(error => {
+                console.error("Failed to update portfolio item:", error);
+                showNotification("Failed to update portfolio item, please try again", "error");
+            })
+            .finally(() => {
+                saveBtn.prop("disabled", false).text(originalText);
+            });
+    }
+
+    function updatePortfolioWithNewImage(imageUrl) {
+        return fetch(`${CONFIG.API.BASE_URL}/photographer/portfolio/update`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem("token")}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                id: itemId,
+                title: title,
+                category_id: category,
+                description: description,
+                image_path: imageUrl,
+                featured: featured
+            })
+        });
+    }
+
+    function createNewPortfolio(imageUrl) {
+        return fetch(`${CONFIG.API.BASE_URL}/photographer/portfolio/create`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem("token")}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                title: title,
+                category_id: category,
+                description: description,
+                image_path: imageUrl,
+                featured: featured
+            })
+        });
+    }
+}
+
+function resetPortfolioModal() {
+    $("#addPortfolioModal .modal-title").text("Add Portfolio Item");
+    $("#savePortfolioBtn").text("Save Item")
+        .removeData("edit-mode")
+        .removeData("item-id")
+        .removeData("original-image");
+    $("#portfolioPreview").attr("src", "../../assets/images/placeholder.jpg");
+    $("#addPortfolioForm")[0].reset();
 }
 
 // Get bookings info
 function loadBookings(status = "all", page = 1) {
-    console.log("Status in loadBookings: ",status);
+    console.log("Status in loadBookings: ", status);
     $("#bookingsTable").html(`
         <tr>
             <td colspan="8" class="text-center">
@@ -1011,13 +1348,25 @@ function loadBookings(status = "all", page = 1) {
 
 
                 // TODO: finish button functions
-                $(".page-link").click(function () {
+                $(".viewBookingBtn").click(function () {
+                    const bookingId = $(this).data("id");
+                    openBookingDetailsModal(bookingId);
+                });
 
+                $(".acceptBookingBtn").click(function () {
+                    const bookingId = $(this).data("id");
+                    updateBookingStatus(bookingId, "confirmed");
+                });
+
+                $(".rejectBookingBtn").click(function () {
+                    const bookingId = $(this).data("id");
+                    updateBookingStatus(bookingId, "cancelled");
                 });
 
                 $(".messageClientBtn").click(function () {
-
-                })
+                    const clientId = $(this).data("id");
+                    messageClient(clientId);
+                });
             }
         })
         .catch(error => {
@@ -1040,16 +1389,349 @@ function showBookingsSection(status = "all") {
     $("#bookingsSection").removeClass("d-none");
 
     const filterText = status === "pending" ? "Pending" :
-                      status === "confirmed" ? "Confirmed" :
-                      status === "completed" ? "Completed" :
-                      status === "cancelled" ? "Cancelled" : "All Bookings";
+        status === "confirmed" ? "Confirmed" :
+            status === "completed" ? "Completed" :
+                status === "cancelled" ? "Cancelled" : "All Bookings";
 
     $('#bookingsSection .btn-group').find('.dropdown-toggle').html(`<i class="bi bi-filter"></i> ${filterText}`);
 
     $("#bookingsSection .dropdown-menu a[data-filter]").removeClass("active");
     $("#bookingsSection .dropdown-menu a[data-filter='" + status + "']").addClass("active");
-    
+
     loadBookings(status);
+}
+
+function openBookingDetailsModal(bookingId) {
+    if (!document.getElementById('bookingDetailModal')) {
+        const modalHtml = `
+            <div class="modal fade" id="bookingDetailModal" tabindex="-1" aria-hidden="true">
+                <div class="modal-dialog modal-lg">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">Booking Details</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="text-center">
+                                <div class="spinner-border" role="status">
+                                    <span class="visually-hidden">Loading...</span>
+                                </div>
+                                <p>Loading Booking Details...</p>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                            <button type="button" class="btn btn-primary edit-booking-btn">Edit</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+
+        setTimeout(() => {
+            loadBookingDetails(bookingId);
+        }, 100);
+    } else {
+        loadBookingDetails(bookingId);
+    }
+
+    const bookingModal = new bootstrap.Modal(document.getElementById('bookingDetailModal'));
+    bookingModal.show();
+}
+
+function loadBookingDetails(bookingId) {
+    const modalBody = document.querySelector('#bookingDetailModal .modal-body');
+
+    if (!modalBody) {
+        console.error('Booking detail modal body not found');
+        return;
+    }
+
+    modalBody.innerHTML = `
+        <div class="text-center">
+            <div class="spinner-border" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <p>Loading Booking Details...</p>
+        </div>
+    `;
+
+    console.log("BookingId: ", bookingId);
+
+    fetch(`${CONFIG.API.BASE_URL}/photographer/bookings/${bookingId}`, {
+        method: 'GET',
+        headers: {
+            'Authorization': `Bearer ${localStorage.getItem("token")}`,
+            'Content-Type': 'application/json'
+        }
+    })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Failed to load booking details');
+            }
+            return response.json();
+        })
+        .then(booking => {
+            modalBody.innerHTML = `
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>Customer Information</h6>
+                        <p><strong>Name:</strong> ${booking.customer_name}</p>
+                        <p><strong>E-mail:</strong> ${booking.customer_email || 'Not Provided'}</p>
+                        <p><strong>Telephone:</strong> ${booking.customer_phone || 'Not Provided'}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>Booking Details</h6>
+                        <p><strong>Service:</strong> ${booking.service_name}</p>
+                        <p><strong>Date:</strong> ${formatDate(booking.booking_date)}</p>
+                        <p><strong>Time:</strong> ${booking.booking_time}</p>
+                        <p><strong>Location:</strong> ${booking.location || 'Not Specified'}</p>
+                        <p><strong>Status:</strong> <span class="badge ${getStatusBadgeClass(booking.status)}">${capitalizeFirstLetter(booking.status)}</span></p>
+                        <p><strong>Price:</strong> €${booking.total_amount}</p>
+                    </div>
+                </div>
+                ${booking.notes ? `
+                <div class="row mt-3">
+                    <div class="col-12">
+                        <h6>Notes</h6>
+                        <p>${booking.notes}</p>
+                    </div>
+                </div>` : ''}
+            `;
+
+            const editBtn = document.querySelector('#bookingDetailModal .edit-booking-btn');
+            if (editBtn) {
+                editBtn.onclick = function () {
+                    document.body.focus();
+                    bootstrap.Modal.getInstance(document.getElementById('bookingDetailModal')).hide();
+                    editBooking(bookingId);
+                }
+            } else {
+                console.error("Edit button not found");
+            }
+        })
+        .catch(error => {
+            console.error("Failed to load booking details: ", error);
+            document.querySelector('#bookingDetailModal .modal-body').innerHTML = `
+                <div class="alert alert-danger">
+                    Failed to load booking details. Please try again.
+                </div>
+            `;
+        });
+}
+
+function editBooking(bookingId) {
+    if (!document.getElementById('editBookingModal')) {
+        const modalHtml = `
+            <div class="modal fade" id="editBookingModal" tabindex="-1" aria-hidden="true">
+                <div class="modal-dialog modal-lg">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">Edit Booking</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="text-center">
+                                <div class="spinner-border" role="status">
+                                    <span class="visually-hidden">Loading...</span>
+                                </div>
+                                <p>Loading Booking Details</p>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                            <button type="button" class="btn btn-primary" id="saveBookingChangesBtn">Save Changes</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+
+        setTimeout(() => {
+            editBookingDetails(bookingId);
+        }, 100)
+    } else {
+        editBookingDetails(bookingId);
+    }
+
+    const editModal = new bootstrap.Modal(document.getElementById('editBookingModal'));
+    editModal.show();
+}
+
+function editBookingDetails(bookingId) {
+    const modalBody = document.querySelector('#editBookingModal .modal-body');
+
+    if (!modalBody) {
+        console.error('Edit detail modal body not found');
+        return;
+    }
+
+    fetch(`${CONFIG.API.BASE_URL}/photographer/bookings/${bookingId}`, {
+        method: 'GET',
+        headers: {
+            'Authorization': `Bearer ${localStorage.getItem("token")}`,
+            'Content-Type': 'application/json'
+        }
+    })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Failed to load booking data');
+            }
+            return response.json();
+        })
+        .then(booking => {
+            const bookingDate = booking.booking_date ? new Date(booking.booking_date) : new Date();
+            const formattedDate = bookingDate.toISOString().split('T')[0]; 
+
+            let bookingTime = '';
+            if (booking.booking_time) {
+                if (booking.booking_time.includes('T')) {
+                    bookingTime = booking.booking_time.split('T')[1].substring(0, 5); 
+                } else if (booking.booking_time.includes(':')) {
+                    bookingTime = booking.booking_time.substring(0, 5);
+                }
+            }
+            modalBody.innerHTML = `
+                <form id="editBookingForm">
+                    <input type="hidden" id="editBookingId" value="${booking.id}">
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="editBookingDate" class="form-label">Date</label>
+                            <input type="date" class="form-control" id="editBookingDate" value="${formattedDate}" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="editBookingTime" class="form-label">Time</label>
+                            <input type="time" class="form-control" id="editBookingTime" value="${bookingTime}" required>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="editBookingLocation" class="form-label">Location</label>
+                        <input type="text" class="form-control" id="editBookingLocation" value="${booking.location || ''}">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="editBookingStatus" class="form-label">Status</label>
+                        <select class="form-select" id="editBookingStatus" required>
+                            <option value="pending" ${booking.status === 'pending' ? 'selected' : ''}>Pending</option>
+                            <option value="confirmed" ${booking.status === 'confirmed' ? 'selected' : ''}>Confirmed</option>
+                            <option value="completed" ${booking.status === 'completed' ? 'selected' : ''}>Completed</option>
+                            <option value="cancelled" ${booking.status === 'cancelled' ? 'selected' : ''}>Cancelled</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="editBookingNotes" class="form-label">Notes</label>
+                        <textarea class="form-control" id="editBookingNotes" rows="3">${booking.notes || ''}</textarea>
+                    </div>
+                </form>
+            `;
+
+            document.getElementById('saveBookingChangesBtn').onclick = saveBookingChanges;
+        })
+        .catch(error => {
+            console.error("Failed to load booking data: ", error);
+            document.querySelector('#editBookingModal .modal-body').innerHTML = `
+                <div class="alert alert-danger">
+                    Failed to load booking data. Please try again.
+                </div>
+            `;
+        })
+}
+
+function saveBookingChanges() {
+    const bookingId = document.getElementById('editBookingId').value;
+    const bookingDate = document.getElementById('editBookingDate').value;
+    const bookingTime = document.getElementById('editBookingTime').value;
+    const bookingLocation = document.getElementById('editBookingLocation').value;
+    const bookingStatus = document.getElementById('editBookingStatus').value;
+    const bookingNotes = document.getElementById('editBookingNotes').value;
+
+    if (!bookingDate || !bookingTime || !bookingStatus) {
+        showNotification("请填写所有必填字段", "warning");
+        return;
+    }
+
+    const saveBtn = document.getElementById('saveBookingChangesBtn');
+    saveBtn.disabled = true;
+    saveBtn.innerHTML = `<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Saving...`;
+
+    fetch(`${CONFIG.API.BASE_URL}/photographer/bookings/${bookingId}`, {
+        method: 'PUT',
+        headers: {
+            'Authorization': `Bearer ${localStorage.getItem("token")}`,
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            booking_date: bookingDate,
+            booking_time: bookingTime,
+            location: bookingLocation,
+            status: bookingStatus,
+            notes: bookingNotes
+        })
+    })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Failed to save booking changes');
+            }
+            return response.json();
+        })
+        .then(data => {
+            bootstrap.Modal.getInstance(document.getElementById('editBookingModal')).hide();
+            showNotification("Booking changes saved successfully", "success");
+            loadBookings();
+        })
+        .catch(error => {
+            console.error("Failed to load booking changes: ", error);
+            showNotification("Error while saving booking changes");
+        })
+        .finally(() => {
+            saveBtn.disabled = false;
+            saveBtn.textContent = "Save Changes";
+        })
+}
+
+function messageClient(clientId) {
+    $(".nav-link").removeClass("active");
+    $('[data-section="messages"]').addClass("active");
+    $(".dashboard-section").addClass("d-none");
+    $("#messagesSection").removeClass("d-none");
+
+    loadMessages(clientId);
+}
+
+function updateBookingStatus(bookingId, status) {
+    if (!confirm(`Are you sure you want to update this booking status to ${status === 'confirmed' ? "Confirmed" : "Cancelled"}?`)) {
+        return;
+    }
+
+    fetch(`${CONFIG.API.BASE_URL}/photographer/bookings/${bookingId}`, {
+        method: 'PUT',
+        headers: {
+            'Authorization': `Bearer ${localStorage.getItem("token")}`,
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            status: status
+        })
+    })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Failed to update booking status');
+            }
+            return response.json();
+        })
+        .then(data => {
+            showNotification("Booking updated successfully", "success");
+            loadBookings();
+        })
+        .catch(error => {
+            console.error("Failed to update booking status: ", error);
+            showNotification("Error while saving booking changes. Please try again.", "danger");
+        })
 }
 
 
@@ -1218,6 +1900,8 @@ function loadMessages() {
             <span class="ms-2">Loading conversations...</span>
         </div>
     `);
+
+    $("#conversationTitle").text("Select a conversation");
     $("#messagesContainer").html(`
         <div class="text-center p-5">
             <i class="bi bi-chat-dots display-4 text-muted"></i>
@@ -1226,127 +1910,201 @@ function loadMessages() {
     `);
 
     $("#messageInputContainer").addClass("d-none");
+    $("#conversationMenu").addClass("d-none");
 
-    fetch(`${CONFIG.API.BASE_URL}/photographer/messages`, {
-        method: "POST",
-        headers: {
-            'Authorization': `Bearer ${localStorage.getItem("token")}`,
-            'Content-Type': 'application/json'
-        }
-    })
-        .then(response => {
-            if (!response.ok) {
-                throw new Error('Failed to load messages');
-            }
-            return response.json();
-        })
-        .then(data => {
-            if (!data.success || !data.data || Object.keys(data.data).length === 0) {
+    
+    API.getConversations()
+        .then(conversations => {
+            window.conversationsData = conversations || [];
+
+            if (!conversations || conversations.length === 0) {
                 $("#conversationsList").html(`
-                    <div class="text-center p-3">
-                        <p class="text-muted mb-0">No conversations found</p>
+                    <div class="p-3 text-center">
+                        <p class="text-muted">No conversations yet</p>
+                        <button class="btn btn-sm btn-outline-primary" id="startNewConversationBtn">
+                            Start a new conversation
+                        </button>
                     </div>
                 `);
+
+                $("#startNewConversationBtn").click(function() {
+                    
+                    showNotification("This feature is not available yet", "info");
+                });
                 return;
             }
 
-            console.log("Messages userId: ", data.data.user_id);
-            const conversationIds = data.data.booking_ids || [];
-            const conversations = [];
-            const userId = data.data.user_id;
+            const conversationsHtml = conversations.map(conversation => {
+                
+                let otherPartyName, otherPartyImage, unreadCount;
 
-            console.log(conversationIds);
-            for (let i = 0; i < conversationIds.length; i++) {
-                console.log("Debug");
-                console.log("Conversation ID: ", data.data.conversations[i]);
-                if (data.data.conversations[i]) {
-                    const conversationData = data.data.conversations[i];
-                    const messages = conversationData.messages || [];
-
-                    if (messages.length > 0) {
-                        const latestMessage = messages[messages.length - 1];
-                        const hasUnread = messages.some(msg => !msg.is_read && msg.sender_id !== userId);
-                        const clientName = messages.find(msg => msg.sender_id !== userId)?.username || "Unknown";
-
-                        conversations.push({
-                            id: conversationData.conversation_id,
-                            clientName: clientName,
-                            latestMessage: latestMessage.message,
-                            timestamp: latestMessage.created_at,
-                            hasUnread: hasUnread,
-                            messages: messages
-                        })
-                    }
+                if (conversation.customer) {
+                    otherPartyName = conversation.customer.name || 'Client';
+                    otherPartyImage = conversation.customer.profile_image || '../../assets/images/default-avatar.jpg';
+                } else if (conversation.sender) {
+                    otherPartyName = conversation.sender.name || 'Client';
+                    otherPartyImage = conversation.sender.profile_image || '../../assets/images/default-avatar.jpg';
+                } else {
+                    otherPartyName = 'Client';
+                    otherPartyImage = '../../assets/images/default-avatar.jpg';
                 }
-            }
 
-            conversations.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+                unreadCount = conversation.unread_count || 0;
 
-            const conversationHtml = conversations.map(conversation => `
-                <a href="#"
-                   class="list-group-item list-group-item-action conversation-item ${conversation.hasUnread ? 'unread-conversation' : ''}"
-                   data-id="${conversation.id}">
+                let lastMessageTime = formatDate(conversation.last_message_time || conversation.created_at);
+                let lastMessageText = conversation.last_message || 'No messages yet';
+
+                const unreadClass = unreadCount > 0 ? 'fw-bold' : '';
+                const unreadBadge = unreadCount > 0
+                    ? `<span class="badge bg-danger rounded-pill ms-2">${unreadCount}</span>`
+                    : '';
+
+                return `
+                <a href="#" class="list-group-item list-group-item-action conversation-item ${unreadClass}" 
+                   data-id="${conversation.id}"
+                   data-other-name="${otherPartyName}">
                     <div class="d-flex w-100 justify-content-between align-items-center">
-                        <h6 class="mb-1">${conversation.clientName} ${conversation.hasUnread ? '<span class="badge rounded-pill bg-danger">New</span>' : ''}</h6>
-                        <small class="text-muted">${formatDate(conversation.timestamp)}</small>
+                        <div class="d-flex align-items-center">
+                            <img src="${otherPartyImage}" class="rounded-circle me-2" width="32" height="32" alt="${otherPartyName}">
+                            <h6 class="mb-1">${otherPartyName} ${unreadBadge}</h6>
+                        </div>
+                        <small class="text-muted">${lastMessageTime}</small>
                     </div>
-                    <p class="mb-1 text-truncate">${conversation.latestMessage}</p>
+                    <p class="mb-1 text-truncate ps-4">${lastMessageText}</p>
                 </a>
-            `).join('');
+                `;
+            }).join('');
 
-            $("#conversationsList").html(conversationHtml);
+            $("#conversationsList").html(conversationsHtml);
 
-            $(".conversation-item").click(function (e) {
+            $(".conversation-item").click(function(e) {
                 e.preventDefault();
                 const conversationId = $(this).data("id");
-                const clientName = $(this).data('client-name');
+                const otherName = $(this).data("other-name");
+
+                if (!conversationId) {
+                    console.error("Missing conversation ID");
+                    return;
+                }
+
+                $("#sendMessageForm").data("conversation-id", conversationId);
+                $("#conversationTitle").text(otherName);
+
+                $(this).removeClass("fw-bold")
+                    .find(".badge").remove();
 
                 $(".conversation-item").removeClass("active");
                 $(this).addClass("active");
-                $(this).removeClass("unread-conversation");
-                $(this).find(".badge").remove();
-
-                displayConversationMessages(conversations.find(c => c.id === conversationId), data.data.user_id);
-
-                $("#conversationTitle").text($(this).find("h6").text().replace());
 
                 $("#conversationMenu").removeClass("d-none");
 
-                $("#viewClientProfileBtn").data("client-name", clientName);
-
-                $("#messageInputContainer").removeClass("d-none");
-
-                $("#sendMessageForm").data("conversation-id", conversationId);
-
-                $("#sendMessageForm").off("submit").on("submit", function (e) {
-                    e.preventDefault();
-                    const messageText = $("#messageInput").val().trim();
-                    const conversationId = $(this).data("conversation-id");
-
-                    if (messageText && conversationId) {
-                        sendMessage(conversationId, messageText, $(this).data("user-id"));
-                    }
-                })
-
-                $("viewClientProfileBtn").click(function (e) {
-                    e.preventDefault();
-                    // TODO: Open client profile
-                })
-
-                $("markAsReadBtn").click(function (e) {
-                    e.preventDefault();
-                    // TODO: Mark conversation as read
-                })
-            })
+                loadConversationMessages(conversationId);
+                API.markMessagesAsRead(conversationId);
+            });
         })
-        .catch((error) => {
-            console.error("Failed to load messages: ", error);
+        .catch(error => {
+            console.error("Failed to load conversations:", error);
             $("#conversationsList").html(`
-                <div class="alert alert-danger m-2">
-                    Failed to load conversations. Please try again.
+            <div class="alert alert-danger m-3">
+                <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                Failed to load conversations. Please try again.
+            </div>
+        `);
+        });
+}
+
+function loadConversationMessages(conversationId) {
+    $("#messagesContainer").html(`
+        <div class="text-center p-3">
+            <div class="spinner-border" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <p>Loading messages...</p>
+        </div>
+    `);
+
+    
+    API.getUserProfile()
+        .then(userData => {
+            const currentUserId = userData.id;
+
+            
+            return API.getConversationMessages(conversationId)
+                .then(response => {
+                    const messages = response.data || [];
+
+                    if (messages.length === 0) {
+                        $("#messagesContainer").html(`
+                            <div class="text-center p-5">
+                                <i class="bi bi-chat-dots display-4 text-muted"></i>
+                                <p class="mt-3">No messages in this conversation</p>
+                            </div>
+                        `);
+                        return;
+                    }
+
+                    const messagesHtml = messages.map(msg => {
+                        
+                        const isCurrentUser = parseInt(msg.sender_id) === parseInt(currentUserId);
+                        const alignClass = isCurrentUser ? 'justify-content-end' : 'justify-content-start';
+                        const bgColor = isCurrentUser ? '#007bff' : '#f1f1f1';
+                        const textColor = isCurrentUser ? '#fff' : '#000';
+
+                        const time = formatTime(msg.created_at);
+                        const date = formatDate(msg.created_at);
+
+                        return `
+                            <div class="d-flex ${alignClass} mb-3">
+                                <div class="message-bubble" style="background: ${bgColor}; color: ${textColor}; border-radius: 1rem; padding: 0.75rem; max-width: 75%;">
+                                    <div class="message-content">
+                                        <p class="mb-0">${msg.message}</p>
+                                        <small class="d-block text-${isCurrentUser ? 'end' : 'start'} mt-1" style="opacity: 0.8; color: ${textColor} !important;">
+                                            ${date} ${time}
+                                        </small>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    }).join('');
+
+                    $("#messagesContainer").html(`
+                        <div class="messages-wrapper d-flex flex-column">
+                            ${messagesHtml}
+                        </div>
+                    `);
+
+                    $("#messageInputContainer").removeClass("d-none");
+
+                    
+                    setTimeout(scrollToBottom, 100);
+                });
+        })
+        .catch(error => {
+            console.error("Failed to load conversation messages:", error);
+            $("#messagesContainer").html(`
+                <div class="alert alert-danger">
+                    Failed to load messages. Please try again.
                 </div>
             `);
         });
+}
+
+function formatTime(timestamp) {
+    if (!timestamp) return '';
+    const date = new Date(timestamp);
+    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+}
+
+
+function scrollToBottom() {
+    const messagesContainer = document.getElementById("messagesContainer");
+    if (messagesContainer) {
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    }
+    const messagesWrapper = document.querySelector(".messages-wrapper");
+    if (messagesWrapper) {
+        messagesWrapper.scrollTop = messagesWrapper.scrollHeight;
+    }
 }
 
 function displayConversationMessages(conversation, user_id) {
@@ -1392,40 +2150,90 @@ function displayConversationMessages(conversation, user_id) {
     }
 }
 
-function sendMessage(conversationId, messageText, userId) {
+function sendMessage(conversationId, messageText) {
     const sendButton = $("#sendMessageForm button[type='submit']");
     sendButton.prop("disabled", true);
 
+    
     $("#messageInput").val("");
 
-    fetch(`${CONFIG.API.BASE_URL}/photographer/messages/send`, {
-        method: 'POST',
-        headers: {
-            'Authorization': `Bearer ${localStorage.getItem("token")}`,
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-            conversation_id: conversationId,
-            message_text: messageText
-        })
+    
+    const currentTime = new Date();
+    const formattedTime = formatTime(currentTime);
+    const formattedDate = formatDate(currentTime);
+
+    
+    const tempId = 'msg_' + Date.now();
+
+    
+    const newMessageHtml = `
+        <div class="d-flex justify-content-end mb-3" id="${tempId}">
+            <div class="message-bubble" style="background: #007bff; color: #fff; border-radius: 1rem; padding: 0.75rem; max-width: 75%;">
+                <div class="message-content">
+                    <p class="mb-0">${messageText}</p>
+                    <small class="d-block text-end mt-1" style="opacity: 0.8; color: #fff !important;">
+                        ${formattedDate} ${formattedTime}
+                        <span class="message-status"><i class="bi bi-clock"></i></span>
+                    </small>
+                </div>
+            </div>
+        </div>
+    `;
+
+    
+    if ($(".messages-wrapper").length === 0) {
+        $("#messagesContainer").html('<div class="messages-wrapper d-flex flex-column"></div>');
+    }
+
+    
+    $(".messages-wrapper").append(newMessageHtml);
+
+    
+    scrollToBottom();
+
+    
+    API.replyToConversation({
+        conversation_id: conversationId,
+        message: messageText
     })
         .then(response => {
-            if (!response.ok) {
-                throw new Error('Failed to send message');
-            }
-            return response.json();
-        })
-        .then(data => {
-            loadMessages();
-            $("#messageInput").focus();
+            console.log("Message sent successfully:", response);
+
+            
+            $(`#${tempId} .message-status`).html('<i class="bi bi-check-all"></i>');
+
+            
+            
+            updateConversationPreview(conversationId, messageText);
         })
         .catch(error => {
             console.error("Failed to send message:", error);
-            alert("Failed to send message. Please try again.");
+
+            
+            $(`#${tempId} .message-status`).html('<i class="bi bi-exclamation-triangle text-danger"></i>');
+
+            showNotification("Failed to send message. Please try again.", "error");
         })
         .finally(() => {
             sendButton.prop("disabled", false);
-        })
+            $("#messageInput").focus();
+        });
+}
+
+function updateConversationPreview(conversationId, lastMessage) {
+    const conversationItem = $(`.conversation-item[data-id="${conversationId}"]`);
+    if (conversationItem.length) {
+        
+        conversationItem.find("p.mb-1").text(lastMessage);
+
+        
+        const now = new Date();
+        conversationItem.find("small.text-muted").text(formatDate(now));
+
+        
+        const conversationsList = $("#conversationsList");
+        conversationsList.prepend(conversationItem);
+    }
 }
 
 //Get reviews info
@@ -1571,7 +2379,7 @@ function generateRatingBars(distribution) {
     let html = '';
     const totalReviews = Object.values(distribution).reduce((a, b) => a + b, 0);
 
-    // 从5星到1星显示
+    
     for (let i = 5; i >= 1; i--) {
         const count = distribution[i] || 0;
         const percentage = totalReviews ? (count / totalReviews * 100).toFixed(1) : 0;
@@ -1596,7 +2404,6 @@ function generateRatingBars(distribution) {
  * @param {number} reviewId - id of the comment
  */
 function openReviewReplyModal(reviewId) {
-    // 显示加载状态
     $("#reviewReplyModal .modal-body").html(`
         <div class="text-center py-5">
             <div class="spinner-border" role="status">
@@ -1611,11 +2418,13 @@ function openReviewReplyModal(reviewId) {
     const replyModal = new bootstrap.Modal(document.getElementById('reviewReplyModal'));
     replyModal.show();
 
-    fetch(`${CONFIG.API.BASE_URL}/reviews/${reviewId}`, {
+    fetch(`${CONFIG.API.BASE_URL}/photographer/reviews/item`, {
+        method: 'POST',
         headers: {
             'Authorization': `Bearer ${localStorage.getItem("token")}`,
             'Content-Type': 'application/json'
-        }
+        },
+        body: JSON.stringify({id: reviewId})
     })
         .then(response => {
             if (!response.ok) {
@@ -1648,7 +2457,7 @@ function updateReviewReplyModal(review) {
     $("#reviewReplyModal .modal-body").html(`
         <div class="review-container mb-3">
             <div class="d-flex align-items-start">
-                <img src="${review.customer.image || '../../assets/images/default-avatar.jpg'}" alt="Client" class="rounded-circle me-2" width="40" height="40" id="reviewClientImage">
+                <img src="${review.customer.profile_image || '../../assets/images/default-avatar.jpg'}" alt="Client" class="rounded-circle me-2" width="40" height="40" id="reviewClientImage">
                 <div>
                     <h6 id="reviewClientName">${review.customer.name}</h6>
                     <div id="reviewRating" class="mb-1">
@@ -1674,26 +2483,27 @@ function updateReviewReplyModal(review) {
  * submit comment reply
  */
 function submitReviewReply() {
-    // fetch id & reply content
+    
     const reviewId = $("#submitReplyBtn").data("reviewId");
     const replyText = $("#replyText").val();
 
     if (!replyText.trim()) {
-        alert("Please enter a reply");
+        showNotification("Please enter reply content", "warning");
         return;
     }
 
     const submitBtn = $("#submitReplyBtn");
     const originalText = submitBtn.text();
-    submitBtn.prop("disabled", true).html('<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Submitting...');
+    submitBtn.prop("disabled", true).html('<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Submitting');
 
-    fetch(`${CONFIG.API.BASE_URL}/reviews/${reviewId}/reply`, {
+    
+    fetch(`${CONFIG.API.BASE_URL}/photographer/reviews/reply`, {
         method: 'POST',
         headers: {
             'Authorization': `Bearer ${localStorage.getItem("token")}`,
             'Content-Type': 'application/json'
         },
-        body: JSON.stringify({reply: replyText})
+        body: JSON.stringify({reply: replyText, id: reviewId})
     })
         .then(response => {
             if (!response.ok) {
@@ -1704,8 +2514,11 @@ function submitReviewReply() {
         .then(data => {
             bootstrap.Modal.getInstance(document.getElementById('reviewReplyModal')).hide();
 
-            showNotification("Reply submitted successfully", "success");
+            
+            const isUpdate = data.is_update ? "update" : "submit";
+            showNotification(`Reply ${isUpdate} succeed`, "success");
 
+            
             if ($("#reviewsSection").is(":visible")) {
                 loadReviews();
             } else {
@@ -1714,7 +2527,7 @@ function submitReviewReply() {
         })
         .catch(error => {
             console.error("Failed to submit reply:", error);
-            showNotification("Failed to submit reply. Please try again.", "error");
+            showNotification("Failed to submit reply. Please try again later", "error");
         })
         .finally(() => {
             submitBtn.prop("disabled", false).text(originalText);
@@ -1751,67 +2564,6 @@ function addServiceFeatureInput() {
 
     $("#serviceFeatures").append(newFeatureInput);
     setupRemoveFeatureButtons();
-}
-
-/**
- * save Portfolio Item
- */
-function savePortfolioItem() {
-    // fetch form data
-    const title = $("#portfolioTitle").val();
-    const category = $("#portfolioCategory").val();
-    const description = $("#portfolioDescription").val();
-    const featured = $("#portfolioFeatured").is(":checked");
-    const imageFile = $("#portfolioImageUpload")[0].files[0];
-
-    if (!title || !category || !imageFile) {
-        alert("Please fill in all required fields");
-        return;
-    }
-
-    const saveBtn = $("#savePortfolioBtn");
-    const originalText = saveBtn.text();
-    saveBtn.prop("disabled", true).html('<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Saving...');
-
-    // upload image
-    uploadImage(imageFile)
-        .then(imageData => {
-            // 然后保存作品集项目
-            return fetch(`${CONFIG.API.BASE_URL}/portfolio`, {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${localStorage.getItem("token")}`,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    title: title,
-                    category_id: category,
-                    description: description,
-                    image_path: imageData.url,
-                    featured: featured
-                })
-            });
-        })
-        .then(response => {
-            if (!response.ok) {
-                throw new Error('Failed to save portfolio item');
-            }
-            return response.json();
-        })
-        .then(data => {
-            bootstrap.Modal.getInstance(document.getElementById('addPortfolioModal')).hide();
-
-            showNotification("Portfolio item added successfully", "success");
-
-            loadPortfolio();
-        })
-        .catch(error => {
-            console.error("Failed to save portfolio item:", error);
-            showNotification("Failed to save portfolio item. Please try again.", "error");
-        })
-        .finally(() => {
-            saveBtn.prop("disabled", false).text(originalText);
-        });
 }
 
 /**
@@ -2091,7 +2843,7 @@ function sendPasswordChangeRequest(currentPassword, newPassword, confirmPassword
 
             if (!response.ok) {
                 return response.json().then(data => {
-                    throw { status: response.status, data: data };
+                    throw {status: response.status, data: data};
                 });
             }
             return response.json();
@@ -2187,7 +2939,9 @@ function openEditProfileModal() {
         });
 }
 
-function loadCategories(selectedCategories) {
+function loadCategories() {
+    console.log("Loading categories...");
+
     fetch(`${CONFIG.API.BASE_URL}/categories`, {
         headers: {
             'Authorization': `Bearer ${localStorage.getItem("token")}`,
@@ -2196,32 +2950,49 @@ function loadCategories(selectedCategories) {
     })
         .then(response => {
             if (!response.ok) {
-                throw new Error('Failed to load categories');
+                throw new Error(`Failed to load categories: ${response.status}`);
             }
             return response.json();
         })
-        .then(data => {
-            if (!data || data.length === 0) {
-                $("#editCategories").html('<p class="text-muted">No categories available</p>');
+        .then(categories => {
+            console.log("Categories loaded:", categories.length);
+            const categoryButtons = $("#portfolioCategoryButtons");
+
+            if (categoryButtons.length === 0) {
+                console.error("Portfolio category buttons container not found with ID");
                 return;
             }
 
-            const categoriesHtml = data.map(category => {
-                const isSelected = selectedCategories.includes(category.name);
-                return `
-                <div class="form-check form-check-inline mb-2">
-                    <input class="form-check-input" type="checkbox" id="category_${category.id}" 
-                           name="categories[]" value="${category.id}" ${isSelected ? 'checked' : ''}>
-                    <label class="form-check-label" for="category_${category.id}">${category.name}</label>
-                </div>
-            `;
-            }).join('');
+            categoryButtons.empty();
+            categoryButtons.append(`
+            <button type="button" class="btn btn-outline-primary active" data-category="all">All</button>
+        `);
 
-            $("#editCategories").html(categoriesHtml);
+            categories.forEach(category => {
+                categoryButtons.append(`
+                <button type="button" class="btn btn-outline-primary" 
+                        data-category="${category.slug}">${category.name}</button>
+            `);
+            });
+
+            $("#portfolioCategoryButtons button[data-category]").off('click').on('click', function() {
+                const category = $(this).data("category");
+                $("#portfolioCategoryButtons button[data-category]").removeClass("active");
+                $(this).addClass("active");
+                lastSelectedCategory = category;
+                filterPortfolioItems(category);
+            });
+
+            const categorySelect = $("#portfolioCategory");
+            categorySelect.empty();
+            categorySelect.append('<option value="">Select category</option>');
+
+            categories.forEach(category => {
+                categorySelect.append(`<option value="${category.id}">${category.name}</option>`);
+            });
         })
         .catch(error => {
             console.error("Failed to load categories:", error);
-            $("#editCategories").html('<p class="text-danger">Failed to load categories</p>');
         });
 }
 
@@ -2237,7 +3008,7 @@ function saveProfileChanges() {
     };
 
     const selectedCategories = [];
-    $("input[name='categories[]']:checked").each(function() {
+    $("input[name='categories[]']:checked").each(function () {
         selectedCategories.push($(this).val());
     });
     profileData.categories = selectedCategories;
@@ -2303,8 +3074,27 @@ function uploadProfileImage(imageFile) {
 
 function previewImage(file, previewElementId) {
     const reader = new FileReader();
-    reader.onload = function(e) {
+    reader.onload = function (e) {
         $(`#${previewElementId}`).attr("src", e.target.result);
     };
     reader.readAsDataURL(file);
+}
+
+function uploadPortfolioImage(imageFile) {
+    const formData = new FormData();
+    formData.append("image", imageFile);
+
+    return fetch(`${CONFIG.API.BASE_URL}/photographer/portfolio/image`, {
+        method: 'POST',
+        headers: {
+            'Authorization': `Bearer ${localStorage.getItem("token")}`
+        },
+        body: formData
+    })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Failed to upload portfolio image');
+            }
+            return response.json();
+        });
 }

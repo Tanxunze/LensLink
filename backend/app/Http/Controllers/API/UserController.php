@@ -68,48 +68,42 @@ class UserController extends Controller
     {
         if (!$request->hasFile('image')) {
             return response()->json([
-                'message' => '没有上传文件',
-                'errors' => ['image' => ['没有文件被上传']]
+                'message' => 'No files uploaded',
+                'errors' => ['image' => ['No files are uploaded']]
             ], 422);
         }
 
         $file = $request->file('image');
         if (!$file->isValid()) {
             return response()->json([
-                'message' => '文件上传失败',
-                'errors' => ['image' => ['文件损坏或上传中断']]
+                'message' => 'File upload failed',
+                'errors' => ['image' => ['Corrupted files or interrupted uploads']]
             ], 422);
         }
 
         $validator = Validator::make($request->all(), [
-            'image' => 'required|file|image|max:5120', // 5MB限制
+            'image' => 'required|file|image|max:5120',
         ]);
 
         if ($validator->fails()) {
             return response()->json([
-                'message' => '验证失败',
+                'message' => 'validation failure',
                 'errors' => $validator->errors()
             ], 422);
         }
 
         try {
             $user = Auth::user();
-
-            // 生成唯一文件名 - 注意我们只保存文件名，不包含路径
             $filename = 'profile_' . $user->id . '_' . time() . '.' . $file->getClientOriginalExtension();
 
-            // 定义目录路径
             $directoryPath = 'images/profiles';
             $fullDirectoryPath = public_path($directoryPath);
 
-            // 创建目录(如果不存在)
             if (!file_exists($fullDirectoryPath)) {
                 mkdir($fullDirectoryPath, 0777, true);
             }
 
-            // 删除旧图片(如果存在且不是默认图片)
             if ($user->profile_image && !str_contains($user->profile_image, 'default-avatar')) {
-                // 从URL提取文件名部分
                 $oldFilename = basename(parse_url($user->profile_image, PHP_URL_PATH));
                 $oldPath = public_path('images/profiles/' . $oldFilename);
                 if (file_exists($oldPath)) {
@@ -117,29 +111,25 @@ class UserController extends Controller
                 }
             }
 
-            // 移动文件到目标目录
             $file->move($fullDirectoryPath, $filename);
 
-            // 设置图片URL - 使用API端点
             $imageUrl = url('/api/images/' . $filename);
-
-            // 更新用户资料
             $user->profile_image = $imageUrl;
             $user->save();
 
             return response()->json([
-                'message' => '头像更新成功',
+                'message' => 'Avatar updated successfully',
                 'user' => $user
             ]);
         } catch (\Exception $e) {
-            \Log::error('图片上传异常', [
+            \Log::error('Image upload exception', [
                 'error' => $e->getMessage(),
                 'file' => $e->getFile(),
                 'line' => $e->getLine()
             ]);
 
             return response()->json([
-                'message' => '服务器处理图片时出错',
+                'message' => 'Server error when processing images',
                 'errors' => ['server' => [$e->getMessage()]]
             ], 500);
         }
@@ -147,18 +137,35 @@ class UserController extends Controller
 
     public function getImage($filename)
     {
-        // 构建图片完整路径
-        $path = public_path('images/profiles/' . $filename);
-
-        // 检查文件是否存在
-        if (!file_exists($path)) {
-            return response()->json(['error' => '图片不存在'], 404);
+        if (str_starts_with($filename, 'portfolio_')) {
+            $path = public_path('images/portfolios/' . $filename);
+        } elseif (str_starts_with($filename, 'service_')) {
+            $path = public_path('images/services/' . $filename);
+        } else {
+            $path = public_path('images/profiles/' . $filename);
         }
 
-        // 确定文件的MIME类型
-        $type = mime_content_type($path);
+        if (!file_exists($path)) {
+            $potentialPaths = [
+                public_path('images/' . $filename),
+                public_path('images/profiles/' . $filename),
+                public_path('images/portfolios/' . $filename),
+                public_path('images/services/' . $filename),
+            ];
 
-        // 返回图片内容
+            foreach ($potentialPaths as $potentialPath) {
+                if (file_exists($potentialPath)) {
+                    $path = $potentialPath;
+                    break;
+                }
+            }
+
+            if (!file_exists($path)) {
+                return response()->json(['error' => 'Image not found'], 404);
+            }
+        }
+
+        $type = mime_content_type($path);
         return response()->file($path, ['Content-Type' => $type]);
     }
 

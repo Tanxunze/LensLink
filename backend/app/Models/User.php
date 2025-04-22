@@ -97,7 +97,7 @@ class User extends Authenticatable
         $ban = $this->banInfo;
         if (!$ban) return false;
 
-        if ($ban->expires_at === null) return true; // 永久封禁
+        if ($ban->expires_at === null) return true;
         return $ban->expires_at->isFuture();
     }
 }

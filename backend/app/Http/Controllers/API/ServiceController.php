@@ -245,7 +245,6 @@ class ServiceController extends Controller
         if ($request->has('category_id')) {
             $service->categories()->attach($request->category_id);
         } else {
-            // 默认使用摄影师的第一个分类
             $defaultCategory = $photographerProfile->categories->first();
             if ($defaultCategory) {
                 $service->categories()->attach($defaultCategory->id);
