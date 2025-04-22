@@ -222,6 +222,34 @@ function setupEventHandlers() {
     $(document).ready(function () {
         initPasswordChangeFeature();
     });
+
+    $("#markAsReadBtn").click(function(e) {
+        e.preventDefault();
+        const conversationId = $("#sendMessageForm").data("conversation-id");
+        const conversationType = $("#sendMessageForm").data("conversation-type");
+
+        if (!conversationId) return;
+
+        if (conversationType === 'customer') {
+            markCustomerMessagesAsRead(conversationId);
+        } else {
+            markMessagesAsRead(conversationId);
+        }
+
+        showNotification("Messages marked as read", "success");
+    });
+
+    $("#viewPhotographerProfileBtn").click(function(e) {
+        e.preventDefault();
+        const conversationId = $("#sendMessageForm").data("conversation-id");
+        const conversation = window.conversationsData.find(c => c.id == conversationId);
+
+        if (conversation && conversation.photographer && conversation.photographer.id) {
+            window.open(`../../pages/photographer-detail.html?id=${conversation.photographer.id}`, '_blank');
+        } else {
+            showNotification("Could not find photographer profile", "warning");
+        }
+    });
 }
 
 // Loading user data
@@ -961,16 +989,17 @@ function loadMessages() {
         </div>
     `);
     $("#messageInputContainer").addClass("d-none");
+    $("#conversationMenu").addClass("d-none");
     loadPendingContactRequests();
 
     Promise.all([
         API.getConversations().catch(error => {
             console.error("Failed to load photographer conversations:", error);
-            return { length: 0 }; 
+            return { length: 0 };
         }),
         API.getCustomerConversations().catch(error => {
             console.error("Failed to load customer conversations:", error);
-            return { conversations: [] }; 
+            return { conversations: [] };
         })
     ])
         .then(([photographerConversations, customerData]) => {
@@ -982,9 +1011,6 @@ function loadMessages() {
                     }
                     return {...conv, type: 'customer'};
                 }) : [];
-
-            console.log("Photographer conversations:", photogConvs);
-            console.log("Customer conversations:", customerConvs);
 
             const allConversations = [
                 ...photogConvs.map(conv => ({...conv, type: 'photographer'})),
@@ -1030,6 +1056,7 @@ function loadMessages() {
                     otherPartyImage = participant.profile_image || '../../assets/images/default-avatar.jpg';
                     unreadCount = conversation.unread_count || 0;
                 }
+
                 let lastMessageTime, lastMessageText;
                 if (conversation.type === 'photographer') {
                     lastMessageTime = formatDate(conversation.last_message_time || conversation.created_at);
@@ -1041,7 +1068,7 @@ function loadMessages() {
 
                 const unreadClass = unreadCount > 0 ? 'fw-bold' : '';
                 const unreadBadge = unreadCount > 0
-                    ? `<span class="badge bg-primary rounded-pill ms-2">${unreadCount}</span>`
+                    ? `<span class="badge bg-danger rounded-pill ms-2">${unreadCount}</span>`
                     : '';
 
                 return `
@@ -1049,17 +1076,14 @@ function loadMessages() {
                    data-id="${conversation.id}"
                    data-type="${conversation.type}"
                    data-other-name="${otherPartyName}">
-                    <div class="d-flex align-items-center mb-1">
-                        <img src="${otherPartyImage}" class="rounded-circle me-2" width="32" height="32" alt="${otherPartyName}">
-                        <div class="d-flex justify-content-between align-items-center w-100">
-                            <h6 class="mb-0 conversation-name">${otherPartyName}</h6>
-                            <small class="text-muted conversation-time">${lastMessageTime}</small>
+                    <div class="d-flex w-100 justify-content-between align-items-center">
+                        <div class="d-flex align-items-center">
+                            <img src="${otherPartyImage}" class="rounded-circle me-2" width="32" height="32" alt="${otherPartyName}">
+                            <h6 class="mb-1">${otherPartyName} ${unreadBadge}</h6>
                         </div>
+                        <small class="text-muted">${lastMessageTime}</small>
                     </div>
-                    <div class="d-flex justify-content-between align-items-center ps-4">
-                        <p class="mb-0 text-truncate conversation-preview small">${lastMessageText}</p>
-                        ${unreadBadge}
-                    </div>
+                    <p class="mb-1 text-truncate ps-4">${lastMessageText}</p>
                     ${conversation.type === 'customer' ?
                     '<div class="mt-1 ps-4"><span class="badge bg-info">Customer</span></div>' : ''}
                 </a>
@@ -1086,6 +1110,8 @@ function loadMessages() {
 
                 $(".conversation-item").removeClass("active");
                 $(this).addClass("active");
+
+                $("#conversationMenu").removeClass("d-none");
 
                 if (conversationType === 'customer') {
                     loadCustomerConversation(conversationId);
@@ -1128,19 +1154,13 @@ function loadCustomerConversation(conversationId) {
         </div>
     `);
 
-    console.log("Loading customer conversation:", conversationId);
-
     API.getCustomerConversationMessages(conversationId)
         .then(data => {
-            console.log("Customer conversation data:", data);
-
-            // 显示消息输入框
             $("#messageInputContainer").removeClass("d-none");
 
             const messages = data.messages || [];
             const otherParticipant = data.participant || {};
 
-            // 更新对话标题
             $("#conversationTitle").text(otherParticipant.name || "Conversation");
             $("#conversationMenu").removeClass("d-none");
 
@@ -1154,41 +1174,41 @@ function loadCustomerConversation(conversationId) {
                 return;
             }
 
-            // 构建消息HTML
             const messagesHtml = messages.map(message => {
                 const isCurrentUser = message.is_mine;
-                const messageClass = isCurrentUser ? 'message-sent' : 'message-received';
-                const alignClass = isCurrentUser ? 'text-end' : 'text-start';
-                const bgClass = isCurrentUser ? 'bg-primary text-white' : 'bg-light';
+                const alignClass = isCurrentUser ? 'justify-content-end' : 'justify-content-start';
+                const bgColor = isCurrentUser ? '#007bff' : '#f1f1f1';
+                const textColor = isCurrentUser ? '#fff' : '#000';
 
                 const time = formatTime(message.created_at);
                 const date = formatDate(message.created_at);
 
                 return `
-                    <div class="${alignClass} mb-3">
-                        <div class="d-inline-block ${bgClass} p-2 px-3 rounded-3" style="max-width: 80%;">
-                            <div class="message-content">${message.message}</div>
-                        </div>
-                        <div class="message-time small text-muted mt-1">
-                            ${date} ${time}
+                    <div class="d-flex ${alignClass} mb-3">
+                        <div class="message-bubble" style="background: ${bgColor}; color: ${textColor}; border-radius: 1rem; padding: 0.75rem; max-width: 75%;">
+                            <div class="message-content">
+                                <p class="mb-0">${message.message}</p>
+                                <small class="d-block text-${isCurrentUser ? 'end' : 'start'} mt-1" style="opacity: 0.8; color: ${textColor} !important;">
+                                    ${date} ${time}
+                                </small>
+                            </div>
                         </div>
                     </div>
                 `;
             }).join('');
 
             $("#messagesContainer").html(`
-                <div class="messages-wrapper">
+                <div class="messages-wrapper d-flex flex-column">
                     ${messagesHtml}
                 </div>
             `);
 
-            // 滚动到底部
             const messagesContainer = document.getElementById("messagesContainer");
             messagesContainer.scrollTop = messagesContainer.scrollHeight;
 
-            // 显示输入框
             $("#messageInputContainer").removeClass("d-none");
             markCustomerMessagesAsRead(conversationId);
+            setTimeout(scrollToBottom, 100);
         })
         .catch(error => {
             console.error("Failed to load customer conversation:", error);
@@ -1239,20 +1259,22 @@ function loadConversation(conversationId) {
 
                 const messagesHtml = messages.map(message => {
                     const isCurrentUser = message.sender_id === currentUserId;
-                    const messageClass = isCurrentUser ? 'message-sent' : 'message-received';
-                    const alignClass = isCurrentUser ? 'align-self-end' : 'align-self-start';
-                    const bgClass = isCurrentUser ? 'bg-primary text-white' : 'bg-light';
+                    const alignClass = isCurrentUser ? 'justify-content-end' : 'justify-content-start';
+                    const bgColor = isCurrentUser ? '#007bff' : '#f1f1f1';
+                    const textColor = isCurrentUser ? '#fff' : '#000';
 
                     const time = message.created_at ? new Date(message.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
                     const date = message.created_at ? formatDate(message.created_at) : '';
 
                     return `
-                        <div class="message ${messageClass} ${alignClass}">
-                            <div class="message-bubble ${bgClass} p-2 rounded mb-2">
-                                ${message.message}
-                            </div>
-                            <div class="message-info small text-muted">
-                                ${date} ${time}
+                        <div class="d-flex ${alignClass} mb-3">
+                            <div class="message-bubble" style="background: ${bgColor}; color: ${textColor}; border-radius: 1rem; padding: 0.75rem; max-width: 75%;">
+                                <div class="message-content">
+                                    <p class="mb-0">${message.message}</p>
+                                    <small class="d-block text-${isCurrentUser ? 'end' : 'start'} mt-1" style="opacity: 0.8; color: ${textColor} !important;">
+                                        ${date} ${time}
+                                    </small>
+                                </div>
                             </div>
                         </div>
                     `;
@@ -1270,6 +1292,7 @@ function loadConversation(conversationId) {
 
             $("#messageInputContainer").removeClass("d-none");
             markMessagesAsRead(conversationId);
+            setTimeout(scrollToBottom, 100);
         })
         .catch(error => {
             console.error("Failed to load conversation:", error);
@@ -1326,7 +1349,26 @@ function sendMessage() {
 
     $("#messageInput").prop("disabled", true);
 
-    console.log(`Sending ${conversationType} message to conversation ${conversationId}`);
+    const currentTime = new Date().toISOString();
+    const formattedTime = formatTime(currentTime);
+    const formattedDate = formatDate(currentTime);
+
+    const newMessageHtml = `
+        <div class="d-flex justify-content-end mb-3">
+            <div class="message-bubble" style="background: #007bff; color: #fff; border-radius: 1rem; padding: 0.75rem; max-width: 75%;">
+                <div class="message-content">
+                    <p class="mb-0">${message}</p>
+                    <small class="d-block text-end mt-1" style="opacity: 0.8; color: #fff !important;">
+                        ${formattedDate} ${formattedTime}
+                    </small>
+                </div>
+            </div>
+        </div>
+    `;
+
+    $(".messages-wrapper").append(newMessageHtml);
+
+    scrollToBottom();
 
     if (conversationType === 'customer') {
         API.sendCustomerMessage({
@@ -1336,7 +1378,6 @@ function sendMessage() {
             .then(response => {
                 console.log("Message sent successfully:", response);
                 $("#messageInput").val("").prop("disabled", false).focus();
-                loadCustomerConversation(conversationId);
             })
             .catch(error => {
                 console.error("Failed to send message:", error);
@@ -1361,7 +1402,6 @@ function sendMessage() {
             .then(response => {
                 console.log("Message sent successfully:", response);
                 $("#messageInput").val("").prop("disabled", false).focus();
-                loadConversation(conversationId);
             })
             .catch(error => {
                 console.error("Failed to send message:", error);
@@ -1369,6 +1409,18 @@ function sendMessage() {
                 showNotification("Failed to send message. Please try again.", "error");
             });
     }
+}
+
+function scrollToBottom() {
+    const messagesContainer = document.getElementById("messagesContainer");
+    if (messagesContainer) {
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    }
+    const messagesWrapper = document.querySelector(".messages-wrapper");
+    if (messagesWrapper) {
+        messagesWrapper.scrollTop = messagesWrapper.scrollHeight;
+    }
+
 }
 
 function createOrOpenConversation(photographerId) {
