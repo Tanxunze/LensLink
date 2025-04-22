@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\API\AdminController;
 use App\Http\Controllers\API\CategoryController;
+use App\Http\Controllers\API\CustomerMessageController;
 use App\Http\Controllers\API\FavoriteController;
 use App\Http\Controllers\API\GoogleAuthController;
 use App\Http\Controllers\API\ServiceController;
@@ -56,6 +57,15 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/messages/mark-as-read', [MessageController::class, 'markAsRead']);
     Route::post('/messages/reply', [MessageController::class, 'replyToConversation']);
 
+    // Customer-to-customer messaging routes
+    Route::post('/customer-messages/send-request', [CustomerMessageController::class, 'sendRequest']);
+    Route::get('/customer-messages/pending-requests', [CustomerMessageController::class, 'getPendingRequests']);
+    Route::get('/customer-messages/pending-requests/count', [CustomerMessageController::class, 'getPendingRequestsCount']);
+    Route::post('/customer-messages/accept-request/{requestId}', [CustomerMessageController::class, 'acceptRequest']);
+    Route::post('/customer-messages/reject-request/{requestId}', [CustomerMessageController::class, 'rejectRequest']);
+    Route::get('/customer-messages/conversations', [CustomerMessageController::class, 'getConversations']);
+    Route::get('/customer-messages/conversation/{conversationId}', [CustomerMessageController::class, 'getConversationMessages']);
+    Route::post('/customer-messages/send', [CustomerMessageController::class, 'sendMessage']);
 
     // Bookings
     Route::post('/bookings', [BookingController::class, 'store']);

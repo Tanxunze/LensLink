@@ -298,9 +298,18 @@ function displayReviews(reviews) {
         <div class="card mb-4">
             <div class="card-body">
                 <div class="d-flex mb-3">
-                    <img src="${review.customer_image || 'default-avatar.jpg'}" class="rounded-circle me-3" width="50" height="50" alt="${review.customer_name}">
+                    <img src="${review.customer_image || '../assets/images/default-avatar.jpg'}" 
+                         class="rounded-circle me-3 customer-contact-trigger" 
+                         width="50" height="50" 
+                         alt="${review.customer_name}"
+                         data-customer-id="${review.customer_id}" 
+                         data-customer-name="${review.customer_name}"
+                         style="cursor: pointer;">
                     <div>
-                        <h6 class="mb-1">${review.customer_name}</h6>
+                        <h6 class="mb-1 customer-contact-trigger" 
+                            data-customer-id="${review.customer_id}" 
+                            data-customer-name="${review.customer_name}"
+                            style="cursor: pointer;">${review.customer_name}</h6>
                         <div class="mb-2">
                             ${$.lenslink.generateStarRating(review.rating)}
                         </div>
@@ -318,7 +327,23 @@ function displayReviews(reviews) {
             </div>
         </div>
     `).join('');
+
     $("#reviewsList").html(reviewsHtml);
+
+    // Add click event for customer contact
+    $(".customer-contact-trigger").on("click", function() {
+        const customerId = $(this).data('customer-id');
+        const customerName = $(this).data('customer-name');
+
+        // Check if trying to contact yourself
+        const currentUserId = localStorage.getItem("userId");
+        if (customerId.toString() === currentUserId) {
+            $.lenslink.showNotification("You cannot contact yourself.", "warning");
+            return;
+        }
+
+        openContactRequestModal(customerId, customerName);
+    });
 }
 
 function openBookingModal(serviceId) {
@@ -559,3 +584,48 @@ function showErrorMessage(message) {
     `);
 }
 
+function openContactRequestModal(customerId, customerName) {
+    // Check if user is logged in
+    if (!localStorage.getItem("token")) {
+        alert("Please log in to connect with other users");
+        window.location.href = "../pages/auth/login.html";
+        return;
+    }
+
+    if (localStorage.getItem("userRole") !== "customer") {
+        $.lenslink.showNotification("Only customers can connect with other customers", "warning");
+        return;
+    }
+
+    $("#requestRecipientName").text(customerName);
+    $("#contactRequestForm")[0].reset();
+    $("#sendRequestBtn").off("click").on("click", function() {
+        sendContactRequest(customerId, $("#requestMessage").val());
+    });
+
+    // Show modal
+    const modal = new bootstrap.Modal(document.getElementById('contactRequestModal'));
+    modal.show();
+}
+
+function sendContactRequest(recipientId, message) {
+    const requestData = {
+        recipient_id: recipientId,
+        message: message || ""
+    };
+
+    $("#sendRequestBtn").prop("disabled", true).html('<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Sending...');
+
+    API.sendContactRequest(requestData)
+        .then(data => {
+            bootstrap.Modal.getInstance(document.getElementById('contactRequestModal')).hide();
+            $.lenslink.showNotification("Contact request sent successfully!", "success");
+        })
+        .catch(error => {
+            console.error("Error sending contact request:", error);
+            $.lenslink.showNotification("Failed to send contact request. Please try again.", "error");
+        })
+        .finally(() => {
+            $("#sendRequestBtn").prop("disabled", false).text("Send Request");
+        });
+}

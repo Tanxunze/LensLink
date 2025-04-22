@@ -660,4 +660,93 @@ class API {
     static async getLogs(page = 1) {
         return this.request(`/admin/logs?page=${page}`);
     }
+
+    // Customer-to-customer messaging APIs
+
+    /**
+     * Send contact request to another customer
+     * @param {Object} requestData - Request data (recipient_id, message)
+     * @returns {Promise} - Request response
+     */
+    static async sendContactRequest(requestData) {
+        return this.request("/customer-messages/send-request", {
+            method: "POST",
+            body: JSON.stringify(requestData),
+        });
+    }
+
+    /**
+     * Get pending contact requests
+     * @returns {Promise} - Pending requests list
+     */
+    static async getPendingContactRequests() {
+        return this.request("/customer-messages/pending-requests");
+    }
+
+    /**
+     * Accept a contact request
+     * @param {number} requestId - Request ID
+     * @returns {Promise} - Accept response
+     */
+    static async acceptContactRequest(requestId) {
+        return this.request(`/customer-messages/accept-request/${requestId}`, {
+            method: "POST"
+        });
+    }
+
+    /**
+     * Reject a contact request
+     * @param {number} requestId - Request ID
+     * @returns {Promise} - Reject response
+     */
+    static async rejectContactRequest(requestId) {
+        return this.request(`/customer-messages/reject-request/${requestId}`, {
+            method: "POST"
+        });
+    }
+
+    /**
+     * Get customer conversations
+     * @returns {Promise} - Customer conversations list
+     */
+    static async getCustomerConversations() {
+        return this.request("/customer-messages/conversations");
+    }
+
+    /**
+     * Get messages from a customer conversation
+     * @param {number} conversationId - Conversation ID
+     * @returns {Promise} - Conversation messages
+     */
+    static async getCustomerConversationMessages(conversationId) {
+        return this.request(`/customer-messages/conversation/${conversationId}`);
+    }
+
+    /**
+     * Send message to another customer
+     * @param {Object} messageData - Message data (conversation_id, message)
+     * @returns {Promise} - Send response
+     */
+    static async sendCustomerMessage(messageData) {
+        return this.request("/customer-messages/send", {
+            method: "POST",
+            body: JSON.stringify(messageData),
+        });
+    }
+
+    /**
+     * Get count of pending contact requests
+     * @returns {Promise} - Count response
+     */
+    static async getPendingContactRequestsCount() {
+        return this.request("/customer-messages/pending-requests/count");
+    }
+    //pitch
+    static async markCustomerMessagesAsRead(conversationId) {
+        return this.request(`/customer-messages/mark-read/${conversationId}`, {
+            method: "POST"
+        });
+    }
 }
+
+
