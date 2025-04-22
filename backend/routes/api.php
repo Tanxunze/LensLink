@@ -5,6 +5,12 @@ use App\Http\Controllers\API\CategoryController;
 use App\Http\Controllers\API\CustomerMessageController;
 use App\Http\Controllers\API\FavoriteController;
 use App\Http\Controllers\API\GoogleAuthController;
+use App\Http\Controllers\API\PhotographerDashboard\Bookings;
+use App\Http\Controllers\API\PhotographerDashboard\Dashboard;
+use App\Http\Controllers\API\PhotographerDashboard\Messages;
+use App\Http\Controllers\API\PhotographerDashboard\Portfolio;
+use App\Http\Controllers\API\PhotographerDashboard\Reviews;
+use App\Http\Controllers\API\PhotographerDashboard\Services;
 use App\Http\Controllers\API\ServiceController;
 use App\Http\Controllers\API\ReviewController;
 use App\Http\Controllers\API\MessageController;
@@ -29,6 +35,7 @@ Route::get('/rating-options', [UtilityController::class, 'getRatingOptions']);
 Route::get('auth/google/redirect', [GoogleAuthController::class, 'redirectToGoogle']);
 Route::get('auth/google/callback', [GoogleAuthController::class, 'handleGoogleCallback']);
 Route::get('/images/{filename}', [UserController::class, 'getImage']);
+
 
 //private routes
 Route::middleware('auth:sanctum')->group(function () {
@@ -76,21 +83,24 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/earnings/chart', [BookingController::class, 'earnings']);
 
     // Photographer dashboard
-    Route::post('/photographer/dashboard', [App\Http\Controllers\API\PhotographerDashboard\Dashboard::class, 'index']);
-    Route::post('/photographer/portfolio', [App\Http\Controllers\API\PhotographerDashboard\Portfolio::class, 'index']);
-    Route::post('/photographer/profile',[\App\Http\Controllers\API\PhotographerDashboard\Dashboard::class,'show']);
-    Route::post('/photographer/profile/recent-bookings',[\App\Http\Controllers\API\PhotographerDashboard\Dashboard::class,'recentBookings']);
-    Route::post('photographer/bookings-details',[\App\Http\Controllers\API\PhotographerDashboard\Bookings::class,'index']);
-    Route::post('photographer/services',[\App\Http\Controllers\API\PhotographerDashboard\Services::class,'index']);
-    Route::post('photographer/reviews/details',[\App\Http\Controllers\API\PhotographerDashboard\Reviews::class,'index']);
-    Route::post('photographer/messages',[\App\Http\Controllers\API\PhotographerDashboard\Messages::class,'index']);
-    Route::post('photographer/messages/send',[\App\Http\Controllers\API\PhotographerDashboard\Messages::class,'send']);
-    Route::post('/photographer/profile/update',[\App\Http\Controllers\API\PhotographerDashboard\Dashboard::class,'update']);
-    Route::post('/photographer/profile/image',[\App\Http\Controllers\API\PhotographerDashboard\Dashboard::class,'updateProfileImage']);
-    Route::get('/photographer/bookings/{id}', [App\Http\Controllers\API\PhotographerDashboard\Bookings::class, 'show']);
-    Route::put('/photographer/bookings/{id}', [App\Http\Controllers\API\PhotographerDashboard\Bookings::class, 'update']);
-    Route::post('/photographer/reviews/reply', [App\Http\Controllers\API\PhotographerDashboard\Reviews::class, 'reply']);
-    Route::post('photographer/reviews/item',[\App\Http\Controllers\API\PhotographerDashboard\Reviews::class,'getReview']);
+    Route::post('/photographer/dashboard', [Dashboard::class, 'index']);
+    Route::post('/photographer/portfolio', [Portfolio::class, 'index']);
+    Route::post('/photographer/portfolio/image', [Portfolio::class, 'uploadPortfolioImage']);
+    Route::post('/photographer/profile',[Dashboard::class,'show']);
+    Route::post('/photographer/profile/recent-bookings',[Dashboard::class,'recentBookings']);
+    Route::post('/photographer/portfolio/create', [Portfolio::class, 'store']);
+    Route::post('/photographer/portfolio/update', [Portfolio::class, 'update']);
+    Route::post('photographer/bookings-details',[Bookings::class,'index']);
+    Route::post('photographer/services',[Services::class,'index']);
+    Route::post('photographer/reviews/details',[Reviews::class,'index']);
+    Route::post('photographer/messages',[Messages::class,'index']);
+    Route::post('photographer/messages/send',[Messages::class,'send']);
+    Route::post('/photographer/profile/update',[Dashboard::class,'update']);
+    Route::post('/photographer/profile/image',[Dashboard::class,'updateProfileImage']);
+    Route::get('/photographer/bookings/{id}', [Bookings::class, 'show']);
+    Route::put('/photographer/bookings/{id}', [Bookings::class, 'update']);
+    Route::post('/photographer/reviews/reply', [Reviews::class, 'reply']);
+    Route::post('photographer/reviews/item',[Reviews::class,'getReview']);
 
     //Favorites
     Route::get('/favorites', [FavoriteController::class, 'index']);
