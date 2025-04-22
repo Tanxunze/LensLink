@@ -1917,23 +1917,6 @@ function loadMessages() {
         .then(conversations => {
             window.conversationsData = conversations || [];
 
-            if (!conversations || conversations.length === 0) {
-                $("#conversationsList").html(`
-                    <div class="p-3 text-center">
-                        <p class="text-muted">No conversations yet</p>
-                        <button class="btn btn-sm btn-outline-primary" id="startNewConversationBtn">
-                            Start a new conversation
-                        </button>
-                    </div>
-                `);
-
-                $("#startNewConversationBtn").click(function() {
-                    
-                    showNotification("This feature is not available yet", "info");
-                });
-                return;
-            }
-
             const conversationsHtml = conversations.map(conversation => {
                 
                 let otherPartyName, otherPartyImage, unreadCount;
