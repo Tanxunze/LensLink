@@ -28,7 +28,7 @@ function checkAuthentication() {
     const userRole = localStorage.getItem("userRole");
 
     if (!token) {
-        window.location.href = "../../pages/auth/login.html";
+        window.location.href = "../../../pages/auth/login.html";
         return;
     }
 
@@ -40,7 +40,7 @@ function checkAuthentication() {
         localStorage.removeItem("userRole");
 
         setTimeout(() => {
-            window.location.href = "../../pages/auth/login.html";
+            window.location.href = "../../../pages/auth/login.html";
         }, 2000);
     });
 }
@@ -158,13 +158,13 @@ function logout() {
         .then((response) => {
             localStorage.removeItem("token");
             localStorage.removeItem("userRole");
-            window.location.href = "../../index.html";
+            window.location.href = "../../../index.html";
         })
         .catch((error) => {
             console.error("Logout error:", error);
             localStorage.removeItem("token");
             localStorage.removeItem("userRole");
-            window.location.href = "../../index.html";
+            window.location.href = "../../../index.html";
         });
 }
 
