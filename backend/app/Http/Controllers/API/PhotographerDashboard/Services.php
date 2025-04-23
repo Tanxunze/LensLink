@@ -69,4 +69,26 @@ class Services extends Controller
             'service' => $service
         ]);
     }
+
+    public function updateFeatureStatus(Request $request, $id)
+    {
+        $service = Service::where('id', $id)
+            ->first();
+
+        if (!$service) {
+            return response()->json(['message' => 'Service does not exists'], 404);
+        }
+
+        $validated = $request->validate([
+            'is_featured' => 'required|boolean',
+        ]);
+
+        $service->is_featured = $validated['is_featured'];
+        $service->save();
+
+        return response()->json([
+            'message' => $validated['is_featured'] ? 'Featured' : 'Unfeatured',
+            'service' => $service
+        ]);
+    }
 }

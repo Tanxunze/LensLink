@@ -22,11 +22,23 @@ $(document).ready(function () {
         }
     });
 
-    $(document).on('click','.edit-service-btn', function(e) {
+    $(document).on('click', '.edit-service-btn', function (e) {
         e.preventDefault();
         const serviceId = $(this).data("id");
         PhotographerServices.openEditServiceModal(serviceId);
     })
+
+    $(document).on('click', '.feature-service-btn', function (e) {
+        e.preventDefault();
+        const serviceId = $(this).data("id");
+        PhotographerServices.updateServiceFeatured(serviceId, true);
+    })
+
+    $(document).on('click', '.unfeature-service-btn', function (e) {
+        e.preventDefault();
+        const serviceId = $(this).data('id');
+        PhotographerServices.updateServiceFeatured(serviceId, false);
+    });
 });
 
 function setupEventHandlers() {
@@ -126,7 +138,7 @@ function setupEventHandlers() {
         }
     });
 
-    $(document).on("click", ".replyBtn", function() {
+    $(document).on("click", ".replyBtn", function () {
         const reviewId = $(this).data("id");
         PhotographerReviews.openReviewReplyModal(reviewId);
     });
@@ -288,7 +300,7 @@ function setupEventHandlers() {
         $(this).data("direct-upload", "false");
     });
 
-    $("#markAsReadBtn").click(function(e) {
+    $("#markAsReadBtn").click(function (e) {
         e.preventDefault();
         const conversationId = $("#sendMessageForm").data("conversation-id");
         if (!conversationId) return;
@@ -303,7 +315,7 @@ function setupEventHandlers() {
             });
     });
 
-    $("#viewClientProfileBtn").click(function(e) {
+    $("#viewClientProfileBtn").click(function (e) {
         e.preventDefault();
         const conversationId = $("#sendMessageForm").data("conversation-id");
         const conversation = window.conversationsData.find(c => c.id == conversationId);
@@ -315,12 +327,12 @@ function setupEventHandlers() {
         }
     });
 
-    $("#refreshMessagesBtn").click(function() {
+    $("#refreshMessagesBtn").click(function () {
         PhotographerMessages.loadMessages();
         showNotification("Messages refreshed", "info");
     });
 
-    $(document).on("submit", "#sendMessageForm", function(e) {
+    $(document).on("submit", "#sendMessageForm", function (e) {
         e.preventDefault();
         const messageText = $("#messageInput").val().trim();
         const conversationId = $(this).data("conversation-id");

@@ -206,9 +206,9 @@ const PhotographerServices = {
 
         const serviceId = saveBtn.data("id");
         const isEdit = !!serviceId;
-        const method= isEdit ? 'PUT' : 'POST';
+        const method = isEdit ? 'PUT' : 'POST';
 
-        const url=isEdit
+        const url = isEdit
             ? `${CONFIG.API.BASE_URL}/photographer/services/edit/${serviceId}`
             : `${CONFIG.API.BASE_URL}/services`;
 
@@ -328,6 +328,42 @@ const PhotographerServices = {
             .catch(error => {
                 console.error("Failed to load service details:", error);
                 showNotification("Failed to load service details. Please try again.", "error");
+            })
+    },
+
+    updateServiceFeatured: function (serviceId, isFeatured) {
+        const btn = $(`.${isFeatured ? 'feature-service-btn' : 'unfeature-service-btn'}[data-id="${serviceId}"]`);
+        const originalHtml = btn.html();
+
+        btn.html(`
+            <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+            ${isFeatured ? 'Setting as Featured...' : 'Setting as Unfeatured...'}
+        `).prop("disabled", true);
+
+        fetch(`${CONFIG.API.BASE_URL}/photographer/services/${serviceId}/featured`, {
+            method: "POST",
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem("token")}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                is_featured: isFeatured ? 1 : 0
+            })
+        })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Failed to update service featured status');
+                }
+                return response.json();
+            })
+            .then(data=>{
+                showNotification(isFeatured? "Service marked as featured" : "Service unmarked as featured", "success");
+                this.loadServices();
+            })
+            .catch(error => {
+                console.error("Failed to load service details:", error);
+                showNotification("Failed to load service details. Please try again.", "error");
+                btn.html(originalHtml).prop("disabled", false);
             })
     }
 };
