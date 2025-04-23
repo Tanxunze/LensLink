@@ -145,7 +145,7 @@ const PhotographerPortfolio = {
                 categories.forEach(category => {
                     categoryButtons.append(`
                     <button type="button" class="btn btn-outline-primary" 
-                            data-category="${category.slug}">${category.name}</button>
+                            data-category="${category.name}">${category.name}</button>
                 `);
                 });
 
