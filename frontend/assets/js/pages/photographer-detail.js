@@ -96,7 +96,7 @@ function updateFavoriteButton() {
 function toggleFavorite() {
     if (!localStorage.getItem("token")) {
         alert("Please log in to save photographers");
-        window.location.href = "../pages/auth/login.html";
+        window.location.href = "../../../pages/auth/login.html";
         return;
     }
 
@@ -350,7 +350,7 @@ function openBookingModal(serviceId) {
     // Check if user is logged in
     if (!localStorage.getItem("token")) {
         alert("Please log in to book a session");
-        window.location.href = "../pages/auth/login.html";
+        window.location.href = "../../../pages/auth/login.html";
         return;
     }
     console.log('serviceId: ', serviceId);
@@ -383,7 +383,7 @@ function openContactModal() {
     // Check if user is logged in
     if (!localStorage.getItem("token")) {
         alert("Please log in to contact a photographer");
-        window.location.href = "../pages/auth/login.html";
+        window.location.href = "../../../pages/auth/login.html";
         return;
     }
 
@@ -397,7 +397,7 @@ function openReviewModal() {
     // Check if user is logged in
     if (!localStorage.getItem("token")) {
         alert("Please log in to write a review");
-        window.location.href = "../pages/auth/login.html";
+        window.location.href = "../../../pages/auth/login.html";
         return;
     }
 
@@ -564,7 +564,7 @@ function confirmBooking() {
             $.lenslink.showNotification("Booking created successfully!", "success");
 
             setTimeout(() => {//redirect to dashboard
-                window.location.href = "../pages/dashboard/customer.html";
+                window.location.href = "../../../pages/dashboard/customer.html";
             }, 2000);
         })
         .catch(error => {
@@ -588,7 +588,7 @@ function openContactRequestModal(customerId, customerName) {
     // Check if user is logged in
     if (!localStorage.getItem("token")) {
         alert("Please log in to connect with other users");
-        window.location.href = "../pages/auth/login.html";
+        window.location.href = "../../../pages/auth/login.html";
         return;
     }
 

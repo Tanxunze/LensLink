@@ -53,15 +53,20 @@ const PhotographerProfile = {
                     document.getElementById('profileImage').src = data.profile_image;
                 }
 
-                
-                const categoriesContainer = document.getElementById('photographerCategories');
-                console.log("Categories data:", data.categories); 
 
-                if (data.categories && Array.isArray(data.categories) && data.categories.length > 0) {
-                    const categoriesHtml = data.categories.map(category => {
-                        return `<span class="badge bg-primary me-1 mb-1">${category}</span>`;
-                    }).join('');
-                    categoriesContainer.innerHTML = categoriesHtml;
+                const categoriesContainer = document.getElementById('photographerCategories');
+                const rawCategories = data.categories || [];
+                const categories = rawCategories.map(name => ({
+                    id: name.toLowerCase().replace(/ /g, '-'),
+                    name: name
+                }));
+
+                console.log("Processed categories:", categories);
+
+                if (categories.length > 0) {
+                    categoriesContainer.innerHTML = categories.map(cat =>
+                        `<span class="badge bg-primary me-1 mb-1">${cat.name}</span>`
+                    ).join('');
                 } else {
                     categoriesContainer.innerHTML = '<p class="text-muted mb-0">No category specified</p>';
                 }
@@ -117,7 +122,12 @@ const PhotographerProfile = {
                     $("#previewProfileImage").attr("src", "../../assets/images/default-photographer.jpg");
                 }
 
-                PhotographerPortfolio.loadCategories(data.categories || []);
+                const rawCategories = data.categories || [];
+                const formattedCategories = rawCategories.map(name => ({
+                    id: name.toLowerCase().replace(/ /g, '-'),
+                    name: name
+                }));
+                PhotographerPortfolio.loadCategories(formattedCategories);
 
                 const editProfileModal = new bootstrap.Modal(document.getElementById('editProfileModal'));
                 editProfileModal.show();

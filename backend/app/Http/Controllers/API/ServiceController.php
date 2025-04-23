@@ -85,7 +85,7 @@ class ServiceController extends Controller
         }
 
         // Pagination
-        $limit = $request->input('limit', 12);
+        $limit = $request->input('limit', 100);
         $services = $query->paginate($limit);
 
         // Format response data
