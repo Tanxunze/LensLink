@@ -158,13 +158,13 @@ function logout() {
         .then((response) => {
             localStorage.removeItem("token");
             localStorage.removeItem("userRole");
-            window.location.href = "../../../../index.html";
+            window.location.href = "../../index.html";
         })
         .catch((error) => {
             console.error("Logout error:", error);
             localStorage.removeItem("token");
             localStorage.removeItem("userRole");
-            window.location.href = "../../../../index.html";
+            window.location.href = "../../index.html";
         });
 }
 
