@@ -91,4 +91,22 @@ class Services extends Controller
             'service' => $service
         ]);
     }
+
+    public function destroy($id)
+    {
+        $service = Service::where('id', $id)
+            ->first();
+
+        if (!$service) {
+            return response()->json(['message' => 'Service does not exist, or you do not have the authority to delete it.'], 404);
+        }
+
+        // 执行删除
+        $service->delete();
+
+        return response()->json([
+            'message' => 'Service deleted successfully',
+            'id' => $id
+        ]);
+    }
 }

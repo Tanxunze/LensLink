@@ -63,14 +63,14 @@ const PhotographerServices = {
 
                     return `
                         <div class="col-md-4 mb-4">
-                            <div class="card h-100 service-card">
+                            <div class="card service-card" style="height: 500px; overflow: visible;">
                                 <div class="card-header d-flex justify-content-between align-items-center">
                                     <h5 class="mb-0">${service.name}</h5>
-                                    <div class="dropdown">
+                                    <div class="dropdown" style="position: static;">
                                         <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
                                             <i class="bi bi-three-dots-vertical"></i>
                                         </button>
-                                        <ul class="dropdown-menu dropdown-menu-end">
+                                        <ul class="dropdown-menu dropdown-menu-end" style="position: absolute; z-index: 1050;">
                                             <li><a class="dropdown-item edit-service-btn" href="#" data-id="${service.id}">
                                                 <i class="bi bi-pencil me-2"></i> Edit
                                             </a></li>
@@ -85,7 +85,7 @@ const PhotographerServices = {
                                         </ul>
                                     </div>
                                 </div>
-                                <div class="card-body">
+                                <div class="card-body" style="overflow-y: auto;">
                                     ${service.image_url ? `
                                         <div class="service-image-container mb-3">
                                             <img src="${service.image_url}" class="img-fluid rounded" alt="${service.name}">
@@ -363,6 +363,55 @@ const PhotographerServices = {
             .catch(error => {
                 console.error("Failed to load service details:", error);
                 showNotification("Failed to load service details. Please try again.", "error");
+                btn.html(originalHtml).prop("disabled", false);
+            })
+    },
+
+    deleteService: function (serviceId) {
+        if(!confirm("Are you sure you want to delete this service? This operation is irreversible")) {
+            return;
+        }
+
+        const btn=$(`.delete-service-btn[data-id="${serviceId}"]`);
+        const card=btn.closest(".card").parent();
+        const originalHtml=btn.html();
+        btn.html(`
+            <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+            Deleting...
+        `).prop("disabled", true);
+
+        fetch(`${CONFIG.API.BASE_URL}/photographer/services/${serviceId}/delete`, {
+            method: "DELETE",
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem("token")}`,
+                'Content-Type': 'application/json'
+            }
+        })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Failed to delete service');
+                }
+                return response.json();
+            })
+            .then(data=>{
+                card.fadeOut(300, function () {
+                    $(this).remove();
+                    if($("#servicesList .service-card").length===0) {
+                        $("#servicesList").html(`
+                            <div class="col-12">
+                                <div class="alert alert-info">
+                                    No services found. Add some services to attract clients.
+                                </div>
+                            </div>
+                        `);
+                    }
+                });
+
+                showNotification("Service deleted", "success");
+            })
+            .catch(error => {
+                console.error("Failed to delete service:", error);
+                showNotification("Failed to delete service. Please try again.", "error");
                 btn.html(originalHtml).prop("disabled", false);
             })
     }

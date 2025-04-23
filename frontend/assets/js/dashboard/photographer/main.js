@@ -39,6 +39,12 @@ $(document).ready(function () {
         const serviceId = $(this).data('id');
         PhotographerServices.updateServiceFeatured(serviceId, false);
     });
+
+    $(document).on('click', '.delete-service-btn', function (e) {
+        e.preventDefault();
+        const serviceId = $(this).data('id');
+        PhotographerServices.deleteService(serviceId);
+    })
 });
 
 function setupEventHandlers() {
@@ -110,6 +116,26 @@ function setupEventHandlers() {
     $("#addServiceBtn").click(function (e) {
         e.preventDefault();
         PhotographerServices.openAddServiceModal();
+    });
+
+    $('#addServiceBtn').off('click').on('click', function() { // ???
+        $("#addServiceForm")[0].reset();
+        $("#addServiceModal .modal-title").text("Add New Service");
+        $("#saveServiceBtn").removeData("id").text("Save Service");
+
+        $("#serviceFeatures").html(`
+            <div class="input-group mb-2">
+                <input type="text" class="form-control" placeholder="e.g., 2-hour photoshoot" name="features[]">
+                <button class="btn btn-outline-secondary remove-feature" type="button">
+                    <i class="bi bi-dash"></i>
+                </button>
+            </div>
+        `);
+
+        PhotographerServices.setupRemoveFeatureButtons();
+
+        const serviceModal = new bootstrap.Modal(document.getElementById('addServiceModal'));
+        serviceModal.show();
     });
 
     $("button[data-category]").click(function () {
@@ -226,11 +252,19 @@ function setupEventHandlers() {
         PhotographerServices.addServiceFeatureInput();
     });
 
+    $('#addFeatureBtn').off('click').on('click', function() {
+        PhotographerServices.addServiceFeatureInput();
+    });
+
     $("#savePortfolioBtn").click(function () {
         PhotographerPortfolio.savePortfolioItem();
     });
 
     $("#saveServiceBtn").click(function () {
+        PhotographerServices.saveService();
+    });
+
+    $('#saveServiceBtn').off('click').on('click', function() {
         PhotographerServices.saveService();
     });
 

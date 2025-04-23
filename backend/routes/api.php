@@ -104,6 +104,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/photographer/services/edit/{id}', [\App\Http\Controllers\API\PhotographerDashboard\Services::class, 'edit']);
     Route::put('/photographer/services/edit/{id}', [\App\Http\Controllers\API\PhotographerDashboard\Services::class, 'update']);
     Route::post('/photographer/services/{id}/featured', [\App\Http\Controllers\API\PhotographerDashboard\Services::class, 'updateFeatureStatus']);
+    Route::delete('/photographer/services/{id}/delete', [\App\Http\Controllers\API\PhotographerDashboard\Services::class, 'destroy']);
 
     //Favorites
     Route::get('/favorites', [FavoriteController::class, 'index']);
