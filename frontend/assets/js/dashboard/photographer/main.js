@@ -21,6 +21,12 @@ $(document).ready(function () {
             $('body').css('padding-right', '');
         }
     });
+
+    $(document).on('click','.edit-service-btn', function(e) {
+        e.preventDefault();
+        const serviceId = $(this).data("id");
+        PhotographerServices.openEditServiceModal(serviceId);
+    })
 });
 
 function setupEventHandlers() {

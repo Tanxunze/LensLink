@@ -49,7 +49,6 @@ const PhotographerPortfolio = {
                 }
 
                 const portfolioItemHtml = data.map(item => {
-
                     return `
                     <div class="col-md-3 mb-4 portfolio-item" data-category="${item.category}">
                         <div class="card h-100">
@@ -145,7 +144,7 @@ const PhotographerPortfolio = {
                 categories.forEach(category => {
                     categoryButtons.append(`
                     <button type="button" class="btn btn-outline-primary" 
-                            data-category="${category.slug}">${category.name}</button>
+                            data-category="${category.name}">${category.name}</button>
                 `);
                 });
 

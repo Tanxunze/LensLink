@@ -101,6 +101,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/photographer/reviews/reply', [Reviews::class, 'reply']);
     Route::post('photographer/reviews/item',[Reviews::class,'getReview']);
     Route::post('/photographer/messages',[\App\Http\Controllers\API\PhotographerDashboard\Messages::class,'show']);
+    Route::get('/photographer/services/edit/{id}', [\App\Http\Controllers\API\PhotographerDashboard\Services::class, 'edit']);
+    Route::put('/photographer/services/edit/{id}', [\App\Http\Controllers\API\PhotographerDashboard\Services::class, 'update']);
 
     //Favorites
     Route::get('/favorites', [FavoriteController::class, 'index']);

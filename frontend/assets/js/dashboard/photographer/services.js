@@ -1,9 +1,9 @@
 const PhotographerServices = {
-    init: function() {
-        
+    init: function () {
+
     },
 
-    loadServices: function(onlyFeatured = false) {
+    loadServices: function (onlyFeatured = false) {
         $("#servicesList").html(`
             <div class="col-12 text-center">
                 <div class="spinner-border" role="status">
@@ -120,7 +120,7 @@ const PhotographerServices = {
             });
     },
 
-    formatServiceUnit: function(unit, duration) {
+    formatServiceUnit: function (unit, duration) {
         switch (unit) {
             case 'hour':
                 return 'hour';
@@ -135,7 +135,7 @@ const PhotographerServices = {
         }
     },
 
-    openAddServiceModal: function() {
+    openAddServiceModal: function () {
         $("#addServiceForm")[0].reset();
 
         $("#serviceFeatures").html(`
@@ -153,19 +153,19 @@ const PhotographerServices = {
         serviceModal.show();
     },
 
-    setupRemoveFeatureButtons: function() {
+    setupRemoveFeatureButtons: function () {
         $(".remove-feature").off('click').on('click', function () {
-            
+
             if ($("#serviceFeatures .input-group").length === 1) {
                 $(this).closest(".input-group").find("input").val("");
                 return;
             }
-            
+
             $(this).closest(".input-group").remove();
         });
     },
 
-    addServiceFeatureInput: function() {
+    addServiceFeatureInput: function () {
         const newFeatureInput = `
             <div class="input-group mb-2">
                 <input type="text" class="form-control" placeholder="e.g., Digital delivery" name="features[]">
@@ -179,7 +179,7 @@ const PhotographerServices = {
         this.setupRemoveFeatureButtons();
     },
 
-    saveService: function() {
+    saveService: function () {
         const name = $("#serviceName").val();
         const description = $("#serviceDescription").val();
         const price = $("#servicePrice").val();
@@ -204,8 +204,16 @@ const PhotographerServices = {
         const originalText = saveBtn.text();
         saveBtn.prop("disabled", true).html('<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Saving...');
 
-        fetch(`${CONFIG.API.BASE_URL}/services`, {
-            method: 'POST',
+        const serviceId = saveBtn.data("id");
+        const isEdit = !!serviceId;
+        const method= isEdit ? 'PUT' : 'POST';
+
+        const url=isEdit
+            ? `${CONFIG.API.BASE_URL}/photographer/services/edit/${serviceId}`
+            : `${CONFIG.API.BASE_URL}/services`;
+
+        fetch(url, {
+            method: method,
             headers: {
                 'Authorization': `Bearer ${localStorage.getItem("token")}`,
                 'Content-Type': 'application/json'
@@ -240,5 +248,86 @@ const PhotographerServices = {
             .finally(() => {
                 saveBtn.prop("disabled", false).text(originalText);
             });
+    },
+
+    openEditServiceModal: function (serviceId) {
+        $("#addServiceForm")[0].reset();
+        $("#addServiceModal .modal-title").text("Edit Service");
+        $("#saveServiceBtn").data("id", serviceId).text("Save Changes");
+
+        $("#addServiceModal .modal-body").prepend(`
+            <div id="loadingIndicator" class="text-center mb-3">
+                <div class="spinner-border" role="status">
+                    <span class="visually-hidden">加载中...</span>
+                </div> 
+                <span>加载服务信息...</span>
+            </div>
+        `);
+
+        const serviceModal = new bootstrap.Modal(document.getElementById('addServiceModal'));
+        serviceModal.show();
+
+        $("#addServiceForm").hide();
+
+        fetch(`${CONFIG.API.BASE_URL}/photographer/services/edit/${serviceId}`, {
+            method: "GET",
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem("token")}`,
+                'Content-Type': 'application/json'
+            }
+        })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Failed to load service details');
+                }
+                return response.json();
+            })
+            .then(service => {
+                $("#loadingIndicator").remove();
+
+                // 重置并显示表单
+                $("#addServiceForm")[0].reset();
+                $("#addServiceForm").show();
+
+                // 填充表单数据
+                $("#serviceName").val(service.name);
+                $("#serviceDescription").val(service.description);
+                $("#servicePrice").val(service.price);
+                $("#serviceUnit").val(service.unit);
+                $("#serviceDuration").val(service.duration);
+                $("#serviceFeatured").prop("checked", service.is_featured);
+
+                // 处理特性(features)
+                $("#serviceFeatures").empty();
+                if (service.features && service.features.length > 0) {
+                    service.features.forEach(feature => {
+                        const featureInput = `
+                            <div class="input-group mb-2">
+                                <input type="text" class="form-control" placeholder="e.g., Digital delivery" name="features[]" value="${feature}">
+                                <button class="btn btn-outline-secondary remove-feature" type="button">
+                                    <i class="bi bi-dash"></i>
+                                </button>
+                            </div>
+                        `;
+                        $("#serviceFeatures").append(featureInput);
+                    });
+                } else {
+                    const emptyFeatureInput = `
+                        <div class="input-group mb-2">
+                            <input type="text" class="form-control" placeholder="e.g., Digital delivery" name="features[]">
+                            <button class="btn btn-outline-secondary remove-feature" type="button">
+                                <i class="bi bi-dash"></i>
+                            </button>
+                        </div>
+                    `;
+                    $("#serviceFeatures").append(emptyFeatureInput);
+                }
+
+                this.setupRemoveFeatureButtons();
+            })
+            .catch(error => {
+                console.error("Failed to load service details:", error);
+                showNotification("Failed to load service details. Please try again.", "error");
+            })
     }
 };
