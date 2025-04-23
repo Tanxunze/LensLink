@@ -181,6 +181,8 @@ class Portfolio extends Controller
             $portfolioItem->image_path = $request->input('image_path');
             $portfolioItem->featured = $request->input('featured', false);
             $portfolioItem->save();
+            $photographerProfile = $user->photographerProfile;
+            $photographerProfile->categories()->syncWithoutDetaching([$categoryId]);
 
             return response()->json([
                 'success' => true,
@@ -264,6 +266,8 @@ class Portfolio extends Controller
             }
             $portfolioItem->featured = $request->input('featured', false);
             $portfolioItem->save();
+            $photographerProfile = $user->photographerProfile;
+            $photographerProfile->categories()->syncWithoutDetaching([$categoryId]);
 
             return response()->json([
                 'success' => true,
