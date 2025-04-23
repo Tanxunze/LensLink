@@ -300,10 +300,10 @@ const PhotographerServices = {
                 // 处理特性(features)
                 $("#serviceFeatures").empty();
                 if (service.features && service.features.length > 0) {
-                    service.features.forEach(feature => {
+                    service.features.forEach(featureObj => {
                         const featureInput = `
                             <div class="input-group mb-2">
-                                <input type="text" class="form-control" placeholder="e.g., Digital delivery" name="features[]" value="${feature}">
+                                <input type="text" class="form-control" placeholder="e.g., Digital delivery" name="features[]" value="${featureObj.feature}">
                                 <button class="btn btn-outline-secondary remove-feature" type="button">
                                     <i class="bi bi-dash"></i>
                                 </button>
