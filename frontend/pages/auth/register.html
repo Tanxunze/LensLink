@@ -10,288 +10,82 @@
 </head>
 
 <body>
-    <div id="header"></div>
+<div id="header"></div>
 
-    <main class="container py-5">
-        <div class="row justify-content-center">
-            <div class="col-md-8 col-lg-6">
-                <div class="card shadow">
-                    <div class="card-body p-5">
-                        <h2 class="text-center mb-4">Create Account</h2>
-                        <form id="registerForm">
-                            <div class="mb-3">
-                                <label for="name" class="form-label">Full Name</label>
-                                <input type="text" class="form-control" id="name" required>
-                            </div>
-                            <div class="mb-3">
-                                <label for="email" class="form-label">Email address</label>
-                                <input type="email" class="form-control" id="email" required>
-                            </div>
-                            <div class="mb-3">
-                                <label for="password" class="form-label">Password</label>
-                                <input type="password" class="form-control" id="password" required>
-                                <div class="mt-2">
-                                    <div class="progress" style="height: 5px;">
-                                        <div id="passwordStrength" class="progress-bar d-none" role="progressbar"
-                                            style="width: 0%"></div>
-                                    </div>
-                                    <small id="passwordRequirements" class="form-text text-muted mt-1">
-                                        Password must be at least 8 characters and include uppercase, lowercase, number
-                                        and special character.
-                                    </small>
-                                </div>
-                            </div>
-                            <div class="mb-3">
-                                <label for="confirmPassword" class="form-label">Confirm Password</label>
-                                <input type="password" class="form-control" id="confirmPassword" required>
-                                <small id="passwordMatchFeedback" class="form-text d-none mt-1"></small>
-                            </div>
-                            <div class="mb-3">
-                                <label class="form-label">Account Type</label>
-                                <div class="form-check">
-                                    <input class="form-check-input" type="radio" name="role" id="roleCustomer"
-                                        value="customer" checked>
-                                    <label class="form-check-label" for="roleCustomer">
-                                        I want to hire photographers
-                                    </label>
-                                </div>
-                                <div class="form-check">
-                                    <input class="form-check-input" type="radio" name="role" id="rolePhotographer"
-                                        value="photographer">
-                                    <label class="form-check-label" for="rolePhotographer">
-                                        I am a photographer
-                                    </label>
-                                </div>
-                            </div>
-                            <div id="registerSuccess" class="alert alert-success d-none"></div>
-                            <div id="registerError" class="alert alert-danger d-none"></div>
-                            <button type="submit" class="btn btn-primary w-100" id="registerButton">Register</button>
-                        </form>
-                        <div class="text-center mt-3">
-                            <p>Already have an account? <a href="./login.html">Login</a></p>
+<main class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <div class="card shadow">
+                <div class="card-body p-5">
+                    <h2 class="text-center mb-4">Create Account</h2>
+                    <form id="registerForm">
+                        <div class="mb-3">
+                            <label for="name" class="form-label">Full Name</label>
+                            <input type="text" class="form-control" id="name" required>
+                            <small id="nameFeedback" class="form-text d-none mt-1"></small>
                         </div>
+                        <div class="mb-3">
+                            <label for="email" class="form-label">Email address</label>
+                            <input type="email" class="form-control" id="email" required>
+                            <small id="emailFeedback" class="form-text d-none mt-1"></small>
+                        </div>
+                        <div class="mb-3">
+                            <label for="password" class="form-label">Password</label>
+                            <input type="password" class="form-control" id="password" required>
+                            <div class="mt-2">
+                                <div class="progress" style="height: 5px;">
+                                    <div id="passwordStrength" class="progress-bar d-none" role="progressbar"
+                                         style="width: 0%"></div>
+                                </div>
+                                <small id="passwordRequirements" class="form-text text-muted mt-1">
+                                    Password must be at least 8 characters and include uppercase, lowercase, number
+                                    and special character.
+                                </small>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="confirmPassword" class="form-label">Confirm Password</label>
+                            <input type="password" class="form-control" id="confirmPassword" required>
+                            <small id="passwordMatchFeedback" class="form-text d-none mt-1"></small>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Account Type</label>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="role" id="roleCustomer"
+                                       value="customer" checked>
+                                <label class="form-check-label" for="roleCustomer">
+                                    I want to hire photographers
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="role" id="rolePhotographer"
+                                       value="photographer">
+                                <label class="form-check-label" for="rolePhotographer">
+                                    I am a photographer
+                                </label>
+                            </div>
+                        </div>
+                        <div id="registerSuccess" class="alert alert-success d-none"></div>
+                        <div id="registerError" class="alert alert-danger d-none"></div>
+                        <button type="submit" class="btn btn-primary w-100" id="registerButton">Register</button>
+                    </form>
+                    <div class="text-center mt-3">
+                        <p>Already have an account? <a href="./login.html">Login</a></p>
                     </div>
                 </div>
             </div>
         </div>
-    </main>
+    </div>
+</main>
 
-    <div id="footer"></div>
+<div id="footer"></div>
 
-    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="../../assets/js/config.js"></script>
-    <script src="../../assets/js/api.js"></script>
-    <script src="../../assets/js/loadComponents.js"></script>
-    <script>
-        $(document).ready(function () {
-            // Check if user is already logged in
-            if (localStorage.getItem("token")) {
-                const userRole = localStorage.getItem("userRole");
-                const redirectPath = userRole === "photographer"
-                    ? "../dashboard/photographer.html"
-                    : "../dashboard/customer.html";
-                window.location.href = redirectPath;
-                return;
-            }
-
-            // Handle form submission
-            $("#registerForm").submit(function (event) {
-                event.preventDefault();
-                if (validateForm()) {
-                    handleRegister();
-                }
-            });
-
-            // Password strength validation
-            $("#password").on('input', function () {
-                validatePasswordStrength();
-            });
-
-            // Password match validation
-            $("#confirmPassword").on('input', function () {
-                validatePasswordMatch();
-            });
-        });
-
-        function validateForm() {
-            $("#registerError").addClass("d-none");
-
-            const password = $("#password").val();
-            const strength = getPasswordStrength(password);
-
-            if (strength < 3) {
-                $("#registerError")
-                    .text("Password is too weak. Please use a stronger password.")
-                    .removeClass("d-none");
-                return false;
-            }
-
-            const confirmPassword = $("#confirmPassword").val();
-            if (password !== confirmPassword) {
-                $("#registerError")
-                    .text("Passwords do not match.")
-                    .removeClass("d-none");
-                return false;
-            }
-
-            return true;
-        }
-
-        function getPasswordStrength(password) {
-            if (!password) return 0;
-
-            let strength = 0;
-            const regexes = [
-                /[a-z]/, 
-                /[A-Z]/, 
-                /[0-9]/, 
-                /[^a-zA-Z0-9]/
-            ];
-
-            regexes.forEach(regex => {
-                if (regex.test(password)) strength++;
-            });
-
-            if (password.length >= 8) strength++;
-            if (password.length >= 12) strength++;
-
-            return strength;
-        }
-
-        function validatePasswordStrength() {
-            const password = $("#password").val();
-            const strengthMeter = $("#passwordStrength");
-            const requirementsElement = $("#passwordRequirements");
-
-            if (!password) {
-                strengthMeter.addClass('d-none');
-                requirementsElement.removeClass('text-success text-danger').addClass('text-muted');
-                return;
-            }
-
-            strengthMeter.removeClass('d-none');
-
-            const strength = getPasswordStrength(password);
-
-            const percentage = (strength / 6) * 100;
-            strengthMeter.css('width', percentage + '%');
-
-            if (percentage < 40) {
-                strengthMeter.removeClass('bg-warning bg-success').addClass('bg-danger');
-                requirementsElement.removeClass('text-muted text-success').addClass('text-danger');
-            } else if (percentage < 70) {
-                strengthMeter.removeClass('bg-danger bg-success').addClass('bg-warning');
-                requirementsElement.removeClass('text-muted text-danger').addClass('text-warning');
-            } else {
-                strengthMeter.removeClass('bg-danger bg-warning').addClass('bg-success');
-                requirementsElement.removeClass('text-muted text-danger').addClass('text-success');
-            }
-
-            let requirementText = "Password requirements: ";
-            const missing = [];
-
-            if (!/[a-z]/.test(password)) missing.push("lowercase letter");
-            if (!/[A-Z]/.test(password)) missing.push("uppercase letter");
-            if (!/[0-9]/.test(password)) missing.push("number");
-            if (!/[^a-zA-Z0-9]/.test(password)) missing.push("special character");
-            if (password.length < 8) missing.push("minimum 8 characters");
-
-            if (missing.length > 0) {
-                requirementText += "Missing " + missing.join(", ");
-                requirementsElement.text(requirementText);
-            } else {
-                requirementsElement.text("Password strength: " +
-                    (percentage < 40 ? "Weak" : percentage < 70 ? "Medium" : "Strong"));
-            }
-        }
-
-        function validatePasswordMatch() {
-            const password = $("#password").val();
-            const confirmPassword = $("#confirmPassword").val();
-            const feedbackElement = $("#passwordMatchFeedback");
-
-            if (!confirmPassword) {
-                feedbackElement.addClass('d-none');
-                return;
-            }
-
-            feedbackElement.removeClass('d-none');
-
-            if (password === confirmPassword) {
-                feedbackElement.text('Passwords match').removeClass('text-danger').addClass('text-success');
-                return true;
-            } else {
-                feedbackElement.text('Passwords do not match').removeClass('text-success').addClass('text-danger');
-                return false;
-            }
-        }
-
-        function handleRegister() {
-            $("#registerError").addClass("d-none");
-
-            const submitButton = $("#registerForm button[type='submit']");
-            const originalText = submitButton.text();
-            submitButton.html('<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Registering...');
-            submitButton.prop('disabled', true);
-
-            const userData = {
-                name: $("#name").val(),
-                email: $("#email").val(),
-                password: $("#password").val(),
-                role: $("input[name='role']:checked").val()
-            };
-
-            API.register(userData)
-                .then(function (response) {
-                    if (response.success) {
-                        $("#registerSuccess")
-                            .text("Registration successful! Logging you in...")
-                            .removeClass("d-none");
-
-                        return API.login({
-                            email: userData.email,
-                            password: userData.password
-                        });
-                    }
-                })
-                .then(function (loginResponse) {
-                    if (loginResponse && loginResponse.token) {
-                        localStorage.setItem("token", loginResponse.token);
-                        localStorage.setItem("userRole", userData.role);
-
-                        const redirectPath = userData.role === "photographer"
-                            ? "../dashboard/photographer.html"
-                            : "../dashboard/customer.html";
-                        window.location.href = redirectPath;
-                    }
-                })
-                .catch(function (error) {
-                    const errorData = error.responseJSON || error;
-                    let errorMessage = 'Registration failed. Please try again.';
-                    if (errorData.message) {
-                        errorMessage = errorData.message;
-                    }
-                    else if (errorData.errors) {
-                        const errorList = [];
-                        for (const field in errorData.errors) {
-                            errorList.push(...errorData.errors[field]);
-                        }
-                        errorMessage = errorList.join('<br>');
-                    }
-
-                    $("#registerError")
-                        .html(errorMessage)
-                        .removeClass("d-none");
-
-                    console.error(error);
-                })
-                .finally(function () {
-                    submitButton.html(originalText);
-                    submitButton.prop('disabled', false);
-                });
-        }
-    </script>
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="../../assets/js/config.js"></script>
+<script src="../../assets/js/api.js"></script>
+<script src="../../assets/js/loadComponents.js"></script>
+<script src="../../assets/js/auth/register.js"></script>
 </body>
 
 </html>
