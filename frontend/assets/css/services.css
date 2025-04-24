@@ -660,3 +660,8 @@
     transform: translateY(-2px);
     box-shadow: 0 5px 15px rgba(13, 110, 253, 0.2);
 }
+
+.service-card .dropdown-menu{
+    position: absolute;
+    z-index: 1000;
+}

@@ -28,7 +28,7 @@ function checkAuthentication() {
     const userRole = localStorage.getItem("userRole");
 
     if (!token) {
-        window.location.href = "../../pages/auth/login.html";
+        window.location.href = "../../../../pages/auth/login.html";
         return;
     }
 
@@ -40,7 +40,7 @@ function checkAuthentication() {
         localStorage.removeItem("userRole");
 
         setTimeout(() => {
-            window.location.href = "../../pages/auth/login.html";
+            window.location.href = "../../../../pages/auth/login.html";
         }, 2000);
     });
 }
