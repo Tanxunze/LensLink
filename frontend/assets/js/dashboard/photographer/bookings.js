@@ -140,6 +140,7 @@ const PhotographerBookings = {
                 `).join('');
 
                 $("#bookingsTable").html(bookingsHtml);
+                this.clearBookingNotification();
 
                 if (data.total_pages > 1) {
                     let paginationHtml = ``;
