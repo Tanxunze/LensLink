@@ -33,7 +33,35 @@ class Dashboard extends Controller
         ];
         return response()->json($data,200);
     }
-    //
+
+    public function monthlyEarnings(Request $request)
+    {
+        $user = $request->user();
+
+        if (!$user || !$user->photographerProfile) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Photographer not found',
+                'amount' => 0
+            ], 404);
+        }
+
+        $photographer_id = $user->photographerProfile->id;
+
+        $firstDayOfMonth = Carbon::now()->startOfMonth()->toDateString();
+        $lastDayOfMonth = Carbon::now()->endOfMonth()->toDateString();
+
+        $totalAmount = Booking::where('photographer_id', $photographer_id)
+            ->where('status', 'completed')
+            ->whereBetween('booking_date', [$firstDayOfMonth, $lastDayOfMonth])
+            ->sum('total_amount');
+
+        return response()->json([
+            'success' => true,
+            'amount' => number_format($totalAmount, 2, '.', '')
+        ]);
+    }
+
     private function getWorkAmount(int $photographer_id): array
     {
         $works=Booking::where('photographer_id',$photographer_id)->get();

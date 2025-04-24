@@ -72,9 +72,7 @@ const PhotographerProfile = {
                 }
 
                 document.getElementById('totalSessions').textContent = data.photoshoot_count || 0;
-                document.getElementById('totalEarnings').textContent = `€${(data.total_earnings || 0).toFixed(2)}`;
                 document.getElementById('totalReviews').textContent = data.review_count || 0;
-                document.getElementById('profileViews').textContent = data.view_count || 0;
 
                 $("#editName").val(data.name || "");
                 $("#editEmail").val(data.email || "");
