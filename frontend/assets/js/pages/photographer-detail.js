@@ -407,12 +407,61 @@ function openReviewModal() {
         return;
     }
 
-    $("#reviewForm")[0].reset();
-    selectedRating = 0;
-    resetStars();
+    // Get completed bookings for this photographer
+    getCompletedBookings().then(bookings => {
+        if (bookings.length === 0) {
+            $.lenslink.showNotification("You can only review photographers after completing a booking with them", "warning");
+            return;
+        }
 
-    const reviewModal = new bootstrap.Modal(document.getElementById('reviewModal'));
-    reviewModal.show();
+        // Reset form and populate booking dropdown
+        $("#reviewForm")[0].reset();
+        selectedRating = 0;
+        resetStars();
+
+        // Replace service_type and service_date fields with booking selection
+        let bookingOptions = '<option value="">Select a completed booking</option>';
+        bookings.forEach(booking => {
+            const serviceName = booking.service ? booking.service.name : 'Unknown Service';
+            const bookingDate = new Date(booking.booking_date).toLocaleDateString();
+            bookingOptions += `<option value="${booking.id}" 
+                data-service="${serviceName}" 
+                data-date="${booking.booking_date}">
+                ${serviceName} - ${bookingDate}
+            </option>`;
+        });
+
+        // Update HTML in modal
+        const bookingSelectHtml = `
+            <div class="mb-3">
+                <label for="bookingSelect" class="form-label">Select Completed Booking</label>
+                <select class="form-select" id="bookingSelect" required>
+                    ${bookingOptions}
+                </select>
+            </div>
+        `;
+
+        // Hide original service_type and service_date inputs
+        $("#serviceType").closest('.mb-3').hide();
+        $("#serviceDate").closest('.mb-3').hide();
+
+        // Add booking select if it doesn't exist
+        if ($("#bookingSelect").length === 0) {
+            $("#reviewTitle").closest('.mb-3').before(bookingSelectHtml);
+        } else {
+            $("#bookingSelect").html(bookingOptions);
+        }
+
+        // Add event listener to booking select
+        $("#bookingSelect").on("change", function() {
+            const selected = $(this).find("option:selected");
+            $("#serviceType").val(selected.data("service"));
+            $("#serviceDate").val(selected.data("date"));
+        });
+
+        const reviewModal = new bootstrap.Modal(document.getElementById('reviewModal'));
+        reviewModal.show();
+    });
 }
 
 function selectRating(rating) {
@@ -474,13 +523,14 @@ function updateBookingSummary() {
 
 function submitReview() {
     // Validate form
-    if (!$("#reviewForm")[0].checkValidity() || !selectedRating) {
-        alert("Please fill all fields and select a rating");
+    if (!$("#reviewForm")[0].checkValidity() || !selectedRating || !$("#bookingSelect").val()) {
+        alert("Please fill all fields, select a rating, and select a booking");
         return;
     }
 
     const reviewData = {
         photographer_id: photographerId,
+        booking_id: $("#bookingSelect").val(),
         rating: selectedRating,
         title: $("#reviewTitle").val(),
         review: $("#reviewText").val(),
@@ -499,7 +549,11 @@ function submitReview() {
         })
         .catch(error => {
             console.error('Error submitting review:', error);
-            $.lenslink.showNotification("Failed to submit review. Please try again.", "error");
+            if (error.response?.status === 409) {
+                $.lenslink.showNotification("You have already reviewed this booking", "warning");
+            } else {
+                $.lenslink.showNotification("Failed to submit review. Please try again.", "error");
+            }
         });
 }
 
@@ -627,5 +681,16 @@ function sendContactRequest(recipientId, message) {
         })
         .finally(() => {
             $("#sendRequestBtn").prop("disabled", false).text("Send Request");
+        });
+}
+
+function getCompletedBookings() {
+    return API.request(`/bookings?photographer_id=${photographerId}&status=completed`)
+        .then(response => {
+            return response.data || [];
+        })
+        .catch(error => {
+            console.error('Error fetching completed bookings:', error);
+            return [];
         });
 }
