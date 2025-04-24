@@ -564,7 +564,7 @@ function confirmBooking() {
             $.lenslink.showNotification("Booking created successfully!", "success");
 
             setTimeout(() => {//redirect to dashboard
-                window.location.href = "../../../pages/dashboard/customer.html";
+                window.location.href = "./dashboard/customer.html";
             }, 2000);
         })
         .catch(error => {

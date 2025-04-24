@@ -63,6 +63,7 @@ function setupEventHandlers() {
 
     $("#refreshDashboardBtn").click(function () {
         PhotographerDashboard.loadDashboardData();
+        PhotographerBookings.checkPendingBookings();
         showNotification("Dashboard data refreshed", "info");
     });
 
@@ -212,6 +213,30 @@ function setupEventHandlers() {
     $(document).on("section:portfolio", function () {
         PhotographerPortfolio.loadCategories();
         PhotographerPortfolio.loadPortfolio(lastSelectedCategory);
+    });
+
+    $(document).on('click', '.viewBookingBtn', function() {
+        const bookingId = $(this).data('id');
+        PhotographerBookings.openBookingDetailsModal(bookingId);
+    });
+
+    $(document).on('click', '.acceptBookingBtn', function() {
+        const bookingId = $(this).data('id');
+        PhotographerBookings.updateBookingStatus(bookingId, "confirmed");
+    });
+
+    $(document).on('click', '.rejectBookingBtn', function() {
+        const bookingId = $(this).data('id');
+        PhotographerBookings.updateBookingStatus(bookingId, "cancelled");
+    });
+
+    $(document).on('click', '.messageClientBtn', function() {
+        const clientId = $(this).data('id');
+        if (typeof PhotographerMessages !== 'undefined' && PhotographerMessages.messageClient) {
+            PhotographerMessages.messageClient(clientId);
+        } else {
+            showNotification("Message function is not available", "warning");
+        }
     });
 
     $(".dropdown-item[data-timeframe]").click(function (e) {

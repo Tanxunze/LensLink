@@ -79,6 +79,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/bookings/count', [BookingController::class, 'count']);
     Route::get('/bookings/{id}', [BookingController::class, 'show']);
     Route::put('/bookings/{id}/cancel', [BookingController::class, 'cancel']);
+    Route::put('/bookings/{id}/reschedule', [BookingController::class, 'reschedule']);
     Route::get('/earnings/chart', [BookingController::class, 'earnings']);
 
     // Photographer dashboard
@@ -100,11 +101,11 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('/photographer/bookings/{id}', [Bookings::class, 'update']);
     Route::post('/photographer/reviews/reply', [Reviews::class, 'reply']);
     Route::post('photographer/reviews/item',[Reviews::class,'getReview']);
-    Route::post('/photographer/messages',[\App\Http\Controllers\API\PhotographerDashboard\Messages::class,'show']);
-    Route::get('/photographer/services/edit/{id}', [\App\Http\Controllers\API\PhotographerDashboard\Services::class, 'edit']);
-    Route::put('/photographer/services/edit/{id}', [\App\Http\Controllers\API\PhotographerDashboard\Services::class, 'update']);
-    Route::post('/photographer/services/{id}/featured', [\App\Http\Controllers\API\PhotographerDashboard\Services::class, 'updateFeatureStatus']);
-    Route::delete('/photographer/services/{id}/delete', [\App\Http\Controllers\API\PhotographerDashboard\Services::class, 'destroy']);
+    Route::post('/photographer/messages',[Messages::class,'show']);
+    Route::get('/photographer/services/edit/{id}', [Services::class, 'edit']);
+    Route::put('/photographer/services/edit/{id}', [Services::class, 'update']);
+    Route::post('/photographer/services/{id}/featured', [Services::class, 'updateFeatureStatus']);
+    Route::delete('/photographer/services/{id}/delete', [Services::class, 'destroy']);
 
     //Favorites
     Route::get('/favorites', [FavoriteController::class, 'index']);

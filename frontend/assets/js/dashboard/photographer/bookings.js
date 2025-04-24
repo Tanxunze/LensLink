@@ -1,6 +1,43 @@
 const PhotographerBookings = {
     init: function() {
-        
+        this.checkPendingBookings();
+    },
+
+    checkPendingBookings: function() {
+        console.log("Checking pending bookings...");
+
+        fetch(`${CONFIG.API.BASE_URL}/photographer/bookings-details`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem("token")}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                filter: { status: 'pending' }
+            })
+        })
+            .then(response => response.json())
+            .then(data => {
+                if (data.bookings && data.bookings.length > 0) {
+                    console.log(`Found ${data.bookings.length} pending bookings`);
+                    
+                    $(".booking-badge").removeClass("d-none").text(data.bookings.length);
+                    
+                    localStorage.setItem('pending_booking_ids',
+                        JSON.stringify(data.bookings.map(b => b.id)));
+                } else {
+                    $(".booking-badge").addClass("d-none").text("0");
+                    localStorage.removeItem('pending_booking_ids');
+                }
+            })
+            .catch(error => {
+                console.error("Failed to check pending bookings:", error);
+            });
+    },
+    
+    clearBookingNotification: function() {
+        console.log("Clearing booking notification");
+        $(".booking-badge").addClass("d-none").text("0");
     },
 
     showBookingsSection: function(status = "all") {
@@ -11,12 +48,12 @@ const PhotographerBookings = {
         $(".dropdown-item[data-filter]").removeClass("active");
         $(".dropdown-item[data-filter='" + status + "']").addClass("active");
 
+        if (status === "pending" || status === "all") {
+            this.clearBookingNotification();
+        }
+
         this.filterBookings(status);
         window.location.hash = "bookings:" + status;
-    },
-
-    filterBookings: function(status) {
-        this.loadBookings(status);
     },
 
     loadBookings: function(status = "all", page = 1) {
@@ -132,26 +169,6 @@ const PhotographerBookings = {
                     `;
 
                     $("#bookingsPagination").html(paginationHtml);
-
-                    $(".viewBookingBtn").click(function () {
-                        const bookingId = $(this).data("id");
-                        PhotographerBookings.openBookingDetailsModal(bookingId);
-                    });
-
-                    $(".acceptBookingBtn").click(function () {
-                        const bookingId = $(this).data("id");
-                        PhotographerBookings.updateBookingStatus(bookingId, "confirmed");
-                    });
-
-                    $(".rejectBookingBtn").click(function () {
-                        const bookingId = $(this).data("id");
-                        PhotographerBookings.updateBookingStatus(bookingId, "cancelled");
-                    });
-
-                    $(".messageClientBtn").click(function () {
-                        const clientId = $(this).data("id");
-                        PhotographerMessages.messageClient(clientId);
-                    });
                 }
             })
             .catch(error => {
@@ -351,13 +368,20 @@ const PhotographerBookings = {
                 const formattedDate = bookingDate.toISOString().split('T')[0];
 
                 let bookingTime = '';
-                if (booking.booking_time) {
-                    if (booking.booking_time.includes('T')) {
-                        bookingTime = booking.booking_time.split('T')[1].substring(0, 5);
-                    } else if (booking.booking_time.includes(':')) {
-                        bookingTime = booking.booking_time.substring(0, 5);
+                const timeValue = booking.booking_time || booking.start_time || '';
+
+                if (timeValue) {
+                    if (timeValue.includes('T')) {
+                        bookingTime = timeValue.split('T')[1].substring(0, 5);
+                    }
+                    else if (timeValue.includes(':')) {
+                        bookingTime = timeValue.substring(0, 5);
+                    }
+                    else if (/^\d{2}:\d{2}$/.test(timeValue)) {
+                        bookingTime = timeValue;
                     }
                 }
+
                 modalBody.innerHTML = `
                     <form id="editBookingForm">
                         <input type="hidden" id="editBookingId" value="${booking.id}">
@@ -464,16 +488,43 @@ const PhotographerBookings = {
             return;
         }
 
+        
+        const $button = $(`.acceptBookingBtn[data-id="${bookingId}"], .rejectBookingBtn[data-id="${bookingId}"]`);
+        if ($button.length) {
+            $button.prop('disabled', true).html('<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>');
+        }
+
+        
         fetch(`${CONFIG.API.BASE_URL}/photographer/bookings/${bookingId}`, {
-            method: 'PUT',
+            method: 'GET',
             headers: {
                 'Authorization': `Bearer ${localStorage.getItem("token")}`,
                 'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                status: status
-            })
+            }
         })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Failed to fetch booking details');
+                }
+                return response.json();
+            })
+            .then(booking => {
+                
+                return fetch(`${CONFIG.API.BASE_URL}/photographer/bookings/${bookingId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem("token")}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        booking_date: booking.booking_date,
+                        booking_time: booking.booking_time || booking.start_time, 
+                        status: status,
+                        location: booking.location || '',
+                        notes: booking.notes || ''
+                    })
+                });
+            })
             .then(response => {
                 if (!response.ok) {
                     throw new Error('Failed to update booking status');
@@ -481,16 +532,19 @@ const PhotographerBookings = {
                 return response.json();
             })
             .then(data => {
-                showNotification("Booking updated successfully", "success");
+                showNotification(`Booking ${status === 'confirmed' ? 'confirmed' : 'cancelled'} successfully`, "success");
                 this.loadBookings();
             })
             .catch(error => {
-                console.error("Failed to update booking status: ", error);
-                showNotification("Error while saving booking changes. Please try again.", "danger");
-            })
+                console.error("Failed to update booking status:", error);
+                showNotification("Error updating booking. Please try again.", "danger");
+
+                
+                if ($button.length) {
+                    $button.prop('disabled', false).html(status === 'confirmed' ?
+                        '<i class="bi bi-check2"></i>' : '<i class="bi bi-x-lg"></i>');
+                }
+            });
     },
 
-    initializeBookingsCalendar: function() {
-        console.log("Calendar initialization placeholder");
-    }
 };

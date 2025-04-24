@@ -7,6 +7,7 @@ use App\Models\Booking;
 use App\Models\Service;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Validator;
 
 class BookingController extends Controller
 {
@@ -195,6 +196,79 @@ class BookingController extends Controller
         return response()->json([
             'labels' => $labels,
             'values' => $values,
+        ]);
+    }
+
+    public function reschedule(Request $request, $id): \Illuminate\Http\JsonResponse
+    {
+
+        $validator = Validator::make($request->all(), [
+            'booking_date' => 'required|date|after:today',
+            'start_time' => 'required|date_format:H:i',
+            'end_time' => 'nullable|date_format:H:i|after:start_time',
+            'notes' => 'nullable|string|max:1000',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation error',
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+
+        $booking = Booking::findOrFail($id);
+
+
+        if ($booking->customer_id != auth()->id()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthorized to reschedule this booking'
+            ], 403);
+        }
+
+
+        $allowedStatuses = ['pending', 'confirmed'];
+        if (!in_array($booking->status, $allowedStatuses)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Booking cannot be rescheduled in its current status'
+            ], 400);
+        }
+
+
+        $oldDate = $booking->booking_date;
+        $oldStartTime = $booking->start_time;
+
+        $booking->booking_date = $request->booking_date;
+        $booking->start_time = $request->start_time;
+
+        if ($request->has('end_time')) {
+            $booking->end_time = $request->end_time;
+        }
+
+
+        $rescheduleNote = "Booking rescheduled from $oldDate $oldStartTime to {$request->booking_date} {$request->start_time}";
+        if ($request->has('notes') && !empty($request->notes)) {
+            $rescheduleNote .= ". Reason: " . $request->notes;
+        }
+
+
+        if (!empty($booking->notes)) {
+            $booking->notes = $booking->notes . "\n\n" . $rescheduleNote;
+        } else {
+            $booking->notes = $rescheduleNote;
+        }
+
+
+        $booking->status = 'rescheduled';
+        $booking->save();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Booking rescheduled successfully',
+            'booking' => $booking
         ]);
     }
 }

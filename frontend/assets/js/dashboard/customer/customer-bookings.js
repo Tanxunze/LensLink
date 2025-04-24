@@ -44,6 +44,22 @@ const CustomerBookings = {
 
             CustomerBookings.loadBookingsPage(page, statusMapping[status] || "");
         });
+
+        // Reschedule form submission
+        $("#submitRescheduleBtn").click(function() {
+            const bookingId = $("#rescheduleBookingId").val();
+            const newDate = $("#rescheduleDate").val();
+            const startTime = $("#rescheduleStartTime").val();
+            const endTime = $("#rescheduleEndTime").val();
+            const notes = $("#rescheduleNotes").val();
+
+            if (!newDate || !startTime) {
+                showNotification("Please fill in all required fields", "warning");
+                return;
+            }
+
+            CustomerBookings.rescheduleBooking(bookingId, newDate, startTime, endTime, notes);
+        });
     },
 
     showBookingsSection: function(status = "all") {
@@ -405,7 +421,7 @@ const CustomerBookings = {
             });
 
             $("#bookingRescheduleBtn").off('click').on('click', function () {
-                alert(`Reschedule functionality for booking ID ${booking.id} will be implemented soon.`);
+                CustomerBookings.openRescheduleModal(booking);
             });
 
             $("#bookingCancelBtn").off('click').on('click', function () {
@@ -425,6 +441,99 @@ const CustomerBookings = {
             console.error("Error setting up booking modal buttons:", error);
             return false;
         }
+    },
+
+    openRescheduleModal: function(booking) {
+        try {
+            // Close the details modal first
+            const detailsModalInstance = bootstrap.Modal.getInstance(document.getElementById('bookingDetailsModal'));
+            if (detailsModalInstance) {
+                detailsModalInstance.hide();
+            }
+
+            // Set initial values in the reschedule form
+            $("#rescheduleBookingId").val(booking.id);
+
+            // Use current booking values as default
+            const bookingDate = new Date(booking.booking_date);
+            const formattedDate = bookingDate.toISOString().split('T')[0];
+            $("#rescheduleDate").val(formattedDate);
+            $("#rescheduleStartTime").val(booking.start_time);
+            if (booking.end_time) {
+                $("#rescheduleEndTime").val(booking.end_time);
+            } else {
+                $("#rescheduleEndTime").val("");
+            }
+            $("#rescheduleNotes").val("");
+
+            // Open the reschedule modal
+            const rescheduleModal = new bootstrap.Modal(document.getElementById('rescheduleBookingModal'));
+            rescheduleModal.show();
+        } catch (error) {
+            console.error("Error opening reschedule modal:", error);
+            showNotification("Could not open reschedule form. Please try again.", "error");
+        }
+    },
+
+    rescheduleBooking: function(bookingId, newDate, startTime, endTime, notes) {
+        // Prepare request data
+        const requestData = {
+            booking_date: newDate,
+            start_time: startTime,
+            notes: notes
+        };
+
+        if (endTime) {
+            requestData.end_time = endTime;
+        }
+
+        // Show loading state
+        $("#submitRescheduleBtn").prop("disabled", true).html(`
+            <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+            Processing...
+        `);
+
+        // Send request to API
+        fetch(`${CONFIG.API.BASE_URL}/bookings/${bookingId}/reschedule`, {
+            method: 'PUT',
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem("token")}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(requestData)
+        })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Failed to reschedule booking');
+                }
+                return response.json();
+            })
+            .then(data => {
+                // Close the modal
+                const modalInstance = bootstrap.Modal.getInstance(document.getElementById('rescheduleBookingModal'));
+                if (modalInstance) {
+                    modalInstance.hide();
+                }
+
+                // Show success notification
+                showNotification("Booking rescheduled successfully", "success");
+
+                // Refresh dashboard data
+                CustomerDashboardData.loadAllData();
+
+                // If bookings section is visible, reload it
+                if ($("#bookingsSection").is(":visible")) {
+                    this.loadBookings();
+                }
+            })
+            .catch(error => {
+                console.error("Failed to reschedule booking:", error);
+                showNotification("Failed to reschedule booking. Please try again.", "error");
+            })
+            .finally(() => {
+                // Reset button state
+                $("#submitRescheduleBtn").prop("disabled", false).html("Reschedule");
+            });
     },
 
     cancelBooking: function(bookingId) {
