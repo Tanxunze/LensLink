@@ -50,7 +50,7 @@ const CustomerBookings = {
         $("#submitRescheduleBtn").click(function() {
             const bookingId = $("#rescheduleBookingId").val();
             const newDate = $("#rescheduleDate").val();
-            const startTime = $("#rescheduleStartTime").val();
+            const startTime = $("#rescheduleStartTime").val().substring(0, 5);
             const endTime = $("#rescheduleEndTime").val();
             const notes = $("#rescheduleNotes").val();
 
