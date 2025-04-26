@@ -76,7 +76,8 @@ const PhotographerDashboard = {
         })
             .then(response => response.json())
             .then(data => {
-                $("#overallRating").text(parseFloat(data.rating).toFixed(1));
+                const rating = data.rating ? parseFloat(data.rating) : 0;
+                $("#overallRating").text(isNaN(rating) ? "0.0" : rating.toFixed(1));
             })
             .catch(error => {
                 console.error("Failed to load overall rating:", error);

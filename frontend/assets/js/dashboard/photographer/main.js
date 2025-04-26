@@ -3,6 +3,7 @@ let lastSelectedCategory = "all";
 $(document).ready(function () {
     loadPhotographerData();
     PhotographerDashboard.init();
+    PhotographerServices.init();
     setupEventHandlers();
     loadSectionFromUrlHash();
 
@@ -73,6 +74,7 @@ function setupEventHandlers() {
         $('[data-section="profile"]').addClass("active");
         $(".dashboard-section").addClass("d-none");
         $("#profileSection").removeClass("d-none");
+        $(document).trigger("section:profile");
 
         if (this.id === "editProfileLink") {
             PhotographerProfile.openEditProfileModal();

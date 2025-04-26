@@ -111,7 +111,7 @@ const PhotographerBookings = {
                         <td>${booking.service_name}</td>
                         <td>${formatDate(booking.booking_date)}</td>
                         <td>${booking.booking_time}</td>
-                        <td>${booking.location || 'N/A'}</td>
+                        <td>${booking.location || 'Not Provided'}</td>
                         <td>
                             <span class="badge ${getStatusBadgeClass(booking.status)}">
                                 ${capitalizeFirstLetter(booking.status)}

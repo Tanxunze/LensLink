@@ -107,6 +107,11 @@ const PhotographerSettings = {
             return false;
         }
 
+        if (currentPassword === newPassword) {
+            showNotification("New password cannot be the same as current password", "warning");
+            return false;
+        }
+
         if (newPassword !== confirmPassword) {
             showNotification("New password does not match the confirmation password", "warning");
             return false;

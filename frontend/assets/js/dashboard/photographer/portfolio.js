@@ -360,7 +360,7 @@ const PhotographerPortfolio = {
                 })
                 .then(data => {
                     bootstrap.Modal.getInstance(document.getElementById('addPortfolioModal')).hide();
-                    showNotification(`Portfolio item ${editMode ? 'update' : 'add'} successfully功`, "success");
+                    showNotification(`Portfolio item ${editMode ? 'update' : 'add'} successfully`, "success");
                     this.loadPortfolio(lastSelectedCategory);
                     this.resetPortfolioModal();
                 })
