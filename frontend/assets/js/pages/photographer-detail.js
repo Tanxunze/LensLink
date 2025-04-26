@@ -409,6 +409,7 @@ function openReviewModal() {
 
     // Get completed bookings for this photographer
     getCompletedBookings().then(bookings => {
+        console.log(bookings.length);
         if (bookings.length === 0) {
             $.lenslink.showNotification("You can only review photographers after completing a booking with them", "warning");
             return;
@@ -455,8 +456,11 @@ function openReviewModal() {
         // Add event listener to booking select
         $("#bookingSelect").on("change", function() {
             const selected = $(this).find("option:selected");
-            $("#serviceType").val(selected.data("service"));
-            $("#serviceDate").val(selected.data("date"));
+            const serviceType = selected.attr("data-service");
+            const serviceDate = selected.attr("data-date");
+
+            $("#serviceType").val(serviceType || '');
+            $("#serviceDate").val(serviceDate || '');
         });
 
         const reviewModal = new bootstrap.Modal(document.getElementById('reviewModal'));
@@ -522,29 +526,51 @@ function updateBookingSummary() {
 }
 
 function submitReview() {
-    // Validate form
-    if (!$("#reviewForm")[0].checkValidity() || !selectedRating || !$("#bookingSelect").val()) {
-        alert("Please fill all fields, select a rating, and select a booking");
+    if (!selectedRating || selectedRating === 0) {
+        alert("Please select a rating");
         return;
+    }
+
+    const bookingId = $("#bookingSelect").val();
+    if (!bookingId) {
+        alert("Please select a booking");
+        return;
+    }
+
+    const title = $("#reviewTitle").val().trim();
+    if (!title) {
+        alert("Please enter a title");
+        return;
+    }
+
+    const reviewText = $("#reviewText").val().trim();
+    if (!reviewText) {
+        alert("Please enter a review");
+        return;
+    }
+
+    const $selected = $("#bookingSelect option:selected");
+    const serviceType = $selected.attr("data-service") || $("#serviceType").val();
+    let serviceDate = $selected.attr("data-date") || $("#serviceDate").val();
+
+    if (!serviceDate) {
+        serviceDate = new Date().toISOString().split('T')[0];
     }
 
     const reviewData = {
         photographer_id: photographerId,
-        booking_id: $("#bookingSelect").val(),
+        booking_id: bookingId,
         rating: selectedRating,
-        title: $("#reviewTitle").val(),
-        review: $("#reviewText").val(),
-        service_type: $("#serviceType").val(),
-        service_date: $("#serviceDate").val()
+        title: title,
+        review: reviewText,
+        service_type: serviceType,
+        service_date: serviceDate
     };
 
     API.createReview(reviewData)
         .then(data => {
-            // Close modal and show success message
             bootstrap.Modal.getInstance(document.getElementById('reviewModal')).hide();
             $.lenslink.showNotification("Review submitted successfully!", "success");
-
-            // Reload reviews
             loadPhotographerDetails();
         })
         .catch(error => {
@@ -687,7 +713,7 @@ function sendContactRequest(recipientId, message) {
 function getCompletedBookings() {
     return API.request(`/bookings?photographer_id=${photographerId}&status=completed`)
         .then(response => {
-            return response.data || [];
+            return response.bookings || [];
         })
         .catch(error => {
             console.error('Error fetching completed bookings:', error);
