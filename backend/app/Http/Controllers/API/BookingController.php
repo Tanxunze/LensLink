@@ -81,47 +81,79 @@ class BookingController extends Controller
         return response()->json($booking);
     }
 
+//    public function store(Request $request)
+//    {
+//        $request->validate([
+//            'photographer_id' => 'required|exists:photographer_profiles,id',
+//            'rating' => 'required|integer|min:1|max:5',
+//            'title' => 'required|string|max:255',
+//            'review' => 'required|string',
+//            'service_type' => 'required|string|max:255',
+//            'service_date' => 'required|date',
+//            'booking_id' => 'required|exists:bookings,id'
+//        ]);
+//
+//        // Verify this is a completed booking and belongs to this user/photographer
+//        $booking = Booking::where('id', $request->booking_id)
+//            ->where('customer_id', Auth::id())
+//            ->where('photographer_id', $request->photographer_id)
+//            ->where('status', 'completed')
+//            ->first();
+//
+//        if (!$booking) {
+//            return response()->json(['message' => 'You can only review photographers for completed bookings'], 403);
+//        }
+//
+//        // Check if a review already exists for this booking
+//        $existingReview = Review::where('booking_id', $request->booking_id)->first();
+//        if ($existingReview) {
+//            return response()->json(['message' => 'You have already reviewed this booking'], 409);
+//        }
+//
+//        $review = Review::create([
+//            'booking_id' => $request->booking_id,
+//            'photographer_id' => $request->photographer_id,
+//            'customer_id' => Auth::id(),
+//            'rating' => $request->rating,
+//            'title' => $request->title,
+//            'review' => $request->review,
+//            'service_type' => $request->service_type,
+//            'service_date' => $request->service_date
+//        ]);
+//
+//        return response()->json($review, 201);
+//    }
+
     public function store(Request $request)
     {
         $request->validate([
             'photographer_id' => 'required|exists:photographer_profiles,id',
-            'rating' => 'required|integer|min:1|max:5',
-            'title' => 'required|string|max:255',
-            'review' => 'required|string',
-            'service_type' => 'required|string|max:255',
-            'service_date' => 'required|date',
-            'booking_id' => 'required|exists:bookings,id'
+            'service_id' => 'required|exists:services,id',
+            'booking_date' => 'required|date|after_or_equal:today',
+            'start_time' => 'required',
+            'location' => 'required|string|max:255',
+            'notes' => 'nullable|string',
+            'total_amount' => 'required|numeric'
         ]);
 
-        // Verify this is a completed booking and belongs to this user/photographer
-        $booking = Booking::where('id', $request->booking_id)
-            ->where('customer_id', Auth::id())
-            ->where('photographer_id', $request->photographer_id)
-            ->where('status', 'completed')
-            ->first();
-
-        if (!$booking) {
-            return response()->json(['message' => 'You can only review photographers for completed bookings'], 403);
+        $service = Service::findOrFail($request->service_id);
+        if ($service->photographer_id != $request->photographer_id) {
+            return response()->json(['message' => 'Service does not belong to this photographer'], 400);
         }
 
-        // Check if a review already exists for this booking
-        $existingReview = Review::where('booking_id', $request->booking_id)->first();
-        if ($existingReview) {
-            return response()->json(['message' => 'You have already reviewed this booking'], 409);
-        }
-
-        $review = Review::create([
-            'booking_id' => $request->booking_id,
+        $booking = Booking::create([
             'photographer_id' => $request->photographer_id,
             'customer_id' => Auth::id(),
-            'rating' => $request->rating,
-            'title' => $request->title,
-            'review' => $request->review,
-            'service_type' => $request->service_type,
-            'service_date' => $request->service_date
+            'service_id' => $request->service_id,
+            'booking_date' => $request->booking_date,
+            'start_time' => $request->start_time,
+            'location' => $request->location,
+            'notes' => $request->notes,
+            'total_amount' => $request->total_amount,
+            'status' => 'pending'
         ]);
 
-        return response()->json($review, 201);
+        return response()->json($booking, 201);
     }
 
     public function cancel($id)
