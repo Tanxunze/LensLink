@@ -210,6 +210,7 @@ class ServiceController extends Controller
             'is_featured' => 'boolean',
             'features' => 'required|array|min:1',
             'features.*' => 'string|max:255',
+            'image_url' => 'nullable|string',
         ]);
 
         if ($validator->fails()) {
@@ -240,6 +241,7 @@ class ServiceController extends Controller
             'unit' => $request->unit,
             'is_featured' => $request->is_featured ?? false,
             'is_active' => true,
+            'image_url' => $request->image_url
         ]);
 
         if ($request->has('category_id')) {

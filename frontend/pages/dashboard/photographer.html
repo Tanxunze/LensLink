@@ -760,6 +760,18 @@
                 </div>
                 <div class="modal-body">
                     <form id="addServiceForm">
+                        <div class="mb-3 text-center">
+                            <div class="service-image-container">
+                                <img src="../../assets/images/placeholder.jpg" alt="Service preview" id="serviceImagePreview" class="img-fluid rounded mb-3" style="max-height: 200px;">
+                                <div class="overlay">
+                                    <button type="button" class="btn btn-sm btn-light" id="serviceImageBtn">
+                                        <i class="bi bi-upload"></i> Upload Image
+                                    </button>
+                                </div>
+                            </div>
+                            <input type="file" class="form-control" id="serviceImageUpload" accept="image/*" style="display: none;">
+                            <input type="hidden" id="serviceImagePath">
+                        </div>
                         <div class="mb-3">
                             <label for="serviceName" class="form-label">Service Name</label>
                             <input type="text" class="form-control" id="serviceName" required>

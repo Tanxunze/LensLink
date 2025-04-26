@@ -106,6 +106,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('/photographer/services/edit/{id}', [Services::class, 'update']);
     Route::post('/photographer/services/{id}/featured', [Services::class, 'updateFeatureStatus']);
     Route::delete('/photographer/services/{id}/delete', [Services::class, 'destroy']);
+    Route::post('/photographer/services/image', [Services::class, 'uploadServiceImage']);
     Route::get('/earnings/monthly', [Dashboard::class, 'monthlyEarnings']);
 
     //Favorites

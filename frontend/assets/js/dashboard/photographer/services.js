@@ -1,6 +1,22 @@
 const PhotographerServices = {
     init: function () {
+        $(document).on('click', '#serviceImageBtn', function() {
+            $('#serviceImageUpload').click();
+        });
 
+        $(document).on('change', '#serviceImageUpload', function() {
+            if (this.files && this.files[0]) {
+                const file = this.files[0];
+                previewImage(file, "serviceImagePreview");
+                $(this).data('imageFile', file);
+            }
+        });
+
+        $('#addServiceModal').on('hidden.bs.modal', function () {
+            $("#serviceImagePreview").attr("src", "../../assets/images/placeholder.jpg");
+            $("#serviceImagePath").val("");
+            $("#serviceImageUpload").val("").removeData('imageFile');
+        });
     },
 
     loadServices: function (onlyFeatured = false) {
@@ -135,10 +151,17 @@ const PhotographerServices = {
         }
     },
 
-    openAddServiceModal: function () {
-        $("#addServiceForm")[0].reset();
+        openAddServiceModal: function () {
+            
+            $("#addServiceForm")[0].reset();
+            $("#serviceImagePreview").attr("src", "../../assets/images/placeholder.jpg");
+            $("#serviceImagePath").val("");
+            $("#serviceImageUpload").val("").removeData('imageFile');
 
-        $("#serviceFeatures").html(`
+            $("#addServiceModal .modal-title").text("Add New Service");
+            $("#saveServiceBtn").removeData("id").text("Save Service");
+
+            $("#serviceFeatures").html(`
             <div class="input-group mb-2">
                 <input type="text" class="form-control" placeholder="e.g., 2-hour photoshoot" name="features[]">
                 <button class="btn btn-outline-secondary remove-feature" type="button">
@@ -147,11 +170,12 @@ const PhotographerServices = {
             </div>
         `);
 
-        this.setupRemoveFeatureButtons();
+            this.setupRemoveFeatureButtons();
 
-        const serviceModal = new bootstrap.Modal(document.getElementById('addServiceModal'));
-        serviceModal.show();
-    },
+            
+            const serviceModal = new bootstrap.Modal(document.getElementById('addServiceModal'));
+            serviceModal.show();
+        },
 
     setupRemoveFeatureButtons: function () {
         $(".remove-feature").off('click').on('click', function () {
@@ -186,6 +210,8 @@ const PhotographerServices = {
         const unit = $("#serviceUnit").val();
         const duration = $("#serviceDuration").val();
         const featured = $("#serviceFeatured").is(":checked");
+        const imageFile = $("#serviceImageUpload").data('imageFile');
+        const originalImageUrl = $("#serviceImagePath").val();
 
         const features = [];
         $("#serviceFeatures input").each(function () {
@@ -206,8 +232,42 @@ const PhotographerServices = {
 
         const serviceId = saveBtn.data("id");
         const isEdit = !!serviceId;
-        const method = isEdit ? 'PUT' : 'POST';
 
+        
+        if (imageFile) {
+            const formData = new FormData();
+            formData.append('image', imageFile);
+
+            fetch(`${CONFIG.API.BASE_URL}/photographer/services/image`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem("token")}`
+                },
+                body: formData
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        
+                        this.submitServiceData(isEdit, serviceId, name, description, price, unit, duration, featured, features, data.image_url, saveBtn, originalText);
+                    } else {
+                        throw new Error('Image upload failed: ' + (data.message || 'Unknown error'));
+                    }
+                })
+                .catch(error => {
+                    console.error("Image upload failed:", error);
+                    showNotification("Failed to upload image. Service not saved.", "error");
+                    saveBtn.prop("disabled", false).text(originalText);
+                });
+        } else {
+            
+            this.submitServiceData(isEdit, serviceId, name, description, price, unit, duration, featured, features, originalImageUrl, saveBtn, originalText);
+        }
+    },
+
+
+    submitServiceData: function(isEdit, serviceId, name, description, price, unit, duration, featured, features, imageUrl, saveBtn, originalText) {
+        const method = isEdit ? 'PUT' : 'POST';
         const url = isEdit
             ? `${CONFIG.API.BASE_URL}/photographer/services/edit/${serviceId}`
             : `${CONFIG.API.BASE_URL}/services`;
@@ -225,7 +285,8 @@ const PhotographerServices = {
                 unit: unit,
                 duration: duration,
                 is_featured: featured,
-                features: features
+                features: features,
+                image_url: imageUrl
             })
         })
             .then(response => {
@@ -236,9 +297,7 @@ const PhotographerServices = {
             })
             .then(data => {
                 bootstrap.Modal.getInstance(document.getElementById('addServiceModal')).hide();
-
-                showNotification("Service added successfully", "success");
-
+                showNotification(`Service ${isEdit ? 'updated' : 'added'} successfully`, "success");
                 this.loadServices();
             })
             .catch(error => {
@@ -251,18 +310,23 @@ const PhotographerServices = {
     },
 
     openEditServiceModal: function (serviceId) {
+        
         $("#addServiceForm")[0].reset();
+        $("#serviceImagePreview").attr("src", "../../assets/images/placeholder.jpg");
+        $("#serviceImagePath").val("");
+        $("#serviceImageUpload").val("").removeData('imageFile');
+
         $("#addServiceModal .modal-title").text("Edit Service");
         $("#saveServiceBtn").data("id", serviceId).text("Save Changes");
 
         $("#addServiceModal .modal-body").prepend(`
-            <div id="loadingIndicator" class="text-center mb-3">
-                <div class="spinner-border" role="status">
-                    <span class="visually-hidden">加载中...</span>
-                </div> 
-                <span>加载服务信息...</span>
-            </div>
-        `);
+        <div id="loadingIndicator" class="text-center mb-3">
+            <div class="spinner-border" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div> 
+            <span>Loading services...</span>
+        </div>
+    `);
 
         const serviceModal = new bootstrap.Modal(document.getElementById('addServiceModal'));
         serviceModal.show();
@@ -285,11 +349,9 @@ const PhotographerServices = {
             .then(service => {
                 $("#loadingIndicator").remove();
 
-                // 重置并显示表单
                 $("#addServiceForm")[0].reset();
                 $("#addServiceForm").show();
 
-                // 填充表单数据
                 $("#serviceName").val(service.name);
                 $("#serviceDescription").val(service.description);
                 $("#servicePrice").val(service.price);
@@ -297,29 +359,33 @@ const PhotographerServices = {
                 $("#serviceDuration").val(service.duration);
                 $("#serviceFeatured").prop("checked", service.is_featured);
 
-                // 处理特性(features)
+                if (service.image_url) {
+                    $("#serviceImagePreview").attr("src", service.image_url);
+                    $("#serviceImagePath").val(service.image_url);
+                }
+
                 $("#serviceFeatures").empty();
                 if (service.features && service.features.length > 0) {
                     service.features.forEach(featureObj => {
                         const featureInput = `
-                            <div class="input-group mb-2">
-                                <input type="text" class="form-control" placeholder="e.g., Digital delivery" name="features[]" value="${featureObj.feature}">
-                                <button class="btn btn-outline-secondary remove-feature" type="button">
-                                    <i class="bi bi-dash"></i>
-                                </button>
-                            </div>
-                        `;
+                    <div class="input-group mb-2">
+                        <input type="text" class="form-control" placeholder="e.g., Digital delivery" name="features[]" value="${featureObj.feature}">
+                        <button class="btn btn-outline-secondary remove-feature" type="button">
+                            <i class="bi bi-dash"></i>
+                        </button>
+                    </div>
+                `;
                         $("#serviceFeatures").append(featureInput);
                     });
                 } else {
                     const emptyFeatureInput = `
-                        <div class="input-group mb-2">
-                            <input type="text" class="form-control" placeholder="e.g., Digital delivery" name="features[]">
-                            <button class="btn btn-outline-secondary remove-feature" type="button">
-                                <i class="bi bi-dash"></i>
-                            </button>
-                        </div>
-                    `;
+                <div class="input-group mb-2">
+                    <input type="text" class="form-control" placeholder="e.g., Digital delivery" name="features[]">
+                    <button class="btn btn-outline-secondary remove-feature" type="button">
+                        <i class="bi bi-dash"></i>
+                    </button>
+                </div>
+            `;
                     $("#serviceFeatures").append(emptyFeatureInput);
                 }
 
@@ -328,7 +394,7 @@ const PhotographerServices = {
             .catch(error => {
                 console.error("Failed to load service details:", error);
                 showNotification("Failed to load service details. Please try again.", "error");
-            })
+            });
     },
 
     updateServiceFeatured: function (serviceId, isFeatured) {
@@ -365,6 +431,25 @@ const PhotographerServices = {
                 showNotification("Failed to load service details. Please try again.", "error");
                 btn.html(originalHtml).prop("disabled", false);
             })
+    },
+
+    uploadServiceImage: function(imageFile) {
+        const formData = new FormData();
+        formData.append("image", imageFile);
+
+        return fetch(`${CONFIG.API.BASE_URL}/photographer/services/image`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem("token")}`
+            },
+            body: formData
+        })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Failed to upload service image');
+                }
+                return response.json();
+            });
     },
 
     deleteService: function (serviceId) {
