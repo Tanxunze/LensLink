@@ -6,6 +6,8 @@
 let allServices = [];
 let categories = [];
 const itemsPerPage = 9;
+let currentPage = 1;
+let totalPages = 1;
 let searchParams = {
     search: '',
     category: 'all',
@@ -340,15 +342,18 @@ function filterServices(filter) {
         const serviceElement = $(this);
         const categoryAttr = serviceElement.data("category");
 
-        // debug
-        // console.log(`Element: ${serviceElement.find('.service-title').text()}, Category: ${categoryAttr}, Filter: ${filter}`);
-
         if (filter === "all" || categoryAttr === filter) {
             serviceElement.removeClass("hidden").addClass("visible");
         } else {
             serviceElement.removeClass("visible").addClass("hidden");
         }
     });
+
+    totalPages = Math.ceil($(".service-item.visible").length / itemsPerPage);
+    currentPage = 1;
+
+    displayCurrentPageServices();
+    setupPagination();
     updateEmptyStateVisibility();
 }
 
