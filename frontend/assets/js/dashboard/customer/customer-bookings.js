@@ -36,8 +36,9 @@ const CustomerBookings = {
             const status = $(".dropdown-item[data-filter].active").data("filter") || "all";
             const statusMapping = {
                 "all": "",
-                "active": "confirmed",
+                "active": "active",
                 "pending": "pending",
+                "confirmed": "confirmed",
                 "completed": "completed",
                 "cancelled": "cancelled"
             };
@@ -82,8 +83,9 @@ const CustomerBookings = {
     filterBookings: function(filter) {
         const statusMapping = {
             "all": "",
-            "active": "confirmed",
+            "active": "active",
             "pending": "pending",
+            "confirmed": "confirmed",
             "completed": "completed",
             "cancelled": "cancelled"
         };

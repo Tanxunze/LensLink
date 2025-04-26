@@ -25,7 +25,14 @@ class BookingController extends Controller
 
 
         if ($request->has('status') && $request->status) {
-            $query->where('status', $request->status);
+//            $query->where('status', $request->status);
+            $status = $request->status;
+
+            if ($status === 'active') {
+                $query->whereNotIn('status', ['completed', 'cancelled']);
+            } else {
+                $query->where('status', $status);
+            }
         }
 
 
