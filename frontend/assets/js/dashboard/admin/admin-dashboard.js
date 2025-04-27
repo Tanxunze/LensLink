@@ -571,34 +571,46 @@ function banUser() {
 }
 
 function confirmUnbanUser(userId) {
+    $('#delete-item-id').val(userId);
+    $('#delete-item-type').val('user-ban');
+    $('#delete-confirmation-text').text(`Are you sure you want to unban this user?`);
+    $('#confirmDeleteModal').modal('show');
+
+    $('#confirm-delete-btn').off('click').on('click', function () {
+        unbanUserByUserId(userId);
+    });
+}
+
+function unbanUserByUserId(userId) {
+    $('#confirm-delete-btn').prop('disabled', true).html('<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Processing...');
+
     $.ajax({
-        url: `${CONFIG.API.BASE_URL}/admin/bans?search=${userId}`,
-        method: 'GET',
+        url: `${CONFIG.API.BASE_URL}/admin/bans/user/${userId}`,
+        method: 'DELETE',
         headers: {
             'Authorization': 'Bearer ' + localStorage.getItem('token')
         },
         success: function (response) {
-            if (response.success && response.data.length > 0) {
-                const banRecord = response.data.find(ban => ban.user_id == userId);
+            if (response.success) {
+                $('#confirmDeleteModal').modal('hide');
+                showToast('Success', 'User has been unbanned successfully', 'success');
 
-                if (banRecord) {
-                    $('#delete-item-id').val(banRecord.id);
-                    $('#delete-item-type').val('ban');
-                    $('#delete-confirmation-text').text(`Are you sure you want to unban user "${banRecord.user_name}"?`);
-                    $('#confirmDeleteModal').modal('show');
+                loadUsers(1, $('#user-search').val());
 
-                    $('#confirm-delete-btn').off('click').on('click', function () {
-                        unbanUser(banRecord.id);
-                    });
-                } else {
-                    showToast('Error', 'Ban record not found', 'error');
+                loadDashboardStats();
+
+                if ($('#ban-list').hasClass('show active')) {
+                    loadBanList(1, $('#ban-search').val());
                 }
             } else {
-                showToast('Error', 'Failed to find ban record', 'error');
+                showToast('Error', response.message || 'Failed to unban user', 'error');
             }
         },
         error: function (xhr) {
             handleAjaxError(xhr);
+        },
+        complete: function () {
+            $('#confirm-delete-btn').prop('disabled', false).text('Delete');
         }
     });
 }

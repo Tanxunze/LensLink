@@ -339,6 +339,42 @@ class AdminController extends Controller
         ]);
     }
 
+    public function unbanUserByUserId(Request $request, $userId)
+    {
+        $user = Auth::user();
+
+        if ($user->role !== 'admin') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthorized'
+            ], 403);
+        }
+
+        $ban = BanList::where('user_id', $userId)->first();
+
+        if (!$ban) {
+            return response()->json([
+                'success' => false,
+                'message' => 'User is not banned'
+            ], 404);
+        }
+
+        $ban->delete();
+
+        // Log admin activity
+        SystemLog::create([
+            'user_id' => $user->id,
+            'type' => 'admin',
+            'action' => 'Unbanned user #' . $userId,
+            'ip_address' => $request->ip()
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'User has been unbanned successfully'
+        ]);
+    }
+
     public function getBanList(Request $request)
     {
         $user = Auth::user();
