@@ -52,7 +52,12 @@ class AdminController extends Controller
         $pendingReports = DB::table('reports')->where('status', 'pending')->count();
         $totalUsers = User::count();
         $totalPhotographers = User::where('role', 'photographer')->count();
-        $reportedComments = Review::where('is_published', 0)->count();
+
+        $reportedUsers = DB::table('reports')
+            ->where('status', '!=', 'rejected')
+            ->distinct('user_id')
+            ->count('user_id');
+
         $bannedUsers = BanList::where(function($query) {
             $query->whereNull('expires_at')
                 ->orWhere('expires_at', '>', Carbon::now());
@@ -71,12 +76,52 @@ class AdminController extends Controller
             'data' => [
                 'totalUsers' => $totalUsers,
                 'totalPhotographers' => $totalPhotographers,
-                'reportedComments' => $reportedComments,
+                'reportedUsers' => $reportedUsers,
                 'bannedUsers' => $bannedUsers,
                 'pendingReports' => $pendingReports
             ]
         ]);
     }
+
+//    public function getStats(Request $request)
+//    {
+//        $user = Auth::user();
+//
+//        if ($user->role !== 'admin') {
+//            return response()->json([
+//                'success' => false,
+//                'message' => 'Unauthorized'
+//            ], 403);
+//        }
+//
+//        $pendingReports = DB::table('reports')->where('status', 'pending')->count();
+//        $totalUsers = User::count();
+//        $totalPhotographers = User::where('role', 'photographer')->count();
+//        $reportedComments = Review::where('is_published', 0)->count();
+//        $bannedUsers = BanList::where(function($query) {
+//            $query->whereNull('expires_at')
+//                ->orWhere('expires_at', '>', Carbon::now());
+//        })->count();
+//
+//        // Log admin activity
+//        SystemLog::create([
+//            'user_id' => $user->id,
+//            'type' => 'admin',
+//            'action' => 'Viewed dashboard statistics',
+//            'ip_address' => $request->ip()
+//        ]);
+//
+//        return response()->json([
+//            'success' => true,
+//            'data' => [
+//                'totalUsers' => $totalUsers,
+//                'totalPhotographers' => $totalPhotographers,
+//                'reportedComments' => $reportedComments,
+//                'bannedUsers' => $bannedUsers,
+//                'pendingReports' => $pendingReports
+//            ]
+//        ]);
+//    }
 
     public function getUsers(Request $request)
     {
@@ -977,11 +1022,14 @@ class AdminController extends Controller
             ->join('users as reported_users', 'reports.user_id', '=', 'reported_users.id')
             ->join('users as reporters', 'reports.reporter_id', '=', 'reporters.id')
             ->leftJoin('users as admins', 'reports.resolved_by', '=', 'admins.id')
+            ->leftJoin('reviews', 'reports.review_id', '=', 'reviews.id')
             ->select(
                 'reports.*',
                 'reported_users.name as reported_user_name',
                 'reporters.name as reporter_name',
-                'admins.name as resolved_by_name'
+                'admins.name as resolved_by_name',
+                'reviews.title as review_title',
+                'reviews.review as review_content'
             );
 
         if (!empty($search)) {
@@ -1194,6 +1242,49 @@ class AdminController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Report submitted successfully',
+            'data' => $report
+        ]);
+    }
+
+    public function createReviewReport(Request $request)
+    {
+        $user = Auth::user();
+
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthorized'
+            ], 401);
+        }
+
+        $validator = Validator::make($request->all(), [
+            'review_id' => 'required|exists:reviews,id',
+            'reason' => 'required|string|min:10'
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation error',
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        $review = Review::find($request->review_id);
+
+        $report = new \App\Models\Report([
+            'user_id' => $review->customer_id,
+            'review_id' => $request->review_id,
+            'reporter_id' => $user->id,
+            'reason' => $request->reason,
+            'status' => 'pending'
+        ]);
+
+        $report->save();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Review report submitted successfully',
             'data' => $report
         ]);
     }

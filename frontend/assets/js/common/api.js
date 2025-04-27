@@ -759,6 +759,18 @@ class API {
             method: "POST"
         });
     }
+
+    /**
+     * Create a report for a review
+     * @param {Object} reportData - Report data including review_id and reason
+     * @returns {Promise} - Report creation response
+     */
+    static async createReviewReport(reportData) {
+        return this.request("/reports/review", {
+            method: "POST",
+            body: JSON.stringify(reportData)
+        });
+    }
 }
 
 

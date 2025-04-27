@@ -337,6 +337,32 @@
             </div>
         </div>
     </div>
+    <!-- Review Report Modal -->
+    <div class="modal fade" id="reviewReportModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Report Review</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-info">
+                        <small><i class="bi bi-info-circle"></i> Reporting a review should only be done for legitimate concerns.</small>
+                    </div>
+                    <form id="reviewReportForm">
+                        <div class="mb-3">
+                            <label for="reviewReportReason" class="form-label">Reason for Report</label>
+                            <textarea class="form-control" id="reviewReportReason" rows="4" placeholder="Please provide specific details about why you are reporting this review..." required></textarea>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-danger" id="submitReviewReportBtn">Submit Report</button>
+                </div>
+            </div>
+        </div>
+    </div>
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="../assets/js/common/config.js"></script>

@@ -233,7 +233,7 @@ function initEventListeners() {
 }
 
 function loadDashboardStats() {
-    showCardLoading(['#totalUsers', '#totalPhotographers', '#reportedComments', '#bannedUsers']);
+    showCardLoading(['#totalUsers', '#totalPhotographers', '#reportedUsers', '#bannedUsers']);
 
     $.ajax({
         url: `${CONFIG.API.BASE_URL}/admin/stats`,
@@ -245,7 +245,7 @@ function loadDashboardStats() {
             if (response.success) {
                 $('#totalUsers').text(response.data.totalUsers || 0);
                 $('#totalPhotographers').text(response.data.totalPhotographers || 0);
-                $('#reportedComments').text(response.data.reportedComments || 0);
+                $('#reportedUsers').text(response.data.reportedUsers || 0);
                 $('#bannedUsers').text(response.data.bannedUsers || 0);
             } else {
                 showToast('Error', 'Failed to load statistics', 'error');
@@ -255,7 +255,7 @@ function loadDashboardStats() {
             handleAjaxError(xhr);
         },
         complete: function () {
-            hideCardLoading(['#totalUsers', '#totalPhotographers', '#reportedComments', '#bannedUsers']);
+            hideCardLoading(['#totalUsers', '#totalPhotographers', '#reportedUsers', '#bannedUsers']);
         }
     });
 }
@@ -375,7 +375,6 @@ function showCardLoading(selectors) {
 }
 
 function hideCardLoading(selectors) {
-    // Not Empty!!!
 }
 
 function showToast(title, message, type = 'info') {
@@ -1708,6 +1707,7 @@ function renderReportsTable(reports) {
     } else {
         reports.forEach(report => {
             const statusClass = getReportStatusClass(report.status);
+            const isReviewReport = report.review_id ? true : false;
 
             html += `
                 <tr>
@@ -1716,6 +1716,7 @@ function renderReportsTable(reports) {
                     <td>${escapeHtml(report.reported_user_name)}</td>
                     <td>
                         <div class="text-truncate-custom" title="${escapeHtml(report.reason)}">
+                            ${isReviewReport ? '<span class="badge bg-info me-1">Review</span>' : ''}
                             ${escapeHtml(report.reason.substring(0, 50))}${report.reason.length > 50 ? '...' : ''}
                         </div>
                     </td>
@@ -1807,6 +1808,15 @@ function viewReportDetails(reportId) {
                                 <h6>Reason:</h6>
                                 <div class="p-3 bg-light rounded">${escapeHtml(report.reason)}</div>
                             </div>
+                            ${report.review_id ? `
+                                <div class="mt-3">
+                                    <h6>Reported Review:</h6>
+                                    <div class="p-3 bg-light rounded">
+                                        <strong>${escapeHtml(report.review_title || 'Untitled')}</strong>
+                                        <p class="mb-0 mt-2">${escapeHtml(report.review_content)}</p>
+                                    </div>
+                                </div>
+                            ` : ''}
                             ${report.admin_notes ? `
                                 <div class="mt-3">
                                     <h6>Admin Notes:</h6>
