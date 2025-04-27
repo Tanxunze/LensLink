@@ -339,6 +339,8 @@ const CustomerMessages = {
 
                     const messagesHtml = messages.map(message => {
                         const isCurrentUser = message.sender_id === currentUserId;
+                        console.log(isCurrentUser);
+                        console.log(currentUserId);
                         const alignClass = isCurrentUser ? 'justify-content-end' : 'justify-content-start';
                         const bgColor = isCurrentUser ? '#007bff' : '#f1f1f1';
                         const textColor = isCurrentUser ? '#fff' : '#000';
