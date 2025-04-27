@@ -771,6 +771,23 @@ class API {
             body: JSON.stringify(reportData)
         });
     }
+
+    /**
+     * Get customer profile details
+     * @param {number} id - Customer ID
+     * @returns {Promise} - Customer profile details
+     */
+    static async getCustomerProfile(id) {
+        return this.request(`/customers/${id}`);
+    }
+
+    /**
+     * Get current authenticated user details
+     * @returns {Promise} - Current user details
+     */
+    static async getCurrentUser() {
+        return this.request("/user/profile");
+    }
 }
 
 

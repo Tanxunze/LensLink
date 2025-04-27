@@ -35,6 +35,7 @@ Route::get('/rating-options', [UtilityController::class, 'getRatingOptions']);
 Route::get('auth/google/redirect', [GoogleAuthController::class, 'redirectToGoogle']);
 Route::get('auth/google/callback', [GoogleAuthController::class, 'handleGoogleCallback']);
 Route::get('/images/{filename}', [UserController::class, 'getImage']);
+Route::get('/customers/{id}', [UserController::class, 'getCustomerProfile']);
 
 //private routes
 Route::middleware('auth:sanctum')->group(function () {
