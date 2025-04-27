@@ -134,6 +134,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/bans', [AdminController::class, 'getBanList']);
         Route::get('/bans/{id}', [AdminController::class, 'getBanDetails']);
         Route::delete('/bans/{id}', [AdminController::class, 'unbanUser']);
+        Route::delete('/bans/user/{userId}', [AdminController::class, 'unbanUserByUserId']);
         Route::get('/comments', [AdminController::class, 'getComments']);
         Route::delete('/comments/{id}', [AdminController::class, 'deleteComment']);
         Route::put('/comments/{id}/visibility', [AdminController::class, 'toggleCommentVisibility']);
