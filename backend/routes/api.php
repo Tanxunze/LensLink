@@ -119,6 +119,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/user/profile', [UserController::class, 'getProfile']);
     Route::put('/user/profile', [UserController::class, 'updateProfile']);
     Route::post('/user/profile/image', [UserController::class, 'updateProfileImage']);
+    Route::post('/reports', [AdminController::class, 'createReport']);
+    Route::post('/reports/review', [AdminController::class, 'createReviewReport']);
 
     // Admin Dashboard
     Route::prefix('admin')->group(function () {
@@ -141,6 +143,9 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/logs', [AdminController::class, 'getLogs']);
         Route::get('/logs/{id}', [AdminController::class, 'getLogDetails']);
         Route::delete('/logs/clear', [AdminController::class, 'clearLogs']);
+        Route::get('/reports', [AdminController::class, 'getReports']);
+        Route::get('/reports/{id}', [AdminController::class, 'getReportDetails']);
+        Route::post('/reports/handle', [AdminController::class, 'handleReport']);
     });
 });
 

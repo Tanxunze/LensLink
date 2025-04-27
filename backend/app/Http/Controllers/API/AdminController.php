@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
+use App\Models\Report;
 
 class AdminController extends Controller
 {
@@ -48,9 +49,15 @@ class AdminController extends Controller
             ], 403);
         }
 
+        $pendingReports = DB::table('reports')->where('status', 'pending')->count();
         $totalUsers = User::count();
         $totalPhotographers = User::where('role', 'photographer')->count();
-        $reportedComments = Review::where('is_published', 0)->count();
+
+        $reportedUsers = DB::table('reports')
+            ->where('status', '!=', 'rejected')
+            ->distinct('user_id')
+            ->count('user_id');
+
         $bannedUsers = BanList::where(function($query) {
             $query->whereNull('expires_at')
                 ->orWhere('expires_at', '>', Carbon::now());
@@ -69,11 +76,52 @@ class AdminController extends Controller
             'data' => [
                 'totalUsers' => $totalUsers,
                 'totalPhotographers' => $totalPhotographers,
-                'reportedComments' => $reportedComments,
-                'bannedUsers' => $bannedUsers
+                'reportedUsers' => $reportedUsers,
+                'bannedUsers' => $bannedUsers,
+                'pendingReports' => $pendingReports
             ]
         ]);
     }
+
+//    public function getStats(Request $request)
+//    {
+//        $user = Auth::user();
+//
+//        if ($user->role !== 'admin') {
+//            return response()->json([
+//                'success' => false,
+//                'message' => 'Unauthorized'
+//            ], 403);
+//        }
+//
+//        $pendingReports = DB::table('reports')->where('status', 'pending')->count();
+//        $totalUsers = User::count();
+//        $totalPhotographers = User::where('role', 'photographer')->count();
+//        $reportedComments = Review::where('is_published', 0)->count();
+//        $bannedUsers = BanList::where(function($query) {
+//            $query->whereNull('expires_at')
+//                ->orWhere('expires_at', '>', Carbon::now());
+//        })->count();
+//
+//        // Log admin activity
+//        SystemLog::create([
+//            'user_id' => $user->id,
+//            'type' => 'admin',
+//            'action' => 'Viewed dashboard statistics',
+//            'ip_address' => $request->ip()
+//        ]);
+//
+//        return response()->json([
+//            'success' => true,
+//            'data' => [
+//                'totalUsers' => $totalUsers,
+//                'totalPhotographers' => $totalPhotographers,
+//                'reportedComments' => $reportedComments,
+//                'bannedUsers' => $bannedUsers,
+//                'pendingReports' => $pendingReports
+//            ]
+//        ]);
+//    }
 
     public function getUsers(Request $request)
     {
@@ -951,6 +999,293 @@ class AdminController extends Controller
         return response()->json([
             'success' => true,
             'data' => $responseData
+        ]);
+    }
+
+
+    public function getReports(Request $request)
+    {
+        $user = Auth::user();
+
+        if ($user->role !== 'admin') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthorized'
+            ], 403);
+        }
+
+        $search = $request->input('search', '');
+        $perPage = $request->input('per_page', 10);
+        $page = $request->input('page', 1);
+
+        $query = DB::table('reports')
+            ->join('users as reported_users', 'reports.user_id', '=', 'reported_users.id')
+            ->join('users as reporters', 'reports.reporter_id', '=', 'reporters.id')
+            ->leftJoin('users as admins', 'reports.resolved_by', '=', 'admins.id')
+            ->leftJoin('reviews', 'reports.review_id', '=', 'reviews.id')
+            ->select(
+                'reports.*',
+                'reported_users.name as reported_user_name',
+                'reporters.name as reporter_name',
+                'admins.name as resolved_by_name',
+                'reviews.title as review_title',
+                'reviews.review as review_content'
+            );
+
+        if (!empty($search)) {
+            $query->where(function($q) use ($search) {
+                $q->where('reports.reason', 'like', "%{$search}%")
+                    ->orWhere('reported_users.name', 'like', "%{$search}%")
+                    ->orWhere('reporters.name', 'like', "%{$search}%");
+            });
+        }
+
+        $totalReports = $query->count();
+        $lastPage = ceil($totalReports / $perPage);
+
+        $reports = $query->orderBy('reports.created_at', 'desc')
+            ->skip(($page - 1) * $perPage)
+            ->take($perPage)
+            ->get();
+
+        return response()->json([
+            'success' => true,
+            'data' => $reports,
+            'meta' => [
+                'total' => $totalReports,
+                'per_page' => $perPage,
+                'current_page' => $page,
+                'lastPage' => $lastPage
+            ]
+        ]);
+    }
+
+
+    public function getReportDetails(Request $request, $id)
+    {
+        $user = Auth::user();
+
+        if ($user->role !== 'admin') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthorized'
+            ], 403);
+        }
+
+        $report = DB::table('reports')
+            ->join('users as reported_users', 'reports.user_id', '=', 'reported_users.id')
+            ->join('users as reporters', 'reports.reporter_id', '=', 'reporters.id')
+            ->leftJoin('users as admins', 'reports.resolved_by', '=', 'admins.id')
+            ->select(
+                'reports.*',
+                'reported_users.name as reported_user_name',
+                'reporters.name as reporter_name',
+                'admins.name as resolved_by_name'
+            )
+            ->where('reports.id', $id)
+            ->first();
+
+        if (!$report) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Report not found'
+            ], 404);
+        }
+
+
+        SystemLog::create([
+            'user_id' => $user->id,
+            'type' => 'admin',
+            'action' => 'Viewed report #' . $id . ' details',
+            'ip_address' => $request->ip()
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'data' => $report
+        ]);
+    }
+
+
+    public function handleReport(Request $request)
+    {
+        $user = Auth::user();
+
+        if ($user->role !== 'admin') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthorized'
+            ], 403);
+        }
+
+        $validator = Validator::make($request->all(), [
+            'report_id' => 'required|exists:reports,id',
+            'status' => 'required|in:processing,resolved,rejected',
+            'admin_notes' => 'nullable|string',
+            'ban_user' => 'required|boolean'
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation error',
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        DB::beginTransaction();
+
+        try {
+            $report = DB::table('reports')->where('id', $request->report_id)->first();
+
+            if (!$report) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Report not found'
+                ], 404);
+            }
+
+
+            DB::table('reports')
+                ->where('id', $request->report_id)
+                ->update([
+                    'status' => $request->status,
+                    'resolved_by' => $user->id,
+                    'resolved_at' => now(),
+                    'admin_notes' => $request->admin_notes,
+                    'updated_at' => now()
+                ]);
+
+
+            if ($request->ban_user) {
+                $duration = (int) $request->ban_duration;
+                $expiresAt = null;
+
+                if ($duration > 0) {
+                    $expiresAt = Carbon::now()->addDays($duration);
+                }
+
+
+                BanList::updateOrCreate(
+                    ['user_id' => $report->user_id],
+                    [
+                        'reason' => 'Banned due to user report: ' . ($request->admin_notes ?: 'No additional notes'),
+                        'duration' => $request->ban_duration,
+                        'expires_at' => $expiresAt,
+                        'banned_by' => $user->id
+                    ]
+                );
+            }
+
+            DB::commit();
+
+
+            SystemLog::create([
+                'user_id' => $user->id,
+                'type' => 'admin',
+                'action' => 'Handled report #' . $request->report_id,
+                'ip_address' => $request->ip(),
+                'details' => json_encode([
+                    'status' => $request->status,
+                    'ban_user' => $request->ban_user,
+                    'ban_duration' => $request->ban_duration ?? null
+                ])
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Report has been handled successfully'
+            ]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to handle report: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function createReport(Request $request)
+    {
+        $user = Auth::user();
+
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthorized'
+            ], 401);
+        }
+
+        $validator = Validator::make($request->all(), [
+            'user_id' => 'required|exists:users,id',
+            'reason' => 'required|string|min:10'
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation error',
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        $report = new \App\Models\Report([
+            'user_id' => $request->user_id,
+            'reporter_id' => $user->id,
+            'reason' => $request->reason,
+            'status' => 'pending'
+        ]);
+
+        $report->save();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Report submitted successfully',
+            'data' => $report
+        ]);
+    }
+
+    public function createReviewReport(Request $request)
+    {
+        $user = Auth::user();
+
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthorized'
+            ], 401);
+        }
+
+        $validator = Validator::make($request->all(), [
+            'review_id' => 'required|exists:reviews,id',
+            'reason' => 'required|string|min:10'
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation error',
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        $review = Review::find($request->review_id);
+
+        $report = new \App\Models\Report([
+            'user_id' => $review->customer_id,
+            'review_id' => $request->review_id,
+            'reporter_id' => $user->id,
+            'reason' => $request->reason,
+            'status' => 'pending'
+        ]);
+
+        $report->save();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Review report submitted successfully',
+            'data' => $report
         ]);
     }
 }

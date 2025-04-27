@@ -431,6 +431,18 @@ class API {
     }
 
     /**
+     * Create a report for a user
+     * @param {Object} reportData - Report data including user_id and reason
+     * @returns {Promise} - Report submission response
+     */
+    static async createReport(reportData) {
+        return this.request("/reports", {
+            method: "POST",
+            body: JSON.stringify(reportData),
+        });
+    }
+
+    /**
      * Get sorting options for a specific entity
      * @param {string} entity - Entity type (photographers, services, etc.)
      * @returns {Promise} - Sort options
@@ -745,6 +757,18 @@ class API {
     static async markCustomerMessagesAsRead(conversationId) {
         return this.request(`/customer-messages/mark-read/${conversationId}`, {
             method: "POST"
+        });
+    }
+
+    /**
+     * Create a report for a review
+     * @param {Object} reportData - Report data including review_id and reason
+     * @returns {Promise} - Report creation response
+     */
+    static async createReviewReport(reportData) {
+        return this.request("/reports/review", {
+            method: "POST",
+            body: JSON.stringify(reportData)
         });
     }
 }

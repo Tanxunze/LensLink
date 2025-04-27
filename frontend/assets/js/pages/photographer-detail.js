@@ -16,6 +16,9 @@ $(document).ready(function () {
 
     loadPhotographerDetails();
 
+    $("#reportBtn").on("click", openReportModal);
+    $("#submitReportBtn").on("click", submitReport);
+
     // Event handlers
     $("#bookNowBtn").on("click", openBookingModal);
     $("#contactBtn").on("click", openContactModal);
@@ -297,7 +300,7 @@ function displayReviews(reviews) {
     const reviewsHtml = reviews.map(review => `
         <div class="card mb-4">
             <div class="card-body">
-                <div class="d-flex mb-3">
+                <div class="d-flex mb-3 align-items-center">
                     <img src="${review.customer_image || '../assets/images/default-avatar.jpg'}" 
                          class="rounded-circle me-3 customer-contact-trigger" 
                          width="50" height="50" 
@@ -305,7 +308,7 @@ function displayReviews(reviews) {
                          data-customer-id="${review.customer_id}" 
                          data-customer-name="${review.customer_name}"
                          style="cursor: pointer;">
-                    <div>
+                    <div class="flex-grow-1">
                         <h6 class="mb-1 customer-contact-trigger" 
                             data-customer-id="${review.customer_id}" 
                             data-customer-name="${review.customer_name}"
@@ -315,6 +318,9 @@ function displayReviews(reviews) {
                         </div>
                         <small class="text-muted">${review.service_type} - ${$.lenslink.formatDate(review.service_date)}</small>
                     </div>
+                    <button class="btn btn-sm btn-outline-danger report-review-btn" data-review-id="${review.id}" title="Report Review">
+                        <i class="bi bi-flag"></i>
+                    </button>
                 </div>
                 <h5 class="card-title">${review.title}</h5>
                 <p class="card-text">${review.review}</p>
@@ -343,6 +349,12 @@ function displayReviews(reviews) {
         }
 
         openContactRequestModal(customerId, customerName);
+    });
+
+    // Add click event for review report buttons
+    $(".report-review-btn").on("click", function() {
+        const reviewId = $(this).data('review-id');
+        openReviewReportModal(reviewId);
     });
 }
 
@@ -718,5 +730,128 @@ function getCompletedBookings() {
         .catch(error => {
             console.error('Error fetching completed bookings:', error);
             return [];
+        });
+}
+
+// Open the report modal
+function openReportModal() {
+    // Check if user is logged in
+    if (!localStorage.getItem("token")) {
+        alert("Please log in to report a photographer");
+        window.location.href = "../pages/auth/login.html";
+        return;
+    }
+
+    // Reset form
+    $("#reportForm")[0].reset();
+
+    // Show modal
+    const reportModal = new bootstrap.Modal(document.getElementById('reportModal'));
+    reportModal.show();
+}
+
+// Submit the report
+function submitReport() {
+    // Validate form
+    if (!$("#reportForm")[0].checkValidity()) {
+        $("#reportForm")[0].reportValidity();
+        return;
+    }
+
+    const reason = $("#reportReason").val().trim();
+
+    if (reason.length < 10) {
+        $.lenslink.showNotification("Please provide a more detailed reason for your report", "warning");
+        return;
+    }
+
+    const reportData = {
+        user_id: photographerData.id,
+        reason: reason
+    };
+
+    $("#submitReportBtn").prop("disabled", true).html('<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Submitting...');
+
+    // Call the API
+    API.createReport(reportData)
+        .then(response => {
+            bootstrap.Modal.getInstance(document.getElementById('reportModal')).hide();
+            $.lenslink.showNotification("Report submitted successfully. Our team will review it shortly.", "success");
+        })
+        .catch(error => {
+            console.error("Error submitting report:", error);
+            let errorMessage = "Failed to submit report. Please try again.";
+
+            if (error.response && error.response.message) {
+                errorMessage = error.response.message;
+            }
+
+            $.lenslink.showNotification(errorMessage, "error");
+        })
+        .finally(() => {
+            $("#submitReportBtn").prop("disabled", false).text("Submit Report");
+        });
+}
+
+function openReviewReportModal(reviewId) {
+    // Check if user is logged in
+    if (!localStorage.getItem("token")) {
+        alert("Please log in to report a review");
+        window.location.href = "../pages/auth/login.html";
+        return;
+    }
+
+    // Reset form
+    $("#reviewReportForm")[0].reset();
+
+    // Store review ID for submission
+    $("#reviewReportModal").data("reviewId", reviewId);
+
+    // Show modal
+    const reviewReportModal = new bootstrap.Modal(document.getElementById('reviewReportModal'));
+    reviewReportModal.show();
+}
+
+$("#submitReviewReportBtn").on("click", submitReviewReport);
+
+function submitReviewReport() {
+    // Validate form
+    if (!$("#reviewReportForm")[0].checkValidity()) {
+        $("#reviewReportForm")[0].reportValidity();
+        return;
+    }
+
+    const reviewId = $("#reviewReportModal").data("reviewId");
+    const reason = $("#reviewReportReason").val().trim();
+
+    if (reason.length < 10) {
+        $.lenslink.showNotification("Please provide a more detailed reason for your report", "warning");
+        return;
+    }
+
+    const reportData = {
+        review_id: reviewId,
+        reason: reason
+    };
+
+    $("#submitReviewReportBtn").prop("disabled", true).html('<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Submitting...');
+
+    API.createReviewReport(reportData)
+        .then(response => {
+            bootstrap.Modal.getInstance(document.getElementById('reviewReportModal')).hide();
+            $.lenslink.showNotification("Review report submitted successfully. Our team will review it shortly.", "success");
+        })
+        .catch(error => {
+            console.error("Error submitting review report:", error);
+            let errorMessage = "Failed to submit report. Please try again.";
+
+            if (error.response && error.response.message) {
+                errorMessage = error.response.message;
+            }
+
+            $.lenslink.showNotification(errorMessage, "error");
+        })
+        .finally(() => {
+            $("#submitReviewReportBtn").prop("disabled", false).text("Submit Report");
         });
 }
