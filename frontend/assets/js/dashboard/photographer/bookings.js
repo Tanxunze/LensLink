@@ -1,9 +1,9 @@
 const PhotographerBookings = {
-    init: function() {
+    init: function () {
         this.checkPendingBookings();
     },
 
-    checkPendingBookings: function() {
+    checkPendingBookings: function () {
         console.log("Checking pending bookings...");
 
         fetch(`${CONFIG.API.BASE_URL}/photographer/bookings-details`, {
@@ -13,16 +13,16 @@ const PhotographerBookings = {
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({
-                filter: { status: 'pending' }
+                filter: {status: 'pending'}
             })
         })
             .then(response => response.json())
             .then(data => {
                 if (data.bookings && data.bookings.length > 0) {
                     console.log(`Found ${data.bookings.length} pending bookings`);
-                    
+
                     $(".booking-badge").removeClass("d-none").text(data.bookings.length);
-                    
+
                     localStorage.setItem('pending_booking_ids',
                         JSON.stringify(data.bookings.map(b => b.id)));
                 } else {
@@ -34,13 +34,13 @@ const PhotographerBookings = {
                 console.error("Failed to check pending bookings:", error);
             });
     },
-    
-    clearBookingNotification: function() {
+
+    clearBookingNotification: function () {
         console.log("Clearing booking notification");
         $(".booking-badge").addClass("d-none").text("0");
     },
 
-    showBookingsSection: function(status = "all") {
+    showBookingsSection: function (status = "all") {
         $(".nav-link").removeClass("active");
         $('[data-section="bookings"]').addClass("active");
         $(".dashboard-section").addClass("d-none");
@@ -52,11 +52,11 @@ const PhotographerBookings = {
             this.clearBookingNotification();
         }
 
-        this.filterBookings(status);
+        this.loadBookings(status);
         window.location.hash = "bookings:" + status;
     },
 
-    loadBookings: function(status = "all", page = 1) {
+    loadBookings: function (status = "all", page = 1) {
         console.log("Status in loadBookings: ", status);
         $("#bookingsTable").html(`
             <tr>
@@ -73,7 +73,7 @@ const PhotographerBookings = {
 
         const requestData = {
             filter: {
-                status: status
+                status: status === "all" ? undefined : status,
             }
         };
 
@@ -92,7 +92,7 @@ const PhotographerBookings = {
                 return response.json();
             })
             .then(data => {
-                if (!data || data.length === 0) {
+                if (!data || !data.bookings || data.bookings.length === 0) {
                     $("#bookingsTable").html(`
                         <tr>
                             <td colspan="8" class="text-center">
@@ -184,7 +184,7 @@ const PhotographerBookings = {
             });
     },
 
-    openBookingDetailsModal: function(bookingId) {
+    openBookingDetailsModal: function (bookingId) {
         if (!document.getElementById('bookingDetailModal')) {
             const modalHtml = `
                 <div class="modal fade" id="bookingDetailModal" tabindex="-1" aria-hidden="true">
@@ -223,7 +223,7 @@ const PhotographerBookings = {
         bookingModal.show();
     },
 
-    loadBookingDetails: function(bookingId) {
+    loadBookingDetails: function (bookingId) {
         const modalBody = document.querySelector('#bookingDetailModal .modal-body');
 
         if (!modalBody) {
@@ -304,7 +304,7 @@ const PhotographerBookings = {
             });
     },
 
-    editBooking: function(bookingId) {
+    editBooking: function (bookingId) {
         if (!document.getElementById('editBookingModal')) {
             const modalHtml = `
                 <div class="modal fade" id="editBookingModal" tabindex="-1" aria-hidden="true">
@@ -343,7 +343,7 @@ const PhotographerBookings = {
         editModal.show();
     },
 
-    editBookingDetails: function(bookingId) {
+    editBookingDetails: function (bookingId) {
         const modalBody = document.querySelector('#editBookingModal .modal-body');
 
         if (!modalBody) {
@@ -374,11 +374,9 @@ const PhotographerBookings = {
                 if (timeValue) {
                     if (timeValue.includes('T')) {
                         bookingTime = timeValue.split('T')[1].substring(0, 5);
-                    }
-                    else if (timeValue.includes(':')) {
+                    } else if (timeValue.includes(':')) {
                         bookingTime = timeValue.substring(0, 5);
-                    }
-                    else if (/^\d{2}:\d{2}$/.test(timeValue)) {
+                    } else if (/^\d{2}:\d{2}$/.test(timeValue)) {
                         bookingTime = timeValue;
                     }
                 }
@@ -432,7 +430,7 @@ const PhotographerBookings = {
             })
     },
 
-    saveBookingChanges: function() {
+    saveBookingChanges: function () {
         const bookingId = document.getElementById('editBookingId').value;
         const bookingDate = document.getElementById('editBookingDate').value;
         const bookingTime = document.getElementById('editBookingTime').value;
@@ -484,18 +482,18 @@ const PhotographerBookings = {
             })
     },
 
-    updateBookingStatus: function(bookingId, status) {
+    updateBookingStatus: function (bookingId, status) {
         if (!confirm(`Are you sure you want to update this booking status to ${status === 'confirmed' ? "Confirmed" : "Cancelled"}?`)) {
             return;
         }
 
-        
+
         const $button = $(`.acceptBookingBtn[data-id="${bookingId}"], .rejectBookingBtn[data-id="${bookingId}"]`);
         if ($button.length) {
             $button.prop('disabled', true).html('<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>');
         }
 
-        
+
         fetch(`${CONFIG.API.BASE_URL}/photographer/bookings/${bookingId}`, {
             method: 'GET',
             headers: {
@@ -510,7 +508,7 @@ const PhotographerBookings = {
                 return response.json();
             })
             .then(booking => {
-                
+
                 return fetch(`${CONFIG.API.BASE_URL}/photographer/bookings/${bookingId}`, {
                     method: 'PUT',
                     headers: {
@@ -519,7 +517,7 @@ const PhotographerBookings = {
                     },
                     body: JSON.stringify({
                         booking_date: booking.booking_date,
-                        booking_time: booking.booking_time || booking.start_time, 
+                        booking_time: booking.booking_time || booking.start_time,
                         status: status,
                         location: booking.location || '',
                         notes: booking.notes || ''
@@ -540,7 +538,7 @@ const PhotographerBookings = {
                 console.error("Failed to update booking status:", error);
                 showNotification("Error updating booking. Please try again.", "danger");
 
-                
+
                 if ($button.length) {
                     $button.prop('disabled', false).html(status === 'confirmed' ?
                         '<i class="bi bi-check2"></i>' : '<i class="bi bi-x-lg"></i>');

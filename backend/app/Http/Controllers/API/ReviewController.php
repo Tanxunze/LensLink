@@ -25,7 +25,7 @@ class ReviewController extends Controller
 
     public function show(Request $request)
     {
-        $id=$request->user()->id;
+        $id=$request->user()->photographerProfile->id;
         $review = Review::with(['customer'])
             ->where('photographer_id', $id)
             ->avg('rating');
