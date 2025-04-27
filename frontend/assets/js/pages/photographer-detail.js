@@ -4,6 +4,7 @@ let selectedRating = 0;
 let services = [];
 let selectedServiceId = null;
 
+
 $(document).ready(function () {
     // Extract ID from URL
     const urlParams = new URLSearchParams(window.location.search);
@@ -298,57 +299,47 @@ function displayReviews(reviews) {
     }
 
     const reviewsHtml = reviews.map(review => `
-        <div class="card mb-4">
-            <div class="card-body">
-                <div class="d-flex mb-3 align-items-center">
+    <div class="card mb-4">
+        <div class="card-body">
+            <div class="d-flex mb-3 align-items-center">
+                <a href="customer-profile.html?id=${review.customer_id}" class="customer-contact-trigger text-decoration-none d-inline-block">
                     <img src="${review.customer_image || '../assets/images/default-avatar.jpg'}" 
-                         class="rounded-circle me-3 customer-contact-trigger" 
+                         class="rounded-circle me-3" 
                          width="50" height="50" 
                          alt="${review.customer_name}"
-                         data-customer-id="${review.customer_id}" 
-                         data-customer-name="${review.customer_name}"
                          style="cursor: pointer;">
-                    <div class="flex-grow-1">
-                        <h6 class="mb-1 customer-contact-trigger" 
-                            data-customer-id="${review.customer_id}" 
-                            data-customer-name="${review.customer_name}"
-                            style="cursor: pointer;">${review.customer_name}</h6>
-                        <div class="mb-2">
-                            ${$.lenslink.generateStarRating(review.rating)}
-                        </div>
-                        <small class="text-muted">${review.service_type} - ${$.lenslink.formatDate(review.service_date)}</small>
+                </a>
+                <div class="flex-grow-1">
+                    <a href="customer-profile.html?id=${review.customer_id}" class="customer-contact-trigger text-decoration-none text-body">
+                        <h6 class="mb-1" style="cursor: pointer;">${review.customer_name}</h6>
+                    </a>
+                    <div class="mb-2">
+                        ${$.lenslink.generateStarRating(review.rating)}
                     </div>
-                    <button class="btn btn-sm btn-outline-danger report-review-btn" data-review-id="${review.id}" title="Report Review">
-                        <i class="bi bi-flag"></i>
-                    </button>
+                    <small class="text-muted">${review.service_type} - ${$.lenslink.formatDate(review.service_date)}</small>
                 </div>
-                <h5 class="card-title">${review.title}</h5>
-                <p class="card-text">${review.review}</p>
-                ${review.reply ? `
-                    <div class="bg-light p-3 mt-3 rounded">
-                        <small class="text-muted">Photographer's response - ${$.lenslink.formatDate(review.reply_date)}</small>
-                        <p class="mb-0 mt-2">${review.reply}</p>
-                    </div>
-                ` : ''}
+                <button class="btn btn-sm btn-outline-danger report-review-btn" data-review-id="${review.id}" title="Report Review">
+                    <i class="bi bi-flag"></i>
+                </button>
             </div>
+            <h5 class="card-title">${review.title}</h5>
+            <p class="card-text">${review.review}</p>
+            ${review.reply ? `
+                <div class="bg-light p-3 mt-3 rounded">
+                    <small class="text-muted">Photographer's response - ${$.lenslink.formatDate(review.reply_date)}</small>
+                    <p class="mb-0 mt-2">${review.reply}</p>
+                </div>
+            ` : ''}
         </div>
-    `).join('');
+    </div>
+`).join('');
 
     $("#reviewsList").html(reviewsHtml);
 
     // Add click event for customer contact
     $(".customer-contact-trigger").on("click", function() {
         const customerId = $(this).data('customer-id');
-        const customerName = $(this).data('customer-name');
-
-        // Check if trying to contact yourself
-        const currentUserId = localStorage.getItem("userId");
-        if (customerId.toString() === currentUserId) {
-            $.lenslink.showNotification("You cannot contact yourself.", "warning");
-            return;
-        }
-
-        openContactRequestModal(customerId, customerName);
+        window.location.href = `customer-profile.html?id=${customerId}`;
     });
 
     // Add click event for review report buttons

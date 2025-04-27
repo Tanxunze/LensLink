@@ -169,4 +169,24 @@ class UserController extends Controller
         return response()->file($path, ['Content-Type' => $type]);
     }
 
+
+    public function getCustomerProfile($id)
+    {
+        $customer = User::where('id', $id)
+            ->where('role', 'customer')
+            ->select('id', 'name', 'email', 'bio', 'profile_image', 'created_at')
+            ->first();
+
+        if (!$customer) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Customer not found'
+            ], 404);
+        }
+
+        return response()->json([
+            'success' => true,
+            'data' => $customer
+        ]);
+    }
 }
