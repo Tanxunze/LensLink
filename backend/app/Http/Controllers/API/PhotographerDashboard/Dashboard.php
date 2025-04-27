@@ -53,7 +53,7 @@ class Dashboard extends Controller
 
         $totalAmount = Booking::where('photographer_id', $photographer_id)
             ->where('status', 'completed')
-            ->whereBetween('booking_date', [$firstDayOfMonth, $lastDayOfMonth])
+            ->whereBetween('created_at', [$firstDayOfMonth, $lastDayOfMonth])
             ->sum('total_amount');
 
         return response()->json([
