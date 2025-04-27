@@ -83,10 +83,16 @@ class MessageController extends Controller
 
     public function getConversationMessages($id, Request $request)
     {
+        $user = Auth::user();
         $messages = Message::where('conversation_id', $id)
             ->with('sender')
             ->orderBy('created_at')
             ->paginate($request->per_page ?? 15);
+        
+        $messages->getCollection()->transform(function ($message) use ($user) {
+            $message->is_mine = $message->sender_id === $user->id;
+            return $message;
+        });
 
         return response()->json($messages);
     }
