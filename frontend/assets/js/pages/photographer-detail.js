@@ -16,6 +16,9 @@ $(document).ready(function () {
 
     loadPhotographerDetails();
 
+    $("#reportBtn").on("click", openReportModal);
+    $("#submitReportBtn").on("click", submitReport);
+
     // Event handlers
     $("#bookNowBtn").on("click", openBookingModal);
     $("#contactBtn").on("click", openContactModal);
@@ -718,5 +721,65 @@ function getCompletedBookings() {
         .catch(error => {
             console.error('Error fetching completed bookings:', error);
             return [];
+        });
+}
+
+// Open the report modal
+function openReportModal() {
+    // Check if user is logged in
+    if (!localStorage.getItem("token")) {
+        alert("Please log in to report a photographer");
+        window.location.href = "../pages/auth/login.html";
+        return;
+    }
+
+    // Reset form
+    $("#reportForm")[0].reset();
+
+    // Show modal
+    const reportModal = new bootstrap.Modal(document.getElementById('reportModal'));
+    reportModal.show();
+}
+
+// Submit the report
+function submitReport() {
+    // Validate form
+    if (!$("#reportForm")[0].checkValidity()) {
+        $("#reportForm")[0].reportValidity();
+        return;
+    }
+
+    const reason = $("#reportReason").val().trim();
+
+    if (reason.length < 10) {
+        $.lenslink.showNotification("Please provide a more detailed reason for your report", "warning");
+        return;
+    }
+
+    const reportData = {
+        user_id: photographerData.id,
+        reason: reason
+    };
+
+    $("#submitReportBtn").prop("disabled", true).html('<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Submitting...');
+
+    // Call the API
+    API.createReport(reportData)
+        .then(response => {
+            bootstrap.Modal.getInstance(document.getElementById('reportModal')).hide();
+            $.lenslink.showNotification("Report submitted successfully. Our team will review it shortly.", "success");
+        })
+        .catch(error => {
+            console.error("Error submitting report:", error);
+            let errorMessage = "Failed to submit report. Please try again.";
+
+            if (error.response && error.response.message) {
+                errorMessage = error.response.message;
+            }
+
+            $.lenslink.showNotification(errorMessage, "error");
+        })
+        .finally(() => {
+            $("#submitReportBtn").prop("disabled", false).text("Submit Report");
         });
 }

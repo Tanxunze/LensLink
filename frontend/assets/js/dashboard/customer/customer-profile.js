@@ -97,8 +97,7 @@ const CustomerProfile = {
         $("#profileEmail, #infoEmail").text("loading@example.com");
         $("#profileImage").attr("src");
         $("#profileMember").text("Member since: Loading...");
-        $("#infoPhone").text("Loading...");
-        $("#infoAddress").text("Loading...");
+        $("#infoBio").text("Loading...");
         $("#totalBookings").text("0");
         $("#totalReviews").text("0");
 
@@ -122,7 +121,7 @@ const CustomerProfile = {
                 $("#profileMember").text(`Member since: ${memberSince}`);
 
                 $("#infoPhone").text(data.phone || "Not provided");
-                $("#infoAddress").text(data.address || "Not provided");
+                $("#infoBio").text(data.bio || "Not provided");
 
                 $("#totalBookings").text(data.bookings_count || "0");
                 $("#totalReviews").text(data.reviews_count || "0");
@@ -130,7 +129,7 @@ const CustomerProfile = {
                 $("#editName").val(data.name);
                 $("#editEmail").val(data.email);
                 $("#editPhone").val(data.phone || "");
-                $("#editAddress").val(data.address || "");
+                $("#editBio").val(data.bio || "");
 
                 if (data.profile_image) {
                     $("#previewProfileImage").attr("src", data.profile_image);
@@ -160,7 +159,7 @@ const CustomerProfile = {
             name: $("#editName").val(),
             email: $("#editEmail").val(),
             phone: $("#editPhone").val(),
-            address: $("#editAddress").val()
+            bio: $("#editBio").val(),
         };
 
         $("#saveProfileBtn").prop("disabled", true).html(`

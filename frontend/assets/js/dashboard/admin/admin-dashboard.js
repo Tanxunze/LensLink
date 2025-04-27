@@ -20,6 +20,22 @@ $(document).ready(function () {
             $('#search-user-btn').click();
         }
     });
+
+    $('.nav-link[href="#reports"]').on('shown.bs.tab', function () {
+        loadReports(1);
+    });
+
+    $('#search-report-btn').click(function () {
+        const searchTerm = $('#report-search').val();
+        loadReports(1, searchTerm);
+    });
+
+    $('#report-search').keypress(function (e) {
+        if (e.which == 13) {
+            $('#search-report-btn').click();
+        }
+    });
+
     $('.nav-link[href="#comments"]').on('shown.bs.tab', function () {
         loadComments(1);
     });
@@ -132,6 +148,9 @@ function loadTabContent(tabId) {
             break;
         case 'users':
             loadUsers(1);
+            break;
+        case 'reports':
+            loadReports(1);
             break;
         case 'comments':
             loadComments(1);
@@ -1639,4 +1658,300 @@ function clearLogs() {
     });
 }
 
+
+$('.nav-link[href="#reports"]').on('shown.bs.tab', function () {
+    loadReports(1);
+});
+
+$('#search-report-btn').click(function () {
+    const searchTerm = $('#report-search').val();
+    loadReports(1, searchTerm);
+});
+
+$('#report-search').keypress(function (e) {
+    if (e.which == 13) {
+        $('#search-report-btn').click();
+    }
+});
+
+
+function loadReports(page = 1, search = '') {
+    $('#reports-table').html('<tr><td colspan="7" class="text-center"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div></td></tr>');
+
+    $.ajax({
+        url: `${CONFIG.API.BASE_URL}/admin/reports?page=${page}&search=${search}`,
+        method: 'GET',
+        headers: {
+            'Authorization': 'Bearer ' + localStorage.getItem('token')
+        },
+        success: function (response) {
+            if (response.success) {
+                renderReportsTable(response.data);
+                renderPagination('reports-pagination', page, response.meta.lastPage, search, loadReports);
+            } else {
+                showToast('Error', 'Failed to load reports', 'error');
+                $('#reports-table').html('<tr><td colspan="7" class="text-center">Failed to load reports</td></tr>');
+            }
+        },
+        error: function (xhr) {
+            handleAjaxError(xhr);
+            $('#reports-table').html('<tr><td colspan="7" class="text-center">Failed to load reports</td></tr>');
+        }
+    });
+}
+
+function renderReportsTable(reports) {
+    let html = '';
+
+    if (reports.length === 0) {
+        html = '<tr><td colspan="7" class="text-center">No reports found</td></tr>';
+    } else {
+        reports.forEach(report => {
+            const statusClass = getReportStatusClass(report.status);
+
+            html += `
+                <tr>
+                    <td>${report.id}</td>
+                    <td>${escapeHtml(report.reporter_name)}</td>
+                    <td>${escapeHtml(report.reported_user_name)}</td>
+                    <td>
+                        <div class="text-truncate-custom" title="${escapeHtml(report.reason)}">
+                            ${escapeHtml(report.reason.substring(0, 50))}${report.reason.length > 50 ? '...' : ''}
+                        </div>
+                    </td>
+                    <td>${formatDateTime(report.created_at)}</td>
+                    <td>
+                        <span class="badge bg-${statusClass}">${capitalizeFirstLetter(report.status)}</span>
+                    </td>
+                    <td class="action-buttons">
+                        <button class="btn btn-sm btn-info view-report-btn" data-id="${report.id}" title="View Details">
+                            <i class="bi bi-eye"></i>
+                        </button>
+                        ${report.status === 'pending' ?
+                `<button class="btn btn-sm btn-warning handle-report-btn" data-id="${report.id}" title="Handle Report">
+                                <i class="bi bi-flag"></i>
+                            </button>` : ''
+            }
+                    </td>
+                </tr>
+            `;
+        });
+    }
+
+    $('#reports-table').html(html);
+
+    $('.view-report-btn').click(function() {
+        const reportId = $(this).data('id');
+        viewReportDetails(reportId);
+    });
+
+    $('.handle-report-btn').click(function() {
+        const reportId = $(this).data('id');
+        openHandleReportModal(reportId);
+    });
+}
+
+
+function capitalizeFirstLetter(string) {
+    return string.charAt(0).toUpperCase() + string.slice(1);
+}
+
+function getReportStatusClass(status) {
+    switch (status.toLowerCase()) {
+        case 'pending':
+            return 'warning';
+        case 'processing':
+            return 'info';
+        case 'resolved':
+            return 'success';
+        case 'rejected':
+            return 'secondary';
+        default:
+            return 'primary';
+    }
+}
+
+function viewReportDetails(reportId) {
+    $('#viewDetailsModal').modal('show');
+    $('#viewDetailsModalLabel').text('Report Details');
+    $('#details-content').html('<div class="d-flex justify-content-center"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div></div>');
+
+    $.ajax({
+        url: `${CONFIG.API.BASE_URL}/admin/reports/${reportId}`,
+        method: 'GET',
+        headers: {
+            'Authorization': 'Bearer ' + localStorage.getItem('token')
+        },
+        success: function (response) {
+            if (response.success) {
+                const report = response.data;
+                let html = `
+                    <div class="card mb-3">
+                        <div class="card-header bg-danger text-white">
+                            <h5 class="mb-0">Report Information</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <p><strong>Reporter:</strong> ${escapeHtml(report.reporter_name)}</p>
+                                    <p><strong>Reported User:</strong> ${escapeHtml(report.reported_user_name)}</p>
+                                    <p><strong>Date Reported:</strong> ${formatDateTime(report.created_at)}</p>
+                                </div>
+                                <div class="col-md-6">
+                                    <p><strong>Status:</strong> <span class="badge bg-${getReportStatusClass(report.status)}">${capitalizeFirstLetter(report.status)}</span></p>
+                                    ${report.resolved_at ? `<p><strong>Resolved Date:</strong> ${formatDateTime(report.resolved_at)}</p>` : ''}
+                                    ${report.resolved_by_name ? `<p><strong>Resolved By:</strong> ${escapeHtml(report.resolved_by_name)}</p>` : ''}
+                                </div>
+                            </div>
+                            <div class="mt-3">
+                                <h6>Reason:</h6>
+                                <div class="p-3 bg-light rounded">${escapeHtml(report.reason)}</div>
+                            </div>
+                            ${report.admin_notes ? `
+                                <div class="mt-3">
+                                    <h6>Admin Notes:</h6>
+                                    <div class="p-3 bg-light rounded">${escapeHtml(report.admin_notes)}</div>
+                                </div>
+                            ` : ''}
+                        </div>
+                    </div>
+                `;
+
+                // Add buttons for pending reports
+                if (report.status === 'pending') {
+                    html += `
+                        <div class="d-flex justify-content-end">
+                            <button class="btn btn-warning handle-report-btn-modal" data-id="${report.id}">
+                                <i class="bi bi-flag me-1"></i> Handle Report
+                            </button>
+                        </div>
+                    `;
+                }
+
+                $('#details-content').html(html);
+
+                $('.handle-report-btn-modal').click(function () {
+                    const id = $(this).data('id');
+                    $('#viewDetailsModal').modal('hide');
+                    openHandleReportModal(id);
+                });
+            } else {
+                $('#details-content').html('<div class="alert alert-danger">Failed to load report details</div>');
+            }
+        },
+        error: function (xhr) {
+            $('#details-content').html('<div class="alert alert-danger">Error loading report details</div>');
+            handleAjaxError(xhr);
+        }
+    });
+}
+
+function openHandleReportModal(reportId) {
+    // Reset form
+    $('#report-action-form')[0].reset();
+    $('#ban-options').addClass('d-none');
+    $('#report-id').val(reportId);
+
+    // Fetch report details
+    $.ajax({
+        url: `${CONFIG.API.BASE_URL}/admin/reports/${reportId}`,
+        method: 'GET',
+        headers: {
+            'Authorization': 'Bearer ' + localStorage.getItem('token')
+        },
+        success: function (response) {
+            if (response.success) {
+                const report = response.data;
+
+                // Fill report information
+                $('#reporter-name').text(report.reporter_name);
+                $('#reported-user-name').text(report.reported_user_name);
+                $('#report-date').text(formatDateTime(report.created_at));
+                $('#report-status').html(`<span class="badge bg-${getReportStatusClass(report.status)}">${capitalizeFirstLetter(report.status)}</span>`);
+                $('#report-reason').text(report.reason);
+                $('#admin-notes').val(report.admin_notes || '');
+
+                // Open modal
+                $('#handleReportModal').modal('show');
+
+                // Set up action ban user change handler
+                $('#action-ban-user').off('change').on('change', function() {
+                    if ($(this).val() === 'yes') {
+                        $('#ban-options').removeClass('d-none');
+                    } else {
+                        $('#ban-options').addClass('d-none');
+                    }
+                });
+
+                // Set up submission handler
+                $('#submit-report-action-btn').off('click').on('click', function() {
+                    handleReport(reportId);
+                });
+            } else {
+                showToast('Error', 'Failed to load report details', 'error');
+            }
+        },
+        error: function (xhr) {
+            showToast('Error', 'Failed to load report details', 'error');
+            handleAjaxError(xhr);
+        }
+    });
+}
+
+function handleReport(reportId) {
+    const status = $('#action-status').val();
+
+    if (!status) {
+        showToast('Warning', 'Please select a status', 'warning');
+        return;
+    }
+
+    let data = {
+        report_id: reportId,
+        status: status,
+        admin_notes: $('#admin-notes').val()
+    };
+
+    if ($('#action-ban-user').val() === 'yes') {
+        data.ban_user = true;
+        data.ban_duration = $('#action-ban-duration').val();
+    } else {
+        data.ban_user = false;
+    }
+
+    $('#submit-report-action-btn').prop('disabled', true).html('<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Processing...');
+
+    $.ajax({
+        url: `${CONFIG.API.BASE_URL}/admin/reports/handle`,
+        method: 'POST',
+        headers: {
+            'Authorization': 'Bearer ' + localStorage.getItem('token'),
+            'Content-Type': 'application/json'
+        },
+        data: JSON.stringify(data),
+        success: function (response) {
+            if (response.success) {
+                $('#handleReportModal').modal('hide');
+                showToast('Success', 'Report handled successfully', 'success');
+                loadReports(1, $('#report-search').val());
+
+                // Refresh dashboard stats
+                loadDashboardStats();
+
+                // Refresh ban list if user was banned
+                if (data.ban_user && $('#ban-list').hasClass('show active')) {
+                    loadBanList(1, $('#ban-search').val());
+                }
+            } else {
+                showToast('Error', response.message || 'Failed to handle report', 'error');
+            }
+        },
+        error: function (xhr) {
+            handleAjaxError(xhr);
+        },
+        complete: function () {
+            $('#submit-report-action-btn').prop('disabled', false).text('Submit Action');
+        }
+    });
+}
 

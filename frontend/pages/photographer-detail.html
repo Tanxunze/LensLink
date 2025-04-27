@@ -30,6 +30,11 @@
             <div class="row">
                 <div class="col-md-8 offset-md-2">
                     <div class="card shadow">
+                        <div class="position-absolute top-0 end-0 mt-2 me-2">
+                            <button class="btn btn-sm btn-outline-danger" id="reportBtn" title="Report Photographer">
+                                <i class="bi bi-flag"></i> Report
+                            </button>
+                        </div>
                         <div class="card-body p-4">
                             <div class="text-center mb-4">
                                 <img src="../assets/images/default-photographer.jpg" class="photographer-profile-image"
@@ -302,6 +307,32 @@
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                     <button type="button" class="btn btn-primary" id="sendRequestBtn">Send Request</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Report Modal -->
+    <div class="modal fade" id="reportModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Report Photographer</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-info">
+                        <small><i class="bi bi-info-circle"></i> Reporting a photographer should only be done for legitimate concerns. False reports may result in account penalties.</small>
+                    </div>
+                    <form id="reportForm">
+                        <div class="mb-3">
+                            <label for="reportReason" class="form-label">Reason for Report</label>
+                            <textarea class="form-control" id="reportReason" rows="4" placeholder="Please provide specific details about why you are reporting this photographer..." required></textarea>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-danger" id="submitReportBtn">Submit Report</button>
                 </div>
             </div>
         </div>

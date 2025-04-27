@@ -431,6 +431,18 @@ class API {
     }
 
     /**
+     * Create a report for a user
+     * @param {Object} reportData - Report data including user_id and reason
+     * @returns {Promise} - Report submission response
+     */
+    static async createReport(reportData) {
+        return this.request("/reports", {
+            method: "POST",
+            body: JSON.stringify(reportData),
+        });
+    }
+
+    /**
      * Get sorting options for a specific entity
      * @param {string} entity - Entity type (photographers, services, etc.)
      * @returns {Promise} - Sort options
