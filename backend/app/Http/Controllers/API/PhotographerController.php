@@ -15,7 +15,7 @@ class PhotographerController extends Controller
             ->join('users', 'photographer_profiles.user_id', '=', 'users.id')
             ->select('photographer_profiles.*', 'users.name', 'users.email', 'users.profile_image');
 
-        // search filtter
+        // search filter
         if ($request->has('search') && !empty($request->search)) {
             $searchTerm = $request->search;
             $keywords = preg_split('/[\s,]+/', $searchTerm, -1, PREG_SPLIT_NO_EMPTY);
@@ -30,14 +30,14 @@ class PhotographerController extends Controller
             });
         }
 
-        // categories filtter
+        // categories filter
         if ($request->has('category') && !empty($request->category)) {
             $query->whereHas('categories', function ($q) use ($request) {
                 $q->where('categories.slug', $request->category);
             });
         }
 
-        // price filtter
+        // price filter
         if ($request->has('min_price') && is_numeric($request->min_price)) {
             $query->where('starting_price', '>=', $request->min_price);
         }
@@ -46,18 +46,37 @@ class PhotographerController extends Controller
             $query->where('starting_price', '<=', $request->max_price);
         }
 
-        // rating filtter
+
+        $query->addSelect([
+            'calculated_rating' => DB::table('reviews')
+                ->selectRaw('ROUND(COALESCE(AVG(rating), 0), 2)')
+                ->whereColumn('photographer_id', 'photographer_profiles.id')
+                ->where('is_published', true),
+            'calculated_review_count' => DB::table('reviews')
+                ->selectRaw('COUNT(*)')
+                ->whereColumn('photographer_id', 'photographer_profiles.id')
+                ->where('is_published', true)
+        ]);
+
+        // rating filter
         if ($request->has('min_rating') && is_numeric($request->min_rating)) {
-            $query->where('average_rating', '>=', $request->min_rating);
+            $query->having('calculated_rating', '>=', $request->min_rating);
         }
 
         // sort
-        $sortBy = $request->sort_by ?? 'average_rating';
+        $sortBy = $request->sort_by ?? 'calculated_rating';
         $sortDirection = $request->sort_direction ?? 'desc';
-        $allowedSortFields = ['average_rating', 'starting_price', 'experience_years', 'review_count'];
+        $allowedSortFields = ['calculated_rating', 'starting_price', 'experience_years', 'calculated_review_count'];
 
-        if (in_array($sortBy, $allowedSortFields)) {
-            $query->orderBy($sortBy, $sortDirection);
+
+        $sortFieldMap = [
+            'average_rating' => 'calculated_rating',
+            'review_count' => 'calculated_review_count'
+        ];
+
+        $actualSortField = $sortFieldMap[$sortBy] ?? $sortBy;
+        if (in_array($actualSortField, $allowedSortFields)) {
+            $query->orderBy($actualSortField, $sortDirection);
         }
 
         $perPage = $request->per_page ?? 9; // page limit
@@ -73,8 +92,8 @@ class PhotographerController extends Controller
                 'location' => $photographer->location,
                 'experience' => $photographer->experience_years . ' years',
                 'photoshoot_count' => $photographer->photoshoot_count,
-                'rating' => $photographer->average_rating,
-                'review_count' => $photographer->review_count,
+                'rating' => $photographer->calculated_rating,
+                'review_count' => $photographer->calculated_review_count,
                 'startingPrice' => $photographer->starting_price,
                 'description' => $photographer->user->bio,
                 'featured' => $photographer->featured,
@@ -130,6 +149,18 @@ class PhotographerController extends Controller
             ->limit(5)
             ->get();
 
+        // Calculate average rating dynamically from reviews and round to 2 decimal places
+        $avgRating = DB::table('reviews')
+            ->where('photographer_id', $id)
+            ->where('is_published', true)
+            ->selectRaw('ROUND(COALESCE(AVG(rating), 0), 2) as avg_rating')
+            ->value('avg_rating');
+
+        $reviewCount = DB::table('reviews')
+            ->where('photographer_id', $id)
+            ->where('is_published', true)
+            ->count();
+
         return response()->json([
             'id' => $photographer->id,
             'name' => $photographer->user->name,
@@ -141,8 +172,8 @@ class PhotographerController extends Controller
             'location' => $photographer->location,
             'experience_years' => $photographer->experience_years,
             'photoshoot_count' => $photographer->photoshoot_count,
-            'rating' => $photographer->average_rating,
-            'review_count' => $photographer->review_count,
+            'rating' => $avgRating,
+            'review_count' => $reviewCount,
             'starting_price' => $photographer->starting_price,
             'categories' => $photographer->categories->pluck('name'),
             'services' => $services,
