@@ -186,6 +186,10 @@ Key entities and relationships:
 
 This project is licensed under the MIT License - see the LICENSE file for details.
 
+## Acknowledgments
+
+I would like to extend my heartfelt appreciation to **Professor Conor Ryan** (Conor.Ryan@ul.ie) for his exceptional guidance and mentorship throughout the development of this photography trading platform. His expertise in software engineering and innovative approach to web development significantly enhanced both the technical implementation and overall project quality.
+
 ## Contact & Support
 
 For questions regarding this project:
