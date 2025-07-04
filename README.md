@@ -1,148 +1,194 @@
-# CS4116 - SOFTWARE DEVELOPMENT PROJECT 
+# LensLink - Photography Trading Platform
 
-## *LensLink* - Photography trading website
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![PHP Version](https://img.shields.io/badge/PHP-8.2%2B-blue.svg)](https://php.net)
+[![Laravel](https://img.shields.io/badge/Laravel-11.x-red.svg)](https://laravel.com)
+[![Bootstrap](https://img.shields.io/badge/Bootstrap-5.3.3-purple.svg)](https://getbootstrap.com)
 
-A platform connecting photographers with clients, built for CS4116 project.
+## Project Overview
 
----
+**LensLink** is a comprehensive web-based photography trading platform that connects professional photographers with clients, developed as part of the CS4116 Software Development Project. The platform facilitates the entire photography business workflow from service discovery to booking completion, featuring real-time communication, portfolio management, and integrated payment processing.
 
-## Project Setup
+## Key Features
 
-### Prerequisites
-- Web server supporting PHP 8.0+
-- MySQL 8.0+
-- Bootstrap 5.3.3
-- jQuery 3.7.1 min
-- Live Server or similar development server
+- **Dual-Role Authentication System**: Separate registration and login flows for photographers and clients
+- **Service Management**: Photographers can create, edit, and manage multiple photography service packages
+- **Advanced Booking System**: Intelligent scheduling with availability management and booking status tracking
+- **Real-time Messaging**: WebSocket-based instant communication between photographers and clients
+- **Review & Rating System**: Comprehensive feedback mechanism with photo attachments and response capabilities
+- **Portfolio Showcase**: Dynamic portfolio management with image galleries and categorization
+- **Responsive Design**: Mobile-first approach with Bootstrap-powered responsive UI
+- **Search & Discovery**: Advanced filtering and search functionality for finding photographers
 
-### Directory Structure
+## Technology Stack
+
+### Backend Architecture
+- **Framework**: Laravel 11.x (PHP 8.2+)
+- **Database**: MySQL 8.0+ with Eloquent ORM
+- **Authentication**: Laravel Sanctum for API token management
+- **API Design**: RESTful API following Laravel conventions
+- **Testing Framework**: Pest PHP for feature and unit testing
+- **File Storage**: AWS S3 integration via Laravel Flysystem
+
+### Frontend Technologies
+- **UI Framework**: Bootstrap 5.3.3 with custom CSS
+- **JavaScript**: Vanilla ES6+ with modular architecture
+- **HTTP Client**: jQuery 3.7.1 for AJAX requests
+- **Build Tools**: Laravel Mix for asset compilation
+- **Component Architecture**: Reusable HTML components with dynamic loading
+
+## Project Architecture
 
 ```
 LensLink/
-├── frontend/
-│   ├── assets/
-│   │   ├── css/
-│   │   │   ├── customer-dashboard.css
-│   │   │   ├── dashboard-common.css
-│   │   │   ├── photographer-dashboard.css
-│   │   │   ├── photographer-detail.css
-│   │   │   ├── photographers.css
-│   │   │   ├── services.css
-│   │   │   └── style.css
-│   │   ├── images/
-│   │   │   ├── hero-image.jpg
-│   │   │   ├── logo.jpg
-│   │   │   ├── logo.png
-│   │   │   ├── logo.svg
-│   │   │   └── service-hero.jpg
-│   │   └── js/
-│   │       ├── api.js
-│   │       ├── config.js
-│   │       ├── customer-dashboard.js
-│   │       ├── dashboard-common.js
-│   │       ├── loadComponents.js
-│   │       ├── photographer-dashboard.js
-│   │       ├── photographer-detail.js
-│   │       ├── photographers.js
-│   │       └── services.js
-│   ├── components/
-│   │   ├── footer.html
-│   │   └── header.html
-│   └── pages/
-│       ├── auth/
-│       │   ├── login.html
-│       │   └── register.html
-│       ├── dashboard/
-│       │   ├── customer.html
-│       │   └── photographer.html
-│       ├── index.html
-│       ├── photographers.html
-│       ├── photographer-detail.html
-│       └── services.html
-├── backend/
-│   ├── .idea/
+├── backend/                 # Laravel application
 │   ├── app/
-│   │   ├── Http/
-│   │   │   ├── Controllers/
-│   │   │   │   ├── API/
-│   │   │   │   │   ├── AuthController.php
-│   │   │   │   │   ├── BookingController.php
-│   │   │   │   │   ├── ConversationController.php
-│   │   │   │   │   ├── PhotographerController.php
-│   │   │   │   │   ├── ReviewController.php
-│   │   │   │   │   ├── ServiceController.php
-│   │   │   │   │   └── UserController.php
-│   │   │   │   └── Controller.php
-│   │   │   └── Middleware/
-│   │   ├── Models/
-│   │   │   ├── Booking.php
-│   │   │   ├── Category.php
-│   │   │   ├── Conversation.php
-│   │   │   ├── ConversationParticipant.php
-│   │   │   ├── Message.php
-│   │   │   ├── PhotographerProfile.php
-│   │   │   ├── PortfolioItem.php
-│   │   │   ├── Review.php
-│   │   │   ├── Service.php
-│   │   │   ├── ServiceCategory.php
-│   │   │   ├── ServiceFeature.php
-│   │   │   └── User.php
-│   │   └── Providers/
-│   ├── bootstrap/
-│   ├── config/
+│   │   ├── Http/Controllers/API/    # API controllers
+│   │   └── Models/                  # Eloquent models
 │   ├── database/
-│   │   ├── migrations/
-│   │   └── seeders/
-│   ├── public/
-│   ├── resources/
-│   ├── routes/
-│   │   ├── api.php
-│   │   ├── console.php
-│   │   └── web.php
-│   ├── storage/
-│   ├── tests/
-│   ├── vendor/
-│   ├── .editorconfig
-│   ├── .env
-│   ├── composer.json
-│   └── artisan
-├── README.md
-└── .gitignore
+│   │   ├── migrations/              # Database schema
+│   │   └── seeders/                 # Test data
+│   ├── routes/api.php              # API routes
+│   └── tests/                      # Feature and unit tests
+├── frontend/               # Client-side application
+│   ├── assets/
+│   │   ├── css/           # Stylesheets
+│   │   ├── js/            # JavaScript modules
+│   │   └── images/        # Static assets
+│   ├── components/        # Reusable HTML components
+│   └── pages/            # Application pages
+└── database-dump/        # Sample database structure
 ```
+
+## Installation & Setup
+
+### Prerequisites
+- PHP 8.2 or higher
+- Composer
+- Node.js & npm
+- MySQL 8.0+
+- Web server (Apache/Nginx) or Laravel development server
+
+### Backend Setup
+```bash
+# Clone the repository
+git clone <repository-url>
+cd LensLink/backend
+
+# Install PHP dependencies
+composer install
+
+# Configure environment
+cp .env.example .env
+php artisan key:generate
+
+# Database setup
+php artisan migrate
+php artisan db:seed
+
+# Start development server
+php artisan serve
+```
+
+### Frontend Setup
+```bash
+cd LensLink/frontend
+
+# Install Node.js dependencies (if applicable)
+npm install
+
+# Start live server for development
+# Use Live Server VS Code extension or similar
+```
+
+## API Documentation
+
+### Authentication Endpoints
+- `POST /api/auth/register` - User registration
+- `POST /api/auth/login` - User authentication
+- `POST /api/auth/logout` - User logout
+
+### Core Business Logic
+- `GET /api/photographers` - List photographers with filtering
+- `GET /api/photographers/{id}` - Photographer profile details
+- `GET /api/services` - Photography services
+- `POST /api/bookings` - Create new booking
+- `GET /api/conversations` - User conversations
+- `POST /api/reviews` - Submit review
 
 ## Development Guidelines
 
-### 1. Branch Management
-- **main**: Production-ready code
-- **dev**: Development branch for feature integration
-- Feature branches should branch from `dev`
+### Code Standards
+- Follow PSR-12 coding standards for PHP
+- Use ESLint configuration for JavaScript
+- Implement proper error handling and validation
+- Write descriptive commit messages
 
-### 2. Commit Guidelines
-- For **important or disruptive changes**, please commit to the **dev branch** and submit a **pull request**
-- Use clear commit messages following this format:
-  - feat: (new feature)
-  - fix: (bug fix)
-  - docs: (documentation changes)
-  - style: (formatting, missing semi colons, etc)
-  - refactor: (refactoring code)
+### Git Workflow
+```bash
+# Feature development
+git checkout -b feature/amazing-feature
+git commit -m 'feat: Add amazing feature'
+git push origin feature/amazing-feature
 
-### 3. Pull Request Process
-1. Create your feature branch (`git checkout -b feature/AmazingFeature`)
-2. Commit your changes (`git commit -m 'feat: Add some AmazingFeature'`)
-3. Push to the branch (`git push origin feature/AmazingFeature`)
-4. Open a Pull Request to the `dev` branch
+# Submit pull request to dev branch
+```
 
-### 4. Frontend Development
-- Use Bootstrap 5.3.3 classes where possible
-- Follow component-based structure
-- Test across different browsers
+### Testing
+```bash
+# Run PHP tests
+php artisan test
 
-### 5. API Integration
-- All API endpoints are documented in `/docs/api-documentation.md`
-- The api except dashboard is definied in `/assets/js/api.js`
-- The api of dashboard is defined in `/assets/js/xxxx-dashboard.js` & `dashboard-common.js`
+# Run specific test file
+php artisan test tests/Feature/AuthTest.php
+```
 
-## Resources
-- [Bootstrap Documentation](https://getbootstrap.com/docs/5.3/getting-started/introduction/)
-- [Project Requirements Document](https://ulcampus-my.sharepoint.com/:b:/g/personal/24247472_studentmail_ul_ie/EVHfRbct3y5DlZOnXN3_kwEBfWAbnMBU5nFpdV2scdzdIg?e=Ecgm9h)
+## Database Schema
 
+Key entities and relationships:
+- **Users**: Base user authentication
+- **PhotographerProfiles**: Extended photographer information
+- **Services**: Photography service offerings
+- **Bookings**: Appointment management
+- **Conversations & Messages**: Communication system
+- **Reviews**: Feedback and rating system
+
+## Performance Considerations
+
+- **Database Optimization**: Proper indexing on frequently queried columns
+- **Image Handling**: Optimized image storage and delivery via CDN
+- **Caching Strategy**: Redis integration for session and query caching
+- **API Rate Limiting**: Throttling to prevent abuse
+
+## Security Features
+
+- **Input Validation**: Server-side validation for all user inputs
+- **CSRF Protection**: Built-in Laravel CSRF token validation
+- **SQL Injection Prevention**: Eloquent ORM parameterized queries
+- **Authentication**: Secure token-based authentication with Sanctum
+
+## Deployment
+
+### Production Environment
+- Configure proper environment variables
+- Set up SSL certificates
+- Implement proper backup strategies
+- Monitor application performance and logs
+
+## Contributing
+
+1. Fork the repository
+2. Create your feature branch
+3. Follow coding standards and write tests
+4. Submit a pull request with detailed description
+
+## License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
+
+## Contact & Support
+
+For questions regarding this project:
+- Course: CS4116 Software Development Project
+- Institution: University of Limerick
+- Documentation: See `/docs` directory for detailed API documentation
